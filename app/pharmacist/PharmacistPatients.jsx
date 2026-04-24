@@ -10,7 +10,7 @@ export default function PharmacistPatients() {
 
   // Mock list of patients
   const mockPatients = [
-    { id: "1", name: "أحمد محمد الشهري", phone: "0551234567", rxCount: 3, lastVisit: "اليوم" },
+    { id: "1", name: "خالد محمد الشهري", phone: "0551234567", rxCount: 3, lastVisit: "اليوم" },
     { id: "2", name: "سارة عبدالله فهد", phone: "0569876543", rxCount: 7, lastVisit: "قبل يومين" },
     { id: "3", name: "خالد صالح الغامدي", phone: "0501122334", rxCount: 1, lastVisit: "قبل أسبوع" },
     { id: "4", name: "نورة محمد العتيبي", phone: "0533344556", rxCount: 12, lastVisit: "أمس" },
