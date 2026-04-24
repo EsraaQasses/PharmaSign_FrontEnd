@@ -1,0 +1,80 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./app/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}",
+    "./lib/**/*.{js,jsx,ts,tsx}",
+  ],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {
+      colors: {
+        // PharmaSign brand colors
+        primary: {
+          DEFAULT: "#0C6B58",
+          50: "#E6F4F1",
+          100: "#CCE9E3",
+          200: "#99D3C7",
+          300: "#66BDAB",
+          400: "#33A78F",
+          500: "#0C6B58",
+          600: "#0A5646",
+          700: "#074035",
+          800: "#052B23",
+          900: "#021512",
+        },
+        secondary: {
+          DEFAULT: "#2196F3",
+          50: "#E3F2FD",
+          100: "#BBDEFB",
+          200: "#90CAF9",
+          300: "#64B5F6",
+          400: "#42A5F5",
+          500: "#2196F3",
+          600: "#1E88E5",
+          700: "#1976D2",
+          800: "#1565C0",
+          900: "#0D47A1",
+        },
+        accent: {
+          DEFAULT: "#FF9800",
+          50: "#FFF3E0",
+          100: "#FFE0B2",
+          200: "#FFCC80",
+          300: "#FFB74D",
+          400: "#FFA726",
+          500: "#FF9800",
+          600: "#FB8C00",
+          700: "#F57C00",
+          800: "#EF6C00",
+          900: "#E65100",
+        },
+        background: "#F8FAFB",
+        surface: "#FFFFFF",
+        error: "#EF4444",
+        success: "#10B981",
+        warning: "#F59E0B",
+        info: "#3B82F6",
+      },
+      fontFamily: {
+        sans: ["Cairo_400Regular", "Cairo_500Medium", "sans-serif"],
+        // You can map Tailwind weights to specific Expo font variants, but NativeWind automatically handles it 
+        // if you use font-bold, it will look for the bolder font-family if set correctly. However, a simpler
+        // approach for RN is to use the specific font family for each weight, or rely on Android's font mapping.
+        // For NativeWind + Expo fonts, using the base family often works nicely if set globally, but explicitly:
+        light: ["Cairo_300Light"],
+        normal: ["Cairo_400Regular"],
+        medium: ["Cairo_500Medium"],
+        semibold: ["Cairo_600SemiBold"],
+        bold: ["Cairo_700Bold"],
+        extrabold: ["Cairo_800ExtraBold"],
+      },
+      borderRadius: {
+        xl: "16px",
+        "2xl": "20px",
+        "3xl": "24px",
+      },
+    },
+  },
+  plugins: [],
+};
