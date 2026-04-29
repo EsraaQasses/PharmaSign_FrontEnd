@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter, usePathname } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Home,
   FileText,
@@ -29,38 +30,45 @@ const pharmacistTabs = [
 export default function BottomNav({ role = "patient" }) {
   const router = useRouter();
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const tabs = role === "pharmacist" ? pharmacistTabs : patientTabs;
+  const activeColor = role === "pharmacist" ? "#05997F" : "#022451";
+
+  const handlePress = (path) => {
+    if (pathname === path) return;
+    router.replace(path);
+  };
 
   return (
     <View
-      className="flex-row bg-white border-t border-gray-100 px-2 pb-6 pt-2"
+      className="flex-row bg-white border-t border-gray-100 px-2 pt-2"
       style={{
+        paddingBottom: Math.max(insets.bottom, 16),
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 8,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 20,
       }}
     >
       {tabs.map((tab) => {
-        const isActive = pathname === tab.path || pathname?.startsWith(tab.path);
+        const isActive = pathname === tab.path;
         const Icon = tab.icon;
         return (
           <TouchableOpacity
             key={tab.path}
-            onPress={() => router.push(tab.path)}
+            onPress={() => handlePress(tab.path)}
             className="flex-1 items-center py-2"
             activeOpacity={0.7}
           >
             <Icon
-              size={22}
-              color={isActive ? "#0C6B58" : "#9CA3AF"}
+              size={24}
+              color={isActive ? activeColor : "#9CA3AF"}
               strokeWidth={isActive ? 2.5 : 2}
             />
             <Text
-              className={`text-[10px] mt-1 font-medium ${
-                isActive ? "text-primary" : "text-gray-400"
-              }`}
+              style={{ color: isActive ? activeColor : "#9CA3AF" }}
+              className={`text-[10px] mt-1 font-bold`}
             >
               {tab.label}
             </Text>

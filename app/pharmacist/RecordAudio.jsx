@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { Mic, MicOff, CheckCircle, RefreshCw, Lightbulb, Square, ArrowRight, ArrowLeft } from "lucide-react-native";
-import PageHeader from "@/components/mobile/PageHeader";
+import { 
+  Mic, 
+  MicOff, 
+  CheckCircle, 
+  RefreshCw, 
+  Square, 
+  ArrowRight, 
+  ArrowLeft, 
+  Lightbulb 
+} from "lucide-react-native";
+import MobileShell from "@/components/mobile/MobileShell";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function RecordAudio() {
   const router = useRouter();
-  const [isRecording, setIsRecording] = useState(true);
+  const insets = useSafeAreaInsets();
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasRecorded, setHasRecorded] = useState(false);
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
@@ -27,127 +39,184 @@ export default function RecordAudio() {
     return `${mins}:${secs}`;
   };
 
+  const startRecording = () => {
+    setSeconds(0);
+    setIsRecording(true);
+    setHasRecorded(false);
+  };
+
   const stopRecording = () => {
     setIsRecording(false);
+    setHasRecorded(true);
   };
 
   const handleNext = () => {
-    router.push("/pharmacist/PharmacistHome");
+    router.push("/pharmacist/VerifyText");
   };
 
   return (
-    <View className="flex-1 bg-background relative">
-      <PageHeader title="تسجيل التعليمات" showBackButton={false} />
-
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 140 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Step Indicator */}
-        <View className="mt-4 mb-6">
-          <View className="flex-row items-end justify-between mb-3">
-            <Text className="text-xs text-gray-500 font-bold">60% مكتمل</Text>
-            <View className="items-end">
-              <Text className="text-xs text-primary font-bold mb-1">الخطوة 2 من 3</Text>
-              <Text className="text-2xl font-extrabold text-gray-900">تسجيل التعليمات</Text>
-            </View>
+    <MobileShell className="bg-pharmacist" edges={["top", "left", "right"]}>
+      <View className="flex-1 bg-background">
+        {/* Rounded Integrated Header */}
+        <View className="bg-pharmacist pt-4 pb-12 px-6 rounded-b-[4rem] shadow-2xl shadow-pharmacist/30 relative overflow-hidden">
+          {/* Background decorative element */}
+          <View className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
+          
+          <View className="flex-row items-center justify-between mb-8">
+             <TouchableOpacity 
+               onPress={() => router.replace("/pharmacist/NewPrescription")}
+               className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center border border-white/10"
+             >
+                <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
+             </TouchableOpacity>
+             <Text className="text-white text-xl font-extrabold">تسجيل التعليمات</Text>
+             <View className="w-10" />
           </View>
-          <View className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-            <View className="w-3/5 h-full bg-primary rounded-full" />
+
+          {/* Integrated Step Indicator */}
+          <View>
+            <View className="flex-row items-end justify-between mb-3">
+              <Text className="text-[10px] text-white/60 font-extrabold uppercase tracking-tighter">60% مكتمل</Text>
+              <View className="items-end">
+                <Text className="text-[11px] text-white/90 font-extrabold mb-1 uppercase tracking-wider">
+                  الخطوة 2 من 3
+                </Text>
+                <Text className="text-2xl font-extrabold text-white">
+                  تسجيل التعليمات
+                </Text>
+              </View>
+            </View>
+            <View className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <View className="w-3/5 h-full bg-white rounded-full shadow-sm" />
+            </View>
           </View>
         </View>
 
-        {/* Recording Card */}
-        <View className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 items-center justify-center mb-6">
-          <Text className="text-sm font-bold text-gray-600 text-center mb-8 px-4 leading-6">
-            قم بتسجيل التعليمات الصوتية بوضوح باللغة العربية لتحويلها تلقائياً إلى لغة الإشارة
-          </Text>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ 
+            paddingHorizontal: 20, 
+            paddingTop: 24,
+            paddingBottom: 100 + insets.bottom 
+          }}
+          showsVerticalScrollIndicator={false}
+        >
 
-          {/* Mic Button */}
-          <View className="mb-8 items-center justify-center relative w-40 h-40">
-            {isRecording && (
-              <>
-                <View className="absolute inset-0 bg-primary/5 rounded-full animate-pulse" />
-                <View className="absolute inset-4 bg-primary/10 rounded-full animate-pulse" />
-              </>
-            )}
-            <View className={`w-24 h-24 rounded-full items-center justify-center shadow-lg ${isRecording ? "bg-primary shadow-primary/40" : "bg-gray-300 shadow-gray-200"}`}>
-              {isRecording ? <Mic size={40} color="#FFFFFF" /> : <MicOff size={40} color="#FFFFFF" />}
+          {/* Recording Card */}
+          <View className="bg-white rounded-3xl p-8 shadow-sm border border-gray-50 items-center justify-center mb-6">
+            <Text className="text-sm font-bold text-gray-400 text-center mb-10 px-4 leading-6">
+              قم بتسجيل التعليمات الصوتية بوضوح باللغة العربية لتحويلها تلقائياً إلى لغة الإشارة
+            </Text>
+
+            {/* Mic Button */}
+            <View className="mb-10 items-center justify-center relative w-48 h-48">
+              {isRecording && (
+                <>
+                  <View className="absolute inset-0 bg-pharmacist/5 rounded-full" />
+                  <View className="absolute inset-6 bg-pharmacist/10 rounded-full" />
+                </>
+              )}
+              <View 
+                className={`w-28 h-28 rounded-full items-center justify-center shadow-2xl ${
+                  isRecording ? "bg-pharmacist shadow-pharmacist/40" : "bg-gray-200 shadow-gray-200/50"
+                }`}
+              >
+                {isRecording ? (
+                  <Mic size={48} color="#FFFFFF" strokeWidth={2.5} />
+                ) : (
+                  <MicOff size={48} color="#FFFFFF" strokeWidth={2.5} />
+                )}
+              </View>
             </View>
+
+            {/* Status Row */}
+            {isRecording ? (
+              <View className="bg-red-50 px-6 py-4 rounded-2xl flex-row items-center gap-3 border border-red-100">
+                <View className="w-3 h-3 rounded-full bg-red-500" />
+                <Text className="text-base font-extrabold text-red-600">
+                  جاري التسجيل... {formatTime(seconds)}
+                </Text>
+              </View>
+            ) : hasRecorded ? (
+              <View className="items-center">
+                <View className="bg-emerald-50 px-6 py-4 rounded-2xl flex-row items-center gap-3 border border-emerald-100 mb-6">
+                  <CheckCircle size={20} color="#05997F" strokeWidth={2.5} />
+                  <Text className="text-base font-extrabold text-pharmacist">تم إيقاف التسجيل</Text>
+                </View>
+
+                <TouchableOpacity 
+                   activeOpacity={0.7}
+                   onPress={startRecording}
+                   className="flex-row items-center gap-2 bg-gray-50 px-5 py-3 rounded-xl border border-gray-100"
+                >
+                  <RefreshCw size={18} color="#4B5563" strokeWidth={2.5} />
+                  <Text className="text-sm font-bold text-gray-600">إعادة التسجيل</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View className="bg-pharmacist/5 px-6 py-4 rounded-2xl flex-row items-center gap-3 border border-pharmacist/10">
+                <View className="w-3 h-3 rounded-full bg-gray-300" />
+                <Text className="text-base font-extrabold text-gray-500">
+                  جاهز للتسجيل
+                </Text>
+              </View>
+            )}
           </View>
 
-          {/* Status Row */}
-          {isRecording ? (
-            <View className="bg-red-50 px-5 py-3 rounded-full flex-row items-center gap-2 border border-red-100">
-              <View className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <Text className="text-sm font-bold text-red-600">
-                جاري التسجيل... {formatTime(seconds)}
+          {/* Tip */}
+          <View className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex-row items-start gap-4 shadow-sm shadow-amber-900/5">
+            <View className="w-10 h-10 rounded-2xl bg-amber-100 items-center justify-center shadow-sm">
+              <Lightbulb size={22} color="#D97706" strokeWidth={2.5} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-sm font-extrabold text-amber-900 mb-1 text-left">نصيحة للمحتوى:</Text>
+              <Text className="text-xs text-amber-700 leading-relaxed text-left font-medium">
+                "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع"
               </Text>
             </View>
-          ) : (
-            <View className="items-center">
-              <View className="bg-emerald-50 px-5 py-3 rounded-full flex-row items-center gap-2 border border-emerald-100 mb-4">
-                <CheckCircle size={18} color="#059669" />
-                <Text className="text-sm font-bold text-emerald-700">تم إيقاف التسجيل</Text>
-              </View>
-
-              <TouchableOpacity 
-                activeOpacity={0.7}
-                onPress={() => { setIsRecording(true); setSeconds(0); }}
-                className="flex-row items-center gap-1.5 bg-gray-50 px-4 py-2.5 rounded-xl border border-gray-200"
-              >
-                <RefreshCw size={16} color="#4B5563" />
-                <Text className="text-sm font-bold text-gray-700">إعادة التسجيل</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Tip */}
-        <View className="bg-amber-50 rounded-2xl p-5 border border-amber-100 flex-row items-start gap-3 shadow-sm">
-          <View className="w-8 h-8 rounded-full bg-amber-100 items-center justify-center mt-1">
-            <Lightbulb size={18} color="#D97706" />
           </View>
-          <View className="flex-1">
-            <Text className="text-sm font-bold text-amber-900 mb-1 text-left">نصيحة للمحتوى:</Text>
-            <Text className="text-xs text-amber-700 leading-relaxed text-left">
-              "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع"
-            </Text>
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      {/* Fixed Footer */}
-      <View className="absolute bottom-4 left-0 right-0 flex-row px-5 gap-3 bg-transparent">
-        <TouchableOpacity
-          className="flex-1 bg-white border border-gray-200 h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-sm"
-          onPress={() => router.back()}
-          activeOpacity={0.8}
+        {/* Fixed Footer */}
+        <View 
+          className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 px-6 py-4 flex-row gap-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 20) }}
         >
-          <ArrowRight size={20} color="#4B5563" />
-          <Text className="font-bold text-gray-700 text-base">السابق</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-lg ${
-            isRecording ? "bg-red-500 shadow-red-500/30" : "bg-primary shadow-primary/30"
-          }`}
-          onPress={isRecording ? stopRecording : handleNext}
-          activeOpacity={0.8}
-        >
-          {isRecording ? (
-            <>
-              <Square size={20} color="#FFFFFF" fill="#FFFFFF" />
-              <Text className="font-bold text-white text-lg">إيقاف التسجيل</Text>
-            </>
-          ) : (
-            <>
-              <Text className="font-bold text-white text-lg">معالجة وحفظ</Text>
-              <ArrowLeft size={20} color="#FFFFFF" />
-            </>
-          )}
-        </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-1 bg-gray-50 border border-gray-100 h-14 rounded-2xl flex-row items-center justify-center gap-2"
+            onPress={() => router.replace("/pharmacist/NewPrescription")}
+            activeOpacity={0.8}
+          >
+            <ArrowRight size={20} color="#6B7280" strokeWidth={2.5} />
+            <Text className="font-bold text-gray-500 text-base">السابق</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${
+              isRecording ? "bg-red-500 shadow-red-500/20" : "bg-pharmacist shadow-pharmacist/20"
+            }`}
+            onPress={isRecording ? stopRecording : hasRecorded ? handleNext : startRecording}
+            activeOpacity={0.8}
+          >
+            {isRecording ? (
+              <>
+                <Square size={18} color="#FFFFFF" fill="#FFFFFF" />
+                <Text className="font-extrabold text-white text-lg">إيقاف</Text>
+              </>
+            ) : hasRecorded ? (
+              <>
+                <Text className="font-extrabold text-white text-lg">حفظ ومتابعة</Text>
+                <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            ) : (
+              <>
+                <Mic size={22} color="#FFFFFF" strokeWidth={2.5} />
+                <Text className="font-extrabold text-white text-lg">بدء التسجيل</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </MobileShell>
   );
 }

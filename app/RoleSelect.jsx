@@ -1,7 +1,8 @@
-import React, { useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, Animated } from "react-native";
+import BrandLogo from "@/components/mobile/BrandLogo";
 import { useRouter } from "expo-router";
-import { User, Pill, Hand } from "lucide-react-native";
+import { Pill, User } from "lucide-react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Text, TouchableOpacity, View } from "react-native";
 
 const roles = [
   {
@@ -9,7 +10,7 @@ const roles = [
     title: "مريض",
     description: "أريد مشاهدة تعليمات أدويتي بلغة الإشارة",
     Icon: User,
-    bgColor: "#0C6B58",
+    bgColor: "#022451",
     path: "/patient/PatientLogin",
   },
   {
@@ -17,7 +18,7 @@ const roles = [
     title: "صيدلي",
     description: "أريد تجهيز الوصفات الطبية وإرسالها للمرضى",
     Icon: Pill,
-    bgColor: "#3B82F6",
+    bgColor: "#05997F",
     path: "/pharmacist/PharmacistLogin",
   },
 ];
@@ -92,9 +93,9 @@ export default function RoleSelect() {
         {/* Icon */}
         <Animated.View
           style={{ transform: [{ scale: iconScale }] }}
-          className="w-20 h-20 rounded-2xl bg-primary/10 items-center justify-center mb-6"
+          className="w-20 h-20 rounded-2xl bg-white shadow-sm border border-gray-100 items-center justify-center mb-6"
         >
-          <Hand size={40} color="#0C6B58" />
+          <BrandLogo width={60} height={60} />
         </Animated.View>
 
         {/* Title */}

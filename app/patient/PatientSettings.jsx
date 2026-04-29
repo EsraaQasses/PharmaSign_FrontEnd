@@ -1,11 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Switch, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Switch } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Globe, Moon, ShieldAlert, Smartphone } from "lucide-react-native";
+import { Bell, Smartphone, Moon, Globe, ShieldAlert, ArrowRight } from "lucide-react-native";
 import PageHeader from "@/components/mobile/PageHeader";
+import MobileShell from "@/components/mobile/MobileShell";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PatientSettings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   const [settings, setSettings] = useState({
     notifications: true,
@@ -14,89 +17,111 @@ export default function PatientSettings() {
     useBiometrics: true,
   });
 
-  const toggleSetting = (key) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  const toggleSetting = (key) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const SettingRow = ({ icon: Icon, title, description, value, onValueChange }) => (
-    <View className="flex-row items-center justify-between py-4 border-b border-gray-100">
-      <View className="flex-1 flex-row items-center gap-3">
-        <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center">
-          <Icon size={20} color="#0C6B58" />
-        </View>
-        <View className="flex-1">
-          <Text className="text-sm font-bold text-gray-900 text-left">{title}</Text>
-          {description && (
-            <Text className="text-xs text-gray-500 mt-1 text-left">{description}</Text>
-          )}
-        </View>
-      </View>
+  const SettingRow = ({ icon: Icon, title, description, value, onValueChange, showDivider = true }) => (
+    <View className={`flex-row items-center justify-between py-5 ${showDivider ? 'border-b border-gray-50' : ''}`}>
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: "#D1D5DB", true: "#0C6B58" }}
+        trackColor={{ false: "#E5E7EB", true: "#022451" }}
         thumbColor={"#FFFFFF"}
+        style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
       />
+      <View className="flex-1 flex-row items-center gap-4 justify-end">
+        <View className="flex-1">
+          <Text className="text-base font-extrabold text-gray-900 text-right">{title}</Text>
+          {description && <Text className="text-[10px] font-bold text-gray-400 mt-1 text-right leading-relaxed">{description}</Text>}
+        </View>
+        <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+          <Icon size={22} color="#022451" strokeWidth={2.5} />
+        </View>
+      </View>
     </View>
   );
 
   return (
-    <View className="flex-1 bg-background">
-      <PageHeader title="الإعدادات" showBackButton />
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <PageHeader title="الإعدادات" showBackButton role="patient" />
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="bg-white rounded-2xl p-5 mt-6 border border-gray-100 shadow-sm">
-          <Text className="text-base font-bold text-gray-900 mb-2">التنبيهات والإشعارات</Text>
-          <SettingRow
-            icon={Bell}
-            title="الإشعارات العامة"
-            description="السماح للتطبيق بإرسال إشعارات عامة"
-            value={settings.notifications}
-            onValueChange={() => toggleSetting("notifications")}
-          />
-          <SettingRow
-            icon={Smartphone}
-            title="تنبيهات الوصفات"
-            description="تذكير بمواعيد الأدوية واستلام الوصفات الجديدة"
-            value={settings.prescriptionReminders}
-            onValueChange={() => toggleSetting("prescriptionReminders")}
-          />
-        </View>
-
-        <View className="bg-white rounded-2xl p-5 mt-4 border border-gray-100 shadow-sm">
-          <Text className="text-base font-bold text-gray-900 mb-2">المظهر واللغة</Text>
-          <SettingRow
-            icon={Moon}
-            title="الوضع الليلي"
-            description="تغيير مظهر التطبيق إلى الألوان الداكنة"
-            value={settings.darkMode}
-            onValueChange={() => toggleSetting("darkMode")}
-          />
-          <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-100">
-            <View className="flex-row items-center gap-3">
-              <View className="w-10 h-10 bg-blue-50 rounded-full items-center justify-center">
-                <Globe size={20} color="#3B82F6" />
-              </View>
-              <Text className="text-sm font-bold text-gray-900">لغة التطبيق</Text>
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 + insets.bottom }} 
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="bg-white rounded-[2.5rem] p-6 mb-5 border border-gray-50 shadow-sm">
+            <View className="flex-row items-center justify-end mb-6 gap-2">
+               <Text className="text-lg font-extrabold text-gray-900">التنبيهات</Text>
+               <View className="w-1 h-6 bg-patient rounded-full" />
             </View>
-            <Text className="text-sm font-bold text-primary">العربية</Text>
-          </TouchableOpacity>
-        </View>
+            <SettingRow
+              icon={Bell}
+              title="إشعارات التطبيق"
+              description="السماح للتطبيق بإرسال تنبيهات عامة"
+              value={settings.notifications}
+              onValueChange={() => toggleSetting("notifications")}
+            />
+            <SettingRow
+              icon={Smartphone}
+              title="تنبيهات الأدوية"
+              description="تذكير بمواعيد الأدوية واستلام الوصفات"
+              value={settings.prescriptionReminders}
+              onValueChange={() => toggleSetting("prescriptionReminders")}
+              showDivider={false}
+            />
+          </View>
 
-        <View className="bg-white rounded-2xl p-5 mt-4 border border-gray-100 shadow-sm">
-          <Text className="text-base font-bold text-gray-900 mb-2">الأمان</Text>
-          <SettingRow
-            icon={ShieldAlert}
-            title="تسجيل الدخول بالبصمة"
-            description="استخدام بصمة الوجه أو الأصبع لفتح التطبيق"
-            value={settings.useBiometrics}
-            onValueChange={() => toggleSetting("useBiometrics")}
-          />
-        </View>
-      </ScrollView>
-    </View>
+          <View className="bg-white rounded-[2.5rem] p-6 mb-5 border border-gray-50 shadow-sm">
+            <View className="flex-row items-center justify-end mb-6 gap-2">
+               <Text className="text-lg font-extrabold text-gray-900">المظهر واللغة</Text>
+               <View className="w-1 h-6 bg-patient rounded-full" />
+            </View>
+            <SettingRow
+              icon={Moon}
+              title="الوضع الداكن"
+              description="تغيير مظهر التطبيق إلى الألوان الليلية"
+              value={settings.darkMode}
+              onValueChange={() => toggleSetting("darkMode")}
+            />
+            
+            <TouchableOpacity className="flex-row items-center justify-between py-5 pt-5 border-gray-50">
+              <View className="flex-row items-center gap-2">
+                 <Text className="text-sm font-extrabold text-patient">العربية</Text>
+                 <ArrowRight size={14} color="#022451" style={{ transform: [{ rotate: '180deg' }] }} />
+              </View>
+              <View className="flex-row items-center gap-4">
+                <View className="flex-1">
+                   <Text className="text-base font-extrabold text-gray-900 text-right">لغة التطبيق</Text>
+                   <Text className="text-[10px] font-bold text-gray-400 mt-1 text-right">تغيير لغة واجهة المستخدم</Text>
+                </View>
+                <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+                  <Globe size={22} color="#022451" strokeWidth={2.5} />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View className="bg-white rounded-[2.5rem] p-6 mb-8 border border-gray-50 shadow-sm">
+            <View className="flex-row items-center justify-end mb-6 gap-2">
+               <Text className="text-lg font-extrabold text-gray-900">الأمان</Text>
+               <View className="w-1 h-6 bg-patient rounded-full" />
+            </View>
+            <SettingRow
+              icon={ShieldAlert}
+              title="قفل التطبيق"
+              description="استخدام البصمة لتعزيز سرية بياناتك"
+              value={settings.useBiometrics}
+              onValueChange={() => toggleSetting("useBiometrics")}
+              showDivider={false}
+            />
+          </View>
+          
+          <Text className="text-center text-[10px] font-extrabold text-gray-300 mb-4 uppercase tracking-widest leading-relaxed">
+            تم التطوير بواسطة فريق فارماساين{'\n'}مشروع تخرج - 2024
+          </Text>
+        </ScrollView>
+      </View>
+    </MobileShell>
   );
 }

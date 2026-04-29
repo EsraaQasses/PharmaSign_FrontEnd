@@ -1,19 +1,12 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import {
-  User,
-  Settings,
-  Shield,
-  HelpCircle,
-  LogOut,
-  ChevronLeft,
-  FileText,
-  Activity,
-  Edit,
-} from "lucide-react-native";
-import { useAuth } from "@/lib/AuthContext";
+import { Bell, Pill, Calendar, Info, Settings, Smartphone, Moon, Globe, ShieldAlert, ArrowRight, User, Edit, LogOut, Shield, Activity, FileText, HelpCircle, ChevronLeft } from "lucide-react-native";
+import MobileShell from "@/components/mobile/MobileShell";
 import BottomNav from "@/components/mobile/BottomNav";
+import { MOCK_PATIENTS, MOCK_PRESCRIPTIONS, MOCK_NOTIFICATIONS } from "@/lib/mockData";
+import { useAuth } from "@/lib/AuthContext";
+
 
 export default function PatientProfile() {
   const { user, logout } = useAuth();
@@ -54,10 +47,14 @@ export default function PatientProfile() {
   );
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
-        {/* Profile Header */}
-        <View className="bg-primary px-5 pt-16 pb-8 rounded-b-[2rem] items-center">
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View className="bg-patient px-5 pt-12 pb-8 rounded-b-[2rem] items-center">
           <View className="relative">
             <View className="w-24 h-24 bg-white/20 rounded-full items-center justify-center mb-4 border-2 border-white/40">
               <User size={48} color="#FFFFFF" strokeWidth={1.5} />
@@ -66,7 +63,7 @@ export default function PatientProfile() {
               onPress={() => router.push("/patient/PatientEditProfile")}
               className="absolute bottom-4 -right-2 w-8 h-8 bg-white rounded-full items-center justify-center shadow-sm"
             >
-              <Edit size={16} color="#0C6B58" />
+              <Edit size={16} color="#022451" />
             </TouchableOpacity>
           </View>
 
@@ -74,7 +71,7 @@ export default function PatientProfile() {
             {patient.name}
           </Text>
           <Text className="text-sm text-white/80">{patient.phone}</Text>
-          
+
           <View className="flex-row items-center gap-2 mt-4 bg-white/15 px-4 py-2 rounded-full">
             <Activity size={16} color="#FFFFFF" />
             <Text className="text-sm text-white font-bold">
@@ -97,7 +94,7 @@ export default function PatientProfile() {
               title="الإعدادات"
               subtitle="التنبيهات، اللغة، والمظهر"
               path="/patient/PatientSettings"
-              color="bg-gray-500"
+              color="bg-patient"
             />
             <MenuLink
               icon={Shield}
@@ -135,6 +132,6 @@ export default function PatientProfile() {
       <View className="absolute bottom-0 left-0 right-0">
         <BottomNav role="patient" />
       </View>
-    </View>
+    </MobileShell>
   );
 }

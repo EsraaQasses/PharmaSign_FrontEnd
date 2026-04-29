@@ -1,3 +1,4 @@
+import MobileShell from "@/components/mobile/MobileShell";
 import React from "react";
 import { View, Text, ScrollView } from "react-native";
 import { ShieldCheck, FileText, Lock } from "lucide-react-native";
@@ -7,28 +8,35 @@ export default function PrivacyPolicy() {
   const Section = ({ icon: Icon, title, content }) => (
     <View className="mb-8">
       <View className="flex-row items-center gap-2 mb-3">
-        <View className="w-8 h-8 rounded-full bg-primary/10 items-center justify-center">
-          <Icon size={16} color="#0C6B58" />
+        <View className="w-8 h-8 rounded-full bg-patient/10 items-center justify-center">
+          <Icon size={16} color="#022451" />
         </View>
-        <Text className="text-base font-bold text-gray-900">{title}</Text>
+        <Text className="text-base font-bold text-patient text-right flex-1">{title}</Text>
       </View>
-      <Text className="text-sm text-gray-600 leading-relaxed text-left pl-2 pr-1">
+      <Text className="text-sm text-gray-600 leading-relaxed text-right pl-2 pr-1">
         {content}
       </Text>
     </View>
   );
 
   return (
-    <View className="flex-1 bg-background">
-      <PageHeader title="الشروط وسياسة الخصوصية" showBackButton />
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <PageHeader 
+        title="الشروط وسياسة الخصوصية" 
+        showBackButton 
+        role="patient" 
+        backTo="/patient/PatientProfile"
+      />
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
         <View className="items-center mt-6 mb-8">
-          <View className="w-20 h-20 bg-primary/10 rounded-3xl items-center justify-center mb-4">
-            <ShieldCheck size={40} color="#0C6B58" />
+          <View className="w-20 h-20 bg-patient/10 rounded-3xl items-center justify-center mb-4">
+            <ShieldCheck size={40} color="#022451" />
           </View>
           <Text className="text-xl font-bold text-gray-900 mb-2">سياسة الخصوصية</Text>
           <Text className="text-sm text-gray-500 text-center px-4">
@@ -63,5 +71,6 @@ export default function PrivacyPolicy() {
         </View>
       </ScrollView>
     </View>
+  </MobileShell>
   );
 }

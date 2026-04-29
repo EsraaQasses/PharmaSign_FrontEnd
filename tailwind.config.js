@@ -10,18 +10,20 @@ module.exports = {
     extend: {
       colors: {
         // PharmaSign brand colors
+        pharmacist: "#05997F",
+        patient: "#022451",
         primary: {
-          DEFAULT: "#0C6B58",
+          DEFAULT: "#05997F",
           50: "#E6F4F1",
           100: "#CCE9E3",
           200: "#99D3C7",
           300: "#66BDAB",
           400: "#33A78F",
-          500: "#0C6B58",
-          600: "#0A5646",
-          700: "#074035",
-          800: "#052B23",
-          900: "#021512",
+          500: "#05997F",
+          600: "#04806A",
+          700: "#036655",
+          800: "#024D40",
+          900: "#01332B",
         },
         secondary: {
           DEFAULT: "#2196F3",
@@ -49,7 +51,7 @@ module.exports = {
           800: "#EF6C00",
           900: "#E65100",
         },
-        background: "#F8FAFB",
+        background: "#F0F4F4",
         surface: "#FFFFFF",
         error: "#EF4444",
         success: "#10B981",

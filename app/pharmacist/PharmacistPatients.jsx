@@ -1,19 +1,30 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from "react-native";
-import { Search, UserCheck, ChevronLeft, Phone, Calendar } from "lucide-react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
+import { Search, UserCheck, Calendar, Phone, ArrowRight } from "lucide-react-native";
+import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
+import BrandLogo from "@/components/mobile/BrandLogo";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PharmacistPatients() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-  // Mock list of patients
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const mockPatients = [
-    { id: "1", name: "خالد محمد الشهري", phone: "0551234567", rxCount: 3, lastVisit: "اليوم" },
-    { id: "2", name: "سارة عبدالله فهد", phone: "0569876543", rxCount: 7, lastVisit: "قبل يومين" },
-    { id: "3", name: "خالد صالح الغامدي", phone: "0501122334", rxCount: 1, lastVisit: "قبل أسبوع" },
-    { id: "4", name: "نورة محمد العتيبي", phone: "0533344556", rxCount: 12, lastVisit: "أمس" },
+    { id: "1", name: "خالد محمد الشهري", phone: "0551234567", rxCount: 3, lastVisit: "2026-03-20" },
+    { id: "2", name: "سارة عبدالله فهد", phone: "0569876543", rxCount: 7, lastVisit: "2025-11-01" },
+    { id: "3", name: "خالد صالح الغامدي", phone: "0501122334", rxCount: 1, lastVisit: "2026-01-25" },
+    { id: "4", name: "نورة محمد العتيبي", phone: "0533344556", rxCount: 12, lastVisit: "2025-11-20" },
   ];
 
   const filteredPatients = mockPatients.filter((p) =>
@@ -21,76 +32,102 @@ export default function PharmacistPatients() {
   );
 
   return (
-    <View className="flex-1 bg-background">
-      <PageHeader title="سجل المرضى" showBackButton />
+    <MobileShell className="bg-primary" edges={["top", "left", "right"]}>
+      <PageHeader title="سجل المرضى" showBackButton backTo="/pharmacist/PharmacistHome" />
 
-      <View className="px-5 pt-4 pb-4 bg-white border-b border-gray-100 z-10">
-        <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 h-12 relative">
-          <TextInput
-            className="flex-1 text-sm text-gray-900 h-full"
-            placeholder="ابحث برقم الجوال، اسم المريض..."
-            placeholderTextColor="#9CA3AF"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            textAlign="right"
-          />
-          <View className="mr-2">
-            <Search size={20} color="#9CA3AF" />
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
+        <View className="px-6 py-6 border-b border-gray-50 bg-white shadow-sm shadow-gray-900/5">
+          <View className="flex-row items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 h-14">
+            <TextInput
+              className="flex-1 text-base font-bold text-gray-900 h-full"
+              placeholder="ابحث برقم الجوال أو اسم المريض..."
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              textAlign="right"
+            />
+            <View className="ml-3">
+              <Search size={22} color="#05997F" strokeWidth={2.5} />
+            </View>
           </View>
         </View>
-      </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text className="text-sm font-bold text-gray-800 mb-4 text-left">
-          {filteredPatients.length} مريض
-        </Text>
-
-        <View className="gap-4">
-          {filteredPatients.map((patient) => (
-            <TouchableOpacity
-              key={patient.id}
-              onPress={() => router.push(`/pharmacist/ScanPatient`)} // mock routing to scanner for now
-              className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex-row items-center gap-4"
-              activeOpacity={0.7}
-            >
-              <View className="w-14 h-14 bg-primary/10 rounded-2xl items-center justify-center border border-primary/20">
-                <UserCheck size={28} color="#0C6B58" />
-              </View>
-              
-              <View className="flex-1 justify-center">
-                <Text className="text-sm font-bold text-gray-900 text-left mb-1">{patient.name}</Text>
-                <View className="flex-row items-center gap-3">
-                  <View className="flex-row items-center gap-1">
-                     <Phone size={10} color="#6B7280" />
-                     <Text className="text-[10px] text-gray-500">{patient.phone}</Text>
-                  </View>
-                  <View className="flex-row items-center gap-1">
-                     <Calendar size={10} color="#6B7280" />
-                     <Text className="text-[10px] text-gray-500">آخر زيارة: {patient.lastVisit}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className="items-end gap-2">
-                <View className="bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                  <Text className="text-[10px] font-bold text-emerald-700">{patient.rxCount} وصفة</Text>
-                </View>
-                <ChevronLeft size={16} color="#9CA3AF" />
-              </View>
-            </TouchableOpacity>
-          ))}
-          
-          {filteredPatients.length === 0 && (
-            <View className="items-center justify-center py-10 opacity-50">
-              <UserCheck size={48} color="#9CA3AF" />
-              <Text className="text-base font-bold text-gray-500 mt-4">لا يوجد مرضىيطابقون بحثك</Text>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 100 + insets.bottom }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-row items-center justify-between mb-6 px-2">
+            <View className="bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
+              <Text className="text-xs font-extrabold text-primary">المجموع: {filteredPatients.length}</Text>
             </View>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+            <Text className="text-lg font-extrabold text-gray-800">قائمة المرضى</Text>
+          </View>
+
+          <View className="gap-5">
+            {filteredPatients.map((patient) => (
+              <TouchableOpacity
+                key={patient.id}
+                onPress={() => router.push(`/pharmacist/ScanPatient`)}
+                className="bg-white rounded-[2.5rem] p-5 border border-gray-100 shadow-sm flex-row items-center justify-between"
+                activeOpacity={0.85}
+              >
+                {/* Left Side: Status & Action (Fixed Width) */}
+                <View className="items-center gap-2 w-[70px]">
+                  <View className="bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 w-full items-center">
+                    <Text className="text-[10px] font-extrabold text-primary" numberOfLines={1}>{patient.rxCount} وصفة</Text>
+                  </View>
+                  <View className="w-10 h-10 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100">
+                    <ArrowRight size={18} color="#D1D5DB" strokeWidth={3} style={{ transform: [{ rotate: "180deg" }] }} />
+                  </View>
+                </View>
+
+                {/* Center: Patient Details (Flexible space) */}
+                <View className="flex-1 px-4">
+                  <Text 
+                    className="text-lg font-extrabold text-gray-900 text-right mb-2 leading-tight" 
+                    numberOfLines={2}
+                  >
+                    {patient.name}
+                  </Text>
+                  
+                  {/* Metadata Rows */}
+                  <View className="items-end gap-1.5">
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-[11px] font-bold text-gray-500" numberOfLines={1}>{patient.phone}</Text>
+                      <Phone size={11} color="#05997F" />
+                    </View>
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-[11px] font-bold text-gray-400" numberOfLines={1}>{patient.lastVisit}</Text>
+                      <Calendar size={11} color="#9CA3AF" />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Right Side: Profile Icon (Fixed Width) */}
+                <View className="w-16 h-16 bg-primary/5 rounded-[1.8rem] items-center justify-center border border-primary/10 shadow-sm shadow-primary/5">
+                  <UserCheck size={32} color="#05997F" strokeWidth={2} />
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            {filteredPatients.length === 0 && (
+              <View className="items-center justify-center py-20 bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200">
+                <View className="w-20 h-20 bg-white rounded-full items-center justify-center shadow-sm mb-6">
+                  <BrandLogo width={48} height={48} />
+                </View>
+                <Text className="text-lg font-extrabold text-gray-400 px-6 text-center">عذراً، لم نجد أي مريض يطابق مواصفات بحثك</Text>
+                <TouchableOpacity
+                  onPress={() => setSearchQuery("")}
+                  className="mt-4"
+                >
+                  <Text className="text-primary font-extrabold">إلغاء البحث</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </MobileShell>
   );
 }

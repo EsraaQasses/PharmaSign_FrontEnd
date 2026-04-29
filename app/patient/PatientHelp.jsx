@@ -1,7 +1,8 @@
 import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { HelpCircle, Mail, Phone, MessageSquare, ChevronLeft, ExternalLink } from "lucide-react-native";
+import { HelpCircle, Phone, ChevronLeft } from "lucide-react-native";
 import PageHeader from "@/components/mobile/PageHeader";
+import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PatientHelp() {
   const FAQItem = ({ question }) => (
@@ -22,22 +23,29 @@ export default function PatientHelp() {
   );
 
   return (
-    <View className="flex-1 bg-background">
-      <PageHeader title="المساعدة والدعم" showBackButton />
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <PageHeader 
+        title="المساعدة والدعم" 
+        showBackButton 
+        role="patient" 
+        backTo="/patient/PatientProfile"
+      />
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-5 overflow-hidden">
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
         {/* Support Banner */}
-        <View className="bg-primary/10 rounded-2xl p-5 mt-6 border border-primary/20 flex-row items-center gap-4">
-          <View className="w-14 h-14 bg-primary/20 rounded-full items-center justify-center">
-            <HelpCircle size={32} color="#0C6B58" />
+        <View className="bg-patient/10 rounded-2xl p-5 mt-6 border border-patient/20 flex-row items-center gap-4">
+          <View className="w-14 h-14 bg-patient/20 rounded-full items-center justify-center">
+            <HelpCircle size={32} color="#022451" />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-bold text-primary mb-1 text-left">كيف يمكننا مساعدتك؟</Text>
-            <Text className="text-xs text-primary/80 text-left leading-relaxed">
-              فريق الدعم الفني متواجد لمساعدتك في أي وقت. يمكنك التواصل معنا من خلال القنوات التالية.
+            <Text className="text-base font-bold text-patient mb-1 text-left">كيف يمكننا مساعدتك؟</Text>
+            <Text className="text-xs text-patient/80 text-left leading-relaxed">
+              فريق الدعم الفني متواجد لمساعدتك. يمكنك التواصل معنا عبر الاتصال فقط.
             </Text>
           </View>
         </View>
@@ -51,20 +59,6 @@ export default function PatientHelp() {
             color="#3B82F6" 
             bg="bg-blue-100" 
           />
-          <ContactCard 
-            icon={Mail} 
-            title="راسلنا" 
-            value="support@pharmasign.com" 
-            color="#D97706" 
-            bg="bg-amber-100" 
-          />
-          <ContactCard 
-            icon={MessageSquare} 
-            title="محادثة فورية" 
-            value="متوفر 24/7" 
-            color="#059669" 
-            bg="bg-emerald-100" 
-          />
         </View>
 
         {/* FAQs */}
@@ -76,10 +70,6 @@ export default function PatientHelp() {
           <FAQItem question="ماذا أفعل في حال فقدت رمز الاستجابة السريعة (QR)؟" />
           <FAQItem question="كيف يمكنني تحديث بياناتي الصحية؟" />
           
-          <TouchableOpacity className="mt-4 flex-row items-center justify-center gap-2 py-2">
-            <Text className="text-sm font-bold text-primary">عرض جميع الأسئلة</Text>
-            <ExternalLink size={16} color="#0C6B58" />
-          </TouchableOpacity>
         </View>
         
         {/* Version Info */}
@@ -87,8 +77,8 @@ export default function PatientHelp() {
           <Text className="text-xs font-bold text-gray-500">PharmaSign App</Text>
           <Text className="text-[10px] text-gray-400 mt-0.5">الإصدار 1.0.0</Text>
         </View>
-
       </ScrollView>
     </View>
+  </MobileShell>
   );
 }

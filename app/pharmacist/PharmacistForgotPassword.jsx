@@ -21,7 +21,7 @@ export default function PharmacistForgotPassword() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-background">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: top + 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100 shadow-sm mb-8">
+        <TouchableOpacity onPress={() => router.replace("/pharmacist/PharmacistLogin")} className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100 shadow-sm mb-8">
           <ArrowRight size={20} color="#0C6B58" />
         </TouchableOpacity>
 

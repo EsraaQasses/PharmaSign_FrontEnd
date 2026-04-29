@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Mail, Phone, Lock, Hash, ArrowRight, Building2 } from "lucide-react-native";
+import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PharmacistRegister() {
   const router = useRouter();
-  const { top } = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -22,11 +25,11 @@ export default function PharmacistRegister() {
   };
 
   const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default" }) => (
-    <View className="mb-4">
-      <Text className="text-sm font-bold text-gray-700 mb-2">{label}</Text>
-      <View className="flex-row items-center border border-gray-200 rounded-xl bg-white px-4 h-14 relative focus:border-primary">
+    <View className="mb-5">
+      <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1">{label}</Text>
+      <View className="flex-row items-center border border-gray-100 rounded-2xl bg-white px-4 h-15 shadow-sm">
         <TextInput
-          className="flex-1 text-base text-gray-900 h-full"
+          className="flex-1 text-base text-gray-900 h-full font-medium"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -35,7 +38,7 @@ export default function PharmacistRegister() {
           keyboardType={keyboardType}
           textAlign="right"
         />
-        <View className="mr-3">
+        <View className="ml-3">
           <Icon size={20} color="#9CA3AF" />
         </View>
       </View>
@@ -43,45 +46,68 @@ export default function PharmacistRegister() {
   );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-background">
-      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: top + 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <View className="flex-row items-center justify-between mb-8">
-          <View className="w-10" />
-          <Text className="text-xl font-bold text-gray-900">إنشاء حساب صيدلي</Text>
-          <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100 shadow-sm">
-            <ArrowRight size={20} color="#0C6B58" />
-          </TouchableOpacity>
-        </View>
-
-        <View className="mb-6">
-          <Text className="text-2xl font-extrabold text-primary mb-2 text-left">انضم إلى شبكة فارماساين</Text>
-          <Text className="text-base text-gray-500 text-left">يرجى تعبئة بياناتك المهنية للتحقق من هويتك</Text>
-        </View>
-
-        <View className="flex-1">
-          <InputField icon={User} label="الاسم الكامل" value={formData.name} onChangeText={(t) => setFormData({...formData, name: t})} placeholder="الاسم كما في رخصة مزاولة المهنة" />
-          <InputField icon={Hash} label="رقم رخصة مزاولة المهنة" value={formData.licenseId} onChangeText={(t) => setFormData({...formData, licenseId: t})} placeholder="أدخل رقم الرخصة" keyboardType="number-pad"/>
-          <InputField icon={Building2} label="اسم الصيدلية" value={formData.pharmacyName} onChangeText={(t) => setFormData({...formData, pharmacyName: t})} placeholder="الصيدلية التي تعمل بها حالياً" />
-          <InputField icon={Phone} label="رقم الجوال" value={formData.phone} onChangeText={(t) => setFormData({...formData, phone: t})} placeholder="05XXXXXXXX" keyboardType="number-pad" />
-          <InputField icon={Lock} label="كلمة المرور" value={formData.password} onChangeText={(t) => setFormData({...formData, password: t})} placeholder="أدخل كلمة مرور قوية" secureTextEntry />
-          
-          <View className="flex-row items-start gap-2 mt-2 mb-6">
-            <View className="w-5 h-5 rounded border border-gray-300 mt-0.5 bg-white items-center justify-center"><View className="w-3 h-3 bg-primary rounded-sm" /></View>
-            <Text className="text-xs text-gray-500 flex-1 leading-relaxed text-left">أقر بصحة جميع البيانات المدخلة وموافقتي على <Text className="text-primary font-bold">شروط استخدام المنصة للصيادلة</Text></Text>
-          </View>
-
-          <TouchableOpacity className="bg-primary h-14 rounded-xl flex-row items-center justify-center shadow-lg shadow-primary/30 w-full" onPress={handleRegister} activeOpacity={0.8}>
-            <Text className="text-white font-bold text-lg">تقديم طلب التسجيل</Text>
-          </TouchableOpacity>
-
-          <View className="flex-row items-center justify-center mt-6 gap-1">
-            <TouchableOpacity onPress={() => router.replace("/pharmacist/PharmacistLogin")}>
-              <Text className="text-primary font-bold text-sm">تسجيل الدخول</Text>
+    <MobileShell className="bg-primary" edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"} 
+        className="flex-1"
+      >
+        <ScrollView 
+          className="flex-1 bg-background"
+          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60 }} 
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-row items-center justify-between mb-8">
+            <View className="w-10" />
+            <Text className="text-2xl font-extrabold text-gray-900">إنشاء حساب جديد</Text>
+            <TouchableOpacity 
+              onPress={() => router.replace("/pharmacist/PharmacistLogin")} 
+              className="w-10 h-10 bg-white rounded-2xl items-center justify-center border border-gray-50 shadow-sm"
+            >
+              <ArrowRight size={22} color="#05997F" strokeWidth={2.5} />
             </TouchableOpacity>
-            <Text className="text-gray-500 text-sm">لديك حساب بالفعل؟</Text>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          <View className="mb-10">
+            <View className="w-16 h-16 bg-white rounded-3xl p-3 shadow-sm border border-gray-50 items-center justify-center mb-6">
+               <BrandLogo width={40} height={40} />
+            </View>
+            <Text className="text-3xl font-extrabold text-primary mb-2 text-left">انضم إلينا</Text>
+            <Text className="text-base text-gray-400 font-bold text-left leading-relaxed">يرجى تعبئة بياناتك المهنية للتحقق من هويتك كصيدلي معتمد</Text>
+          </View>
+
+          <View className="flex-1">
+            <InputField icon={User} label="الاسم الكامل" value={formData.name} onChangeText={(t) => setFormData({...formData, name: t})} placeholder="الاسم كما في الرخصة" />
+            <InputField icon={Hash} label="رقم الرخصة المهنية" value={formData.licenseId} onChangeText={(t) => setFormData({...formData, licenseId: t})} placeholder="أدخل رقم الرخصة" keyboardType="number-pad"/>
+            <InputField icon={Building2} label="اسم الصيدلية" value={formData.pharmacyName} onChangeText={(t) => setFormData({...formData, pharmacyName: t})} placeholder="أين تعمل حالياً؟" />
+            <InputField icon={Phone} label="رقم الجوال" value={formData.phone} onChangeText={(t) => setFormData({...formData, phone: t})} placeholder="05XXXXXXXX" keyboardType="number-pad" />
+            <InputField icon={Lock} label="كلمة المرور" value={formData.password} onChangeText={(t) => setFormData({...formData, password: t})} placeholder="اختر كلمة مرور قوية" secureTextEntry />
+            
+            <View className="flex-row items-start gap-3 mt-3 mb-8">
+              <View className="w-6 h-6 rounded-lg border-2 border-primary/20 bg-primary/5 items-center justify-center">
+                <View className="w-3 h-3 bg-primary rounded-sm" />
+              </View>
+              <Text className="text-xs text-gray-400 font-bold flex-1 leading-relaxed text-right">
+                أقر بصحة جميع البيانات المدخلة وموافقتي على <Text className="text-primary font-extrabold underline">سياسة الخدمة</Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity 
+              className="bg-primary h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-primary/20 w-full" 
+              onPress={handleRegister} 
+              activeOpacity={0.8}
+            >
+              <Text className="text-white font-extrabold text-lg">تقديم الطلب</Text>
+            </TouchableOpacity>
+
+            <View className="flex-row items-center justify-center mt-8 gap-1.5">
+              <TouchableOpacity onPress={() => router.replace("/pharmacist/PharmacistLogin")}>
+                <Text className="text-primary font-extrabold text-base">تسجيل الدخول</Text>
+              </TouchableOpacity>
+              <Text className="text-gray-400 font-bold text-base">لديك حساب بالفعل؟</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </MobileShell>
   );
 }

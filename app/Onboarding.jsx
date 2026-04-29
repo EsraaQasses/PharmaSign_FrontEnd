@@ -14,13 +14,13 @@ import {
   Shield,
   ChevronLeft,
 } from "lucide-react-native";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import MobileShell from "@/components/mobile/MobileShell";
+import BrandLogo from "@/components/mobile/BrandLogo";
 
 const slides = [
   {
-    Icon: Hand,
-    bgColor: "#0C6B58",
+    isLogo: true,
+    bgColor: "#ffffff",
     title: "مرحباً بك في فارماساين",
     description:
       "تطبيق يساعد المرضى الصم وضعاف السمع على فهم تعليمات الأدوية من خلال لغة الإشارة",
@@ -49,6 +49,7 @@ const slides = [
 ];
 
 export default function Onboarding() {
+  // ... rest of logic
   const [current, setCurrent] = useState(0);
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -57,7 +58,6 @@ export default function Onboarding() {
   const slide = slides[current];
 
   const animateTransition = (nextIndex) => {
-    // Fade out + slide
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -72,7 +72,6 @@ export default function Onboarding() {
     ]).start(() => {
       setCurrent(nextIndex);
       slideAnim.setValue(30);
-      // Fade in + slide back
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -103,7 +102,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View className="flex-1 bg-background">
+    <MobileShell edges={["top", "bottom", "left", "right"]}>
       {/* Slide Content */}
       <View className="flex-1 items-center justify-center px-8">
         <Animated.View
@@ -116,9 +115,13 @@ export default function Onboarding() {
           {/* Icon */}
           <View
             style={{ backgroundColor: slide.bgColor }}
-            className="w-32 h-32 rounded-3xl items-center justify-center mb-8"
+            className={`w-32 h-32 rounded-3xl items-center justify-center mb-8 ${slide.isLogo ? 'shadow-sm border border-gray-100' : ''}`}
           >
-            <slide.Icon size={64} color="#FFFFFF" />
+            {slide.isLogo ? (
+              <BrandLogo width={90} height={90} />
+            ) : (
+              <slide.Icon size={64} color="#FFFFFF" />
+            )}
           </View>
 
           {/* Title */}
@@ -134,7 +137,7 @@ export default function Onboarding() {
       </View>
 
       {/* Bottom Controls */}
-      <View className="px-6 pb-10">
+      <View className="px-6 pb-6">
         {/* Dots */}
         <View className="flex-row items-center justify-center gap-2 mb-6">
           {slides.map((_, i) => (
@@ -181,6 +184,6 @@ export default function Onboarding() {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </MobileShell>
   );
 }

@@ -10,8 +10,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronRight, Eye, EyeOff, Hand } from "lucide-react-native";
+import { ChevronRight, Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/lib/AuthContext";
+import BrandLogo from "@/components/mobile/BrandLogo";
+
+import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PatientLogin() {
   const router = useRouter();
@@ -36,145 +39,149 @@ export default function PatientLogin() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1 bg-background"
-    >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1 bg-background"
       >
-        {/* Header */}
-        <View className="bg-primary px-5 pt-14 pb-8 rounded-b-3xl">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="flex-row items-center mb-6"
-            activeOpacity={0.7}
-          >
-            <ChevronRight size={20} color="#FFFFFF" />
-            <Text className="text-white text-sm mr-1">رجوع</Text>
-          </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View className="bg-patient px-5 pt-4 pb-8 rounded-b-[2rem]">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="flex-row items-center py-2 -ml-2 mb-4"
+              activeOpacity={0.7}
+            >
+              <ChevronRight size={22} color="#FFFFFF" />
+              <Text className="text-white text-sm font-bold mr-1">رجوع</Text>
+            </TouchableOpacity>
 
-          <View className="items-center">
-            <View className="w-16 h-16 rounded-2xl bg-white/20 items-center justify-center mb-4">
-              <Hand size={32} color="#FFFFFF" />
+            <View className="items-center">
+              <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
+                <BrandLogo width={50} height={50} />
+              </View>
+              <Text className="text-white text-2xl font-extrabold">
+                تسجيل الدخول
+              </Text>
+              <Text className="text-white/70 text-sm mt-1">
+                الدخول كـ مريض للمتابعة
+              </Text>
             </View>
-            <Text className="text-white text-xl font-extrabold">
-              تسجيل دخول المريض
-            </Text>
-            <Text className="text-white/70 text-sm mt-1">
-              أدخل بيانات حسابك للمتابعة
-            </Text>
-          </View>
-        </View>
-
-        {/* Form */}
-        <View className="px-6 pt-8 gap-5">
-          {error ? (
-            <View className="bg-red-50 border border-red-200 rounded-xl p-3">
-              <Text className="text-red-600 text-sm text-center">{error}</Text>
-            </View>
-          ) : null}
-
-          {/* Email */}
-          <View>
-            <Text className="text-gray-700 text-sm font-semibold mb-2">
-              البريد الإلكتروني
-            </Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="example@email.com"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-gray-800 text-sm"
-              style={{ textAlign: "right" }}
-            />
           </View>
 
-          {/* Password */}
-          <View>
-            <Text className="text-gray-700 text-sm font-semibold mb-2">
-              كلمة المرور
-            </Text>
-            <View className="relative">
+          {/* Form */}
+          <View className="px-6 pt-8 pb-10 gap-5">
+            {error ? (
+              <View className="bg-red-50 border border-red-100 rounded-xl p-4">
+                <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
+              </View>
+            ) : null}
+
+            {/* Email */}
+            <View>
+              <Text className="text-gray-700 text-sm font-bold mb-2 ml-1">
+                البريد الإلكتروني
+              </Text>
               <TextInput
-                value={password}
-                onChangeText={setPassword}
-                placeholder="أدخل كلمة المرور"
+                value={email}
+                onChangeText={setEmail}
+                placeholder="example@email.com"
                 placeholderTextColor="#9CA3AF"
-                secureTextEntry={!showPassword}
-                className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-gray-800 text-sm pr-12"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base"
                 style={{ textAlign: "right" }}
               />
+            </View>
+
+            {/* Password */}
+            <View>
+              <Text className="text-gray-700 text-sm font-bold mb-2 ml-1">
+                كلمة المرور
+              </Text>
+              <View className="relative">
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder="أدخل كلمة المرور"
+                  placeholderTextColor="#9CA3AF"
+                  secureTextEntry={!showPassword}
+                  className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pr-12"
+                  style={{ textAlign: "right" }}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  className="absolute left-4 top-4"
+                  activeOpacity={0.7}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#9CA3AF" />
+                  ) : (
+                    <Eye size={20} color="#9CA3AF" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              onPress={() => router.push("/patient/ForgotPassword")}
+              activeOpacity={0.7}
+              className="py-1"
+            >
+              <Text className="text-patient text-sm font-bold text-left">
+                نسيت كلمة المرور؟
+              </Text>
+            </TouchableOpacity>
+
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              disabled={isLoadingAuth}
+              className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm ${
+                isLoadingAuth ? "bg-patient/50" : "bg-patient"
+              }`}
+              activeOpacity={0.8}
+            >
+              {isLoadingAuth ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text className="text-white font-bold text-base">
+                  تسجيل الدخول
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {/* QR Login */}
+            <TouchableOpacity
+              onPress={() => router.push("/patient/PatientQRLogin")}
+              className="w-full py-4 rounded-xl items-center border border-patient/20 bg-patient/5"
+              activeOpacity={0.7}
+            >
+              <Text className="text-patient font-bold text-sm">
+                تسجيل الدخول بالرمز QR
+              </Text>
+            </TouchableOpacity>
+
+            {/* Register */}
+            <View className="flex-row items-center justify-center gap-1 mt-4">
+              <Text className="text-gray-500 text-sm">ليس لديك حساب؟</Text>
               <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                className="absolute left-3 top-3.5"
+                onPress={() => router.push("/patient/PatientRegister")}
                 activeOpacity={0.7}
               >
-                {showPassword ? (
-                  <EyeOff size={20} color="#9CA3AF" />
-                ) : (
-                  <Eye size={20} color="#9CA3AF" />
-                )}
+                <Text className="text-patient font-bold text-sm">
+                  سجل الآن
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            onPress={() => router.push("/patient/ForgotPassword")}
-            activeOpacity={0.7}
-          >
-            <Text className="text-primary text-sm font-semibold text-left">
-              نسيت كلمة المرور؟
-            </Text>
-          </TouchableOpacity>
-
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={isLoadingAuth}
-            className={`w-full py-4 rounded-xl items-center mt-2 ${
-              isLoadingAuth ? "bg-primary/50" : "bg-primary"
-            }`}
-            activeOpacity={0.8}
-          >
-            {isLoadingAuth ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text className="text-white font-bold text-base">
-                تسجيل الدخول
-              </Text>
-            )}
-          </TouchableOpacity>
-
-          {/* QR Login */}
-          <TouchableOpacity
-            onPress={() => router.push("/patient/PatientQRLogin")}
-            className="w-full py-3.5 rounded-xl items-center border border-primary"
-            activeOpacity={0.7}
-          >
-            <Text className="text-primary font-semibold text-sm">
-              تسجيل الدخول بالرمز QR
-            </Text>
-          </TouchableOpacity>
-
-          {/* Register */}
-          <View className="flex-row items-center justify-center gap-1 mt-4">
-            <Text className="text-gray-500 text-sm">ليس لديك حساب؟</Text>
-            <TouchableOpacity
-              onPress={() => router.push("/patient/PatientRegister")}
-              activeOpacity={0.7}
-            >
-              <Text className="text-primary font-bold text-sm">
-                سجل الآن
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </MobileShell>
   );
 }

@@ -1,24 +1,25 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import BottomNav from "@/components/mobile/BottomNav";
+import BrandLogo from "@/components/mobile/BrandLogo";
+import StatusBadge from "@/components/mobile/StatusBadge";
+import { useAuth } from "@/lib/AuthContext";
+import {
+  MOCK_NOTIFICATIONS,
+  MOCK_PATIENTS,
+  MOCK_PRESCRIPTIONS,
+} from "@/lib/mockData";
 import { useRouter } from "expo-router";
 import {
   Bell,
-  QrCode,
-  FileText,
-  MapPin,
-  Clock,
   ChevronLeft,
+  Clock,
+  FileText,
   Hand,
+  MapPin,
+  QrCode,
   Shield,
 } from "lucide-react-native";
-import {
-  MOCK_PRESCRIPTIONS,
-  MOCK_PATIENTS,
-  MOCK_NOTIFICATIONS,
-} from "@/lib/mockData";
-import StatusBadge from "@/components/mobile/StatusBadge";
-import BottomNav from "@/components/mobile/BottomNav";
-import { useAuth } from "@/lib/AuthContext";
+import React from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 function QuickAction({ icon: Icon, label, path, color }) {
   const router = useRouter();
@@ -38,10 +39,12 @@ function QuickAction({ icon: Icon, label, path, color }) {
   );
 }
 
+import MobileShell from "@/components/mobile/MobileShell";
+
 export default function PatientHome() {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   // Fallback to mock if user not present yet (for testing)
   const patient = user || MOCK_PATIENTS[0];
   const prescriptions = MOCK_PRESCRIPTIONS.filter(
@@ -50,16 +53,25 @@ export default function PatientHome() {
   const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
 
   return (
-    <View className="flex-1 bg-background">
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
-        <View className="bg-primary px-5 pt-14 pb-12 rounded-b-[2rem]">
+        <View className="bg-patient px-5 pt-4 pb-12 rounded-b-[2rem]">
           <View className="flex-row items-center justify-between mb-6">
-            <View>
-              <Text className="text-white/70 text-sm">مرحباً 👋</Text>
-              <Text className="text-white text-xl font-extrabold">
-                {patient.name}
-              </Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-12 h-12 bg-white rounded-xl items-center justify-center shadow-sm p-1">
+                <BrandLogo width={32} height={32} />
+              </View>
+              <View>
+                <Text className="text-white/70 text-sm">مرحباً 👋</Text>
+                <Text className="text-white text-xl font-extrabold">
+                  {patient.name}
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
               onPress={() => router.push("/patient/PatientNotifications")}
@@ -69,7 +81,7 @@ export default function PatientHome() {
                 <Bell size={20} color="#FFFFFF" />
               </View>
               {unreadNotifs > 0 && (
-                <View className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 rounded-full items-center justify-center border border-primary">
+                <View className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 rounded-full items-center justify-center border border-patient">
                   <Text className="text-[10px] text-white font-bold">
                     {unreadNotifs}
                   </Text>
@@ -78,23 +90,27 @@ export default function PatientHome() {
             </TouchableOpacity>
           </View>
 
-          {/* QR Card */}
-          <View className="bg-white/15 rounded-2xl p-4 flex-row items-center gap-4">
+          {/* QR Session Card */}
+          <TouchableOpacity
+            onPress={() => router.push("/patient/SessionQR")}
+            className="bg-white/10 rounded-2xl p-4 flex-row items-center gap-4"
+            activeOpacity={0.9}
+          >
             <View className="w-16 h-16 bg-white rounded-xl items-center justify-center">
-              <QrCode size={40} color="#0C6B58" />
+              <QrCode size={40} color="#022451" />
             </View>
             <View className="flex-1">
-              <Text className="text-white/80 text-xs">
-                رمز التعريف الخاص بك
+              <Text className="text-white/80 text-xs text-right">
+                ربط الوصفة الطبية
               </Text>
-              <Text className="text-white font-bold text-sm my-0.5">
-                {patient.qrCode}
+              <Text className="text-white font-bold text-sm my-0.5 text-right">
+                إنشاء رمز جلسة مؤقت
               </Text>
-              <Text className="text-white/60 text-[10px]">
-                أظهره للصيدلي لربط الوصفة
+              <Text className="text-white/60 text-[10px] text-right">
+                أظهره للصيدلي لبدء صرف الدواء
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View className="px-5 -mt-6 space-y-6">
@@ -114,12 +130,12 @@ export default function PatientHome() {
                 icon={FileText}
                 label="الوصفات"
                 path="/patient/PatientPrescriptions"
-                color="bg-primary"
+                color="bg-patient"
               />
               <QuickAction
                 icon={Hand}
                 label="لغة الإشارة"
-                path="/patient/SignTutorial"
+                path="/patient/AppGuide"
                 color="bg-amber-500"
               />
               <QuickAction
@@ -138,28 +154,28 @@ export default function PatientHome() {
           </View>
 
           {/* Recent Prescriptions */}
-          <View className="mt-6">
-            <View className="flex-row items-center justify-between mb-3">
-              <Text className="text-base font-bold text-gray-900">
+          <View className="mt-8">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-lg font-extrabold text-gray-900">
                 آخر الوصفات
               </Text>
               <TouchableOpacity
                 onPress={() => router.push("/patient/PatientPrescriptions")}
                 className="flex-row items-center gap-0.5"
               >
-                <Text className="text-xs text-primary font-semibold">
+                <Text className="text-xs text-patient font-bold">
                   عرض الكل
                 </Text>
-                <ChevronLeft size={12} color="#0C6B58" />
+                <ChevronLeft size={12} color="#022451" />
               </TouchableOpacity>
             </View>
 
-            <View className="gap-3">
-              {prescriptions.slice(0, 2).map((rx) => (
+            <View className="gap-4">
+              {prescriptions.slice(0, 3).map((rx) => (
                 <TouchableOpacity
                   key={rx.id}
                   onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
-                  className="bg-white rounded-xl p-4 border border-gray-100"
+                  className="bg-white rounded-2xl p-5 border border-gray-100"
                   activeOpacity={0.7}
                   style={{
                     shadowColor: "#000",
@@ -169,18 +185,18 @@ export default function PatientHome() {
                     elevation: 2,
                   }}
                 >
-                  <View className="flex-row items-start justify-between mb-2">
+                  <View className="flex-row items-start justify-between mb-3">
                     <View>
-                      <Text className="font-bold text-sm text-gray-900">
+                      <Text className="font-extrabold text-base text-gray-900">
                         {rx.doctorName}
                       </Text>
-                      <Text className="text-xs text-gray-500 mt-0.5">
+                      <Text className="text-xs text-gray-400 mt-0.5">
                         {rx.doctorSpecialty}
                       </Text>
                     </View>
                     <StatusBadge status={rx.status} />
                   </View>
-                  <View className="flex-row items-center gap-4 mt-2">
+                  <View className="flex-row items-center gap-4 mt-1">
                     <View className="flex-row items-center gap-1">
                       <Clock size={12} color="#9CA3AF" />
                       <Text className="text-xs text-gray-500">{rx.date}</Text>
@@ -193,10 +209,10 @@ export default function PatientHome() {
                     </Text>
                   </View>
                   {rx.signLanguageReady && (
-                    <View className="mt-3 flex-row items-center gap-1.5 pt-2 border-t border-gray-50">
-                      <Hand size={14} color="#0C6B58" />
-                      <Text className="text-xs text-primary font-semibold">
-                        لغة إشارة متاحة
+                    <View className="mt-4 flex-row items-center gap-1.5 pt-3 border-t border-gray-50">
+                      <Hand size={14} color="#022451" />
+                      <Text className="text-xs text-patient font-extrabold">
+                        لغة إشارة متاحة للمشاهدة
                       </Text>
                     </View>
                   )}
@@ -205,33 +221,13 @@ export default function PatientHome() {
             </View>
           </View>
 
-          {/* Health Info */}
-          <View className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mt-6 mb-6">
-            <Text className="text-sm font-bold text-amber-800 mb-2">
-              ⚠️ تنبيهات صحية
-            </Text>
-            {patient.allergies?.length > 0 && (
-              <Text className="text-xs text-amber-700">
-                حساسية: {patient.allergies.join("، ")}
-              </Text>
-            )}
-            {patient.chronicConditions?.length > 0 && (
-              <Text className="text-xs text-amber-700 mt-1">
-                أمراض مزمنة: {patient.chronicConditions.join("، ")}
-              </Text>
-            )}
-            {(!patient.allergies?.length && !patient.chronicConditions?.length) && (
-              <Text className="text-xs text-amber-700 mt-1">
-                لا توجد تنبيهات صحية مسجلة حالياً
-              </Text>
-            )}
-          </View>
+
         </View>
       </ScrollView>
 
       <View className="absolute bottom-0 left-0 right-0">
         <BottomNav role="patient" />
       </View>
-    </View>
+    </MobileShell>
   );
 }

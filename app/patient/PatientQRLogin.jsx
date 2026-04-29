@@ -1,109 +1,121 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import { QrCode, ShieldCheck, RefreshCw, HelpCircle } from "lucide-react-native";
-import { useAuth } from "@/lib/AuthContext";
+import { QrCode, Upload, Camera, ShieldCheck, HelpCircle } from "lucide-react-native";
 import PageHeader from "@/components/mobile/PageHeader";
+import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PatientQRLogin() {
   const router = useRouter();
-  const { user } = useAuth();
-  const [timeLeft, setTimeLeft] = useState(165); // 2:45 mock
+  const [scanning, setScanning] = useState(false);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 165)); // loop for mock purposes
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  const handleScan = () => {
+    setScanning(true);
+    // Simulate scan success
+    setTimeout(() => {
+      router.replace("/patient/PatientHome");
+    }, 2000);
   };
 
-  const patientId = user?.qrCode || "PAT-001-AHMED";
+  const handleUpload = () => {
+    // Simulate file picker and scan success
+    router.replace("/patient/PatientHome");
+  };
 
   return (
-    <View className="flex-1 bg-background">
-      <PageHeader title="رمز المعرّف الخاص بك" showBackButton />
+    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+      <PageHeader title="تسجيل الدخول بالرمز" showBackButton role="patient" />
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="items-center mt-8 mb-8">
-          <Text className="text-2xl font-bold text-gray-900 mb-2">
-            رمز الاستجابة السريعة
-          </Text>
-          <Text className="text-base text-gray-500 text-center px-4">
-            اعرض هذا الرمز للصيدلي لربط الوصفة الطبية بحسابك
-          </Text>
-        </View>
-
-        {/* QR Code Container */}
-        <View className="items-center justify-center">
-          <View className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-100 shadow-primary/10 relative w-[280px] h-[280px]">
-            {/* Corner Borders */}
-            <View className="absolute top-6 left-6 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-xl" />
-            <View className="absolute top-6 right-6 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-xl" />
-            <View className="absolute bottom-6 left-6 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-xl" />
-            <View className="absolute bottom-6 right-6 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-xl" />
-
-            {/* Scan animation line mock */}
-            <View className="absolute top-[30%] left-6 right-6 h-0.5 bg-primary/40 shadow-sm shadow-primary z-10" />
-
-            <View className="flex-1 items-center justify-center bg-gray-50 rounded-2xl w-full h-full border border-gray-100">
-                <QrCode size={180} color="#0C6B58" strokeWidth={1} />
-            </View>
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 32, paddingBottom: 60 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="items-center mb-10">
+            <Text className="text-2xl font-extrabold text-gray-900 mb-2">
+               اختر طريقة الدخول
+            </Text>
+            <Text className="text-sm text-gray-500 text-center px-6 leading-relaxed">
+              يرجى استخدام رمز QR الخاص بك والمقدم من المؤسسة الطبية لتسجيل الدخول السريع
+            </Text>
           </View>
-        </View>
 
-        <View className="items-center mt-6">
-          <Text className="text-sm font-bold text-gray-600 mb-1">
-            {patientId}
-          </Text>
-          <View className="flex-row gap-2">
-            <TouchableOpacity className="flex-row items-center gap-1">
-              <RefreshCw size={14} color="#0C6B58" />
-              <Text className="text-xs text-primary font-bold">تحديث الرمز</Text>
+          {/* Option 1: Live Scan */}
+          <View className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm mb-6">
+            <View className="flex-row items-center justify-end gap-3 mb-6">
+              <View className="items-end">
+                <Text className="text-lg font-extrabold text-gray-900">مسح الرمز المباشر</Text>
+                <Text className="text-[10px] text-gray-400 font-bold">استخدام الكاميرا للمسح المباشر</Text>
+              </View>
+              <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+                <Camera size={22} color="#022451" />
+              </View>
+            </View>
+
+            <TouchableOpacity 
+              onPress={handleScan}
+              activeOpacity={0.8}
+              className="w-full aspect-square bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200 items-center justify-center relative overflow-hidden"
+            >
+              {!scanning ? (
+                <>
+                  <View className="bg-white p-6 rounded-full shadow-sm mb-4">
+                    <QrCode size={48} color="#D1D5DB" strokeWidth={1.5} />
+                  </View>
+                  <Text className="text-patient font-extrabold text-base">ابدأ المسح الضوئي</Text>
+                </>
+              ) : (
+                <View className="items-center">
+                  <View className="w-full h-1 bg-patient absolute top-1/2 shadow-lg shadow-patient" />
+                  <Text className="text-patient font-extrabold mt-4">جاري قراءة الرمز...</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Status */}
-        <View className="mt-12 items-center w-full">
-          <View className="bg-emerald-50 px-6 py-3 rounded-full flex-row items-center gap-2 border border-emerald-100">
-            <ShieldCheck size={20} color="#059669" />
-            <Text className="text-sm font-bold text-emerald-700">
-              الجلسة مشفرة وآمنة
-            </Text>
-          </View>
-
-          <View className="items-center mt-6">
-            <View className="flex-row items-baseline gap-1">
-              <Text className="text-3xl font-extrabold text-primary">
-                {formatTime(timeLeft)}
-              </Text>
-              <Text className="text-sm font-bold text-primary/70">دقيقة</Text>
+          {/* Option 2: Upload */}
+          <View className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm">
+            <View className="flex-row items-center justify-end gap-3 mb-6">
+              <View className="items-end">
+                <Text className="text-lg font-extrabold text-gray-900">تحميل صورة الرمز</Text>
+                <Text className="text-[10px] text-gray-400 font-bold">رفع الرمز المرسل لك من المؤسسة</Text>
+              </View>
+              <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+                <Upload size={22} color="#022451" />
+              </View>
             </View>
-            <Text className="text-xs text-gray-500 mt-2">
-              يتغير الرمز تلقائياً لدواعي الأمان والحماية
-            </Text>
-          </View>
-        </View>
 
-        <TouchableOpacity 
-          className="mt-12 flex-row items-center justify-center gap-2 py-4"
-          activeOpacity={0.8}
-        >
-          <HelpCircle size={20} color="#0C6B58" />
-          <Text className="text-base font-bold text-primary">
-            هل تواجه مشكلة؟
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+            <TouchableOpacity 
+              onPress={handleUpload}
+              activeOpacity={0.8}
+              className="w-full py-6 bg-patient/5 rounded-2xl border border-patient/10 items-center justify-center gap-3"
+            >
+              <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm">
+                <Upload size={20} color="#022451" />
+              </View>
+              <Text className="text-patient font-extrabold">اختر صورة من الاستديو</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Security Status */}
+          <View className="mt-12 items-center">
+            <View className="bg-emerald-50 px-5 py-3 rounded-2xl flex-row items-center gap-3 border border-emerald-100">
+              <ShieldCheck size={18} color="#059669" />
+              <Text className="text-xs font-bold text-emerald-700">تشفير وحماية البيانات 256-bit</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            className="mt-10 flex-row items-center justify-center gap-2 py-4"
+            activeOpacity={0.8}
+          >
+            <HelpCircle size={20} color="#022451" opacity={0.5} />
+            <Text className="text-sm font-bold text-gray-400">
+              كيف أحصل على رمز الدخول الخاص بي؟
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </MobileShell>
   );
 }

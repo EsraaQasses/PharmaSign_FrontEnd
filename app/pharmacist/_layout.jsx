@@ -9,8 +9,8 @@ export default function PharmacistLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        animation: "slide_from_right",
-        contentStyle: { backgroundColor: "#F8FAFB" },
+        animation: "none",
+        contentStyle: { backgroundColor: "#F0F4F4" },
       }}
     />
   );

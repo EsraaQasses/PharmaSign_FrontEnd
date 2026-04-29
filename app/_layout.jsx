@@ -4,6 +4,7 @@ import { Stack, SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { I18nManager } from "react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "@/lib/AuthContext";
 import { queryClientInstance } from "@/lib/query-client";
 import {
@@ -47,35 +48,37 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClientInstance}>
-      <AuthProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: "slide_from_right",
-          }}
-        >
-          {/* Entry point — decides where to navigate */}
-          <Stack.Screen name="index" />
+      <SafeAreaProvider>
+        <AuthProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: "slide_from_right",
+            }}
+          >
+            {/* Entry point — decides where to navigate */}
+            <Stack.Screen name="index" />
 
-          {/* Onboarding & Role Selection */}
-          <Stack.Screen
-            name="Splash"
-            options={{ animation: "fade" }}
-          />
-          <Stack.Screen name="Onboarding" />
-          <Stack.Screen name="RoleSelect" />
+            {/* Onboarding & Role Selection */}
+            <Stack.Screen
+              name="Splash"
+              options={{ animation: "fade" }}
+            />
+            <Stack.Screen name="Onboarding" />
+            <Stack.Screen name="RoleSelect" />
 
-          {/* Patient flow */}
-          <Stack.Screen name="patient" />
+            {/* Patient flow */}
+            <Stack.Screen name="patient" />
 
-          {/* Pharmacist flow */}
-          <Stack.Screen name="pharmacist" />
+            {/* Pharmacist flow */}
+            <Stack.Screen name="pharmacist" />
 
-          {/* Fallback */}
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="dark" />
-      </AuthProvider>
+            {/* Fallback */}
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="dark" />
+        </AuthProvider>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 }
