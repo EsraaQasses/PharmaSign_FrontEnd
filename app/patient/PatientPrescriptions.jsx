@@ -146,7 +146,7 @@ export default function PatientPrescriptions() {
                         <Text className="text-xs text-gray-500 font-medium">
                           {p.pharmacyName}
                         </Text>
-                         <MapPin size={14} color="#9CA3AF" />
+                        <MapPin size={14} color="#9CA3AF" />
                       </View>
                     </View>
 

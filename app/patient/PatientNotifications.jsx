@@ -51,7 +51,7 @@ export default function PatientNotifications() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="الإشعارات" showBackButton role="patient" />
+      <PageHeader title="الإشعارات" showBackButton role="patient" backTo="/patient/PatientHome" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <View className="px-6 py-6 flex-row items-center justify-between border-b border-gray-50 bg-white">

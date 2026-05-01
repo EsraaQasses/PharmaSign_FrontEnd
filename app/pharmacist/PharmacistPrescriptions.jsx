@@ -14,7 +14,7 @@ export default function PharmacistPrescriptions() {
   const filters = [
     { id: "all", label: "الكل" },
     { id: "pending", label: "قيد الانتظار" },
-    { id: "completed", label: "تم الصرف" },
+    { id: "completed", label: "مكتملة" },
   ];
 
   const filteredPrescriptions = MOCK_PRESCRIPTIONS.filter((rx) => {

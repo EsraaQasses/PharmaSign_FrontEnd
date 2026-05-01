@@ -28,7 +28,7 @@ export default function SessionQR() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="رمز ربط الجلسة" showBackButton role="patient" />
+      <PageHeader title="رمز ربط الجلسة" showBackButton role="patient" backTo="/patient/PatientHome" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView

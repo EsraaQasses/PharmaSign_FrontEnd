@@ -7,7 +7,7 @@ import MobileShell from "@/components/mobile/MobileShell";
 export default function PatientHelp() {
   const FAQItem = ({ question }) => (
     <TouchableOpacity className="flex-row items-center justify-between py-4 border-b border-gray-100" activeOpacity={0.7}>
-      <Text className="text-sm font-bold text-gray-800 text-left flex-1 pl-4 leading-5">{question}</Text>
+      <Text className="text-sm font-bold text-gray-800 text-right flex-1 pl-4 leading-5">{question}</Text>
       <ChevronLeft size={20} color="#9CA3AF" />
     </TouchableOpacity>
   );
@@ -28,7 +28,7 @@ export default function PatientHelp() {
         title="المساعدة والدعم" 
         showBackButton 
         role="patient" 
-        backTo="/patient/PatientProfile"
+        backTo="/patient/PatientSettings"
       />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-5 overflow-hidden">
@@ -43,8 +43,8 @@ export default function PatientHelp() {
             <HelpCircle size={32} color="#022451" />
           </View>
           <View className="flex-1">
-            <Text className="text-base font-bold text-patient mb-1 text-left">كيف يمكننا مساعدتك؟</Text>
-            <Text className="text-xs text-patient/80 text-left leading-relaxed">
+            <Text className="text-base font-bold text-patient mb-1 text-right">كيف يمكننا مساعدتك؟</Text>
+            <Text className="text-xs text-patient/80 text-right leading-relaxed">
               فريق الدعم الفني متواجد لمساعدتك. يمكنك التواصل معنا عبر الاتصال فقط.
             </Text>
           </View>
@@ -63,7 +63,7 @@ export default function PatientHelp() {
 
         {/* FAQs */}
         <View className="bg-white rounded-2xl p-5 mt-8 border border-gray-100 shadow-sm">
-          <Text className="text-base font-bold text-gray-900 mb-2 text-left">الأسئلة الشائعة</Text>
+          <Text className="text-base font-bold text-gray-900 mb-2 text-right">الأسئلة الشائعة</Text>
           
           <FAQItem question="كيف يمكنني عرض الوصفة الطبية بلغة الإشارة؟" />
           <FAQItem question="هل يمكن للصيدلي رؤية جميع وصفاتي السابقة؟" />

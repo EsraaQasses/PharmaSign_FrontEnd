@@ -10,11 +10,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronRight, Eye, EyeOff } from "lucide-react-native";
+import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/lib/AuthContext";
 import BrandLogo from "@/components/mobile/BrandLogo";
-
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function PharmacistLogin() {
   const router = useRouter();
@@ -51,14 +51,11 @@ export default function PharmacistLogin() {
         >
           {/* Header */}
           <View className="bg-pharmacist px-5 pt-4 pb-8 rounded-b-[2rem]">
-            <TouchableOpacity
-            onPress={() => router.replace("/RoleSelect")}
-              className="flex-row items-center py-2 -ml-2 mb-4"
-              activeOpacity={0.7}
-            >
-              <ChevronRight size={22} color="#FFFFFF" />
-              <Text className="text-white text-sm font-bold mr-1">رجوع</Text>
-            </TouchableOpacity>
+            <View className="mb-4" style={{ position: 'relative', minHeight: 44 }}>
+              <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+                <HeaderBackButton fallback="/RoleSelect" color="#05997F" />
+              </View>
+            </View>
 
             <View className="items-center">
               <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
@@ -133,7 +130,7 @@ export default function PharmacistLogin() {
               activeOpacity={0.7}
               className="py-1"
             >
-              <Text className="text-pharmacist text-sm font-bold text-left">
+              <Text className="text-pharmacist text-sm font-bold text-right">
                 نسيت كلمة المرور؟
               </Text>
             </TouchableOpacity>

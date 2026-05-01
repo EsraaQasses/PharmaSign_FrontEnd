@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
         title="الشروط وسياسة الخصوصية" 
         showBackButton 
         role="patient" 
-        backTo="/patient/PatientProfile"
+        backTo="/patient/PatientSettings"
       />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">

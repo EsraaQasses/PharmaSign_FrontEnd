@@ -42,7 +42,7 @@ export default function PatientSettings() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="الإعدادات" showBackButton role="patient" />
+      <PageHeader title="الإعدادات" showBackButton={false} role="patient" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView 

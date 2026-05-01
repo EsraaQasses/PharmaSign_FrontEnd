@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, UserCheck, Calendar, Phone, ArrowRight } from "lucide-react-native";
+import { Search, UserCheck, Calendar, Phone } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
 import BrandLogo from "@/components/mobile/BrandLogo";
@@ -72,13 +72,10 @@ export default function PharmacistPatients() {
                 className="bg-white rounded-[2.5rem] p-5 border border-gray-100 shadow-sm flex-row items-center justify-between"
                 activeOpacity={0.85}
               >
-                {/* Left Side: Status & Action (Fixed Width) */}
-                <View className="items-center gap-2 w-[70px]">
+                {/* Left Side: Prescription Count (Fixed Width) */}
+                <View className="w-[70px] items-center">
                   <View className="bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 w-full items-center">
                     <Text className="text-[10px] font-extrabold text-primary" numberOfLines={1}>{patient.rxCount} وصفة</Text>
-                  </View>
-                  <View className="w-10 h-10 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100">
-                    <ArrowRight size={18} color="#D1D5DB" strokeWidth={3} style={{ transform: [{ rotate: "180deg" }] }} />
                   </View>
                 </View>
 

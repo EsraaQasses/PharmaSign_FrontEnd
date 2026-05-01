@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Mail, Phone, Lock, Hash, ArrowRight, Building2 } from "lucide-react-native";
+import { User, Mail, Phone, Lock, Hash, Building2 } from "lucide-react-native";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function PharmacistRegister() {
   const router = useRouter();
@@ -56,23 +56,21 @@ export default function PharmacistRegister() {
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60 }} 
           showsVerticalScrollIndicator={false}
         >
-          <View className="flex-row items-center justify-between mb-8">
-            <View className="w-10" />
-            <Text className="text-2xl font-extrabold text-gray-900">إنشاء حساب جديد</Text>
-            <TouchableOpacity 
-              onPress={() => router.replace("/pharmacist/PharmacistLogin")} 
-              className="w-10 h-10 bg-white rounded-2xl items-center justify-center border border-gray-50 shadow-sm"
-            >
-              <ArrowRight size={22} color="#05997F" strokeWidth={2.5} />
-            </TouchableOpacity>
+          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
+            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+              <HeaderBackButton fallback="/pharmacist/PharmacistLogin" color="#05997F" />
+            </View>
+            <View className="items-center justify-center" style={{ minHeight: 44 }}>
+              <Text className="text-2xl font-extrabold text-gray-900">إنشاء حساب جديد</Text>
+            </View>
           </View>
 
           <View className="mb-10">
             <View className="w-16 h-16 bg-white rounded-3xl p-3 shadow-sm border border-gray-50 items-center justify-center mb-6">
                <BrandLogo width={40} height={40} />
             </View>
-            <Text className="text-3xl font-extrabold text-primary mb-2 text-left">انضم إلينا</Text>
-            <Text className="text-base text-gray-400 font-bold text-left leading-relaxed">يرجى تعبئة بياناتك المهنية للتحقق من هويتك كصيدلي معتمد</Text>
+            <Text className="text-3xl font-extrabold text-primary mb-2 text-right">انضم إلينا</Text>
+            <Text className="text-base text-gray-400 font-bold text-right leading-relaxed">يرجى تعبئة بياناتك المهنية للتحقق من هويتك كصيدلي معتمد</Text>
           </View>
 
           <View className="flex-1">

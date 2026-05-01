@@ -25,12 +25,12 @@ export default function SignTutorial() {
 
   const handleSave = () => {
     alert("تم حفظ الوصفة في السجل الخاص بك!");
-    router.back();
+    router.replace(id ? `/patient/PrescriptionDetail?id=${id}` : "/patient/PatientPrescriptions");
   };
 
   return (
     <MobileShell className="bg-primary" edges={["top", "left", "right"]}>
-      <PageHeader title="مترجم الإشارة" showBackButton />
+      <PageHeader title="مترجم الإشارة" showBackButton backTo={id ? `/patient/PrescriptionDetail?id=${id}` : "/patient/PatientPrescriptions"} />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView

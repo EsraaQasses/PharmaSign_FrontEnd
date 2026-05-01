@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { KeyRound, Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
+import { KeyRound, Mail, CheckCircle2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function PharmacistForgotPassword() {
   const router = useRouter();
@@ -21,9 +22,11 @@ export default function PharmacistForgotPassword() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-background">
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: top + 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity onPress={() => router.replace("/pharmacist/PharmacistLogin")} className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100 shadow-sm mb-8">
-          <ArrowRight size={20} color="#0C6B58" />
-        </TouchableOpacity>
+        <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
+          <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+            <HeaderBackButton fallback="/pharmacist/PharmacistLogin" color="#0C6B58" />
+          </View>
+        </View>
 
         {!isSubmitted ? (
           <View className="flex-1">
@@ -31,8 +34,8 @@ export default function PharmacistForgotPassword() {
               <View className="w-16 h-16 bg-primary/10 rounded-2xl items-center justify-center mb-6">
                 <KeyRound size={32} color="#0C6B58" />
               </View>
-              <Text className="text-3xl font-extrabold text-gray-900 mb-2 leading-tight text-left">استعادة حساب الصيدلي</Text>
-              <Text className="text-base text-gray-500 leading-relaxed text-left">أدخل البريد المهني أو رقم الجوال المرتبط بحسابك كصيدلي معتمد وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.</Text>
+              <Text className="text-3xl font-extrabold text-gray-900 mb-2 leading-tight text-right">استعادة حساب الصيدلي</Text>
+              <Text className="text-base text-gray-500 leading-relaxed text-right">أدخل البريد المهني أو رقم الجوال المرتبط بحسابك كصيدلي معتمد وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.</Text>
             </View>
 
             <View className="mb-6">

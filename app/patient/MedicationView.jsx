@@ -40,7 +40,7 @@ export default function MedicationView() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="طريقة الاستخدام" showBackButton role="patient" />
+      <PageHeader title="طريقة الاستخدام" showBackButton role="patient" backTo={id ? `/patient/PrescriptionDetail?id=${id}` : "/patient/PatientPrescriptions"} />
 
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
@@ -51,7 +51,7 @@ export default function MedicationView() {
             <Pill size={36} color="#022451" />
           </View>
           <View className="flex-1 items-start">
-            <Text className="text-lg font-bold text-gray-900 mb-1 text-left">
+            <Text className="text-lg font-bold text-gray-900 mb-1 text-right">
               {currentMed.name}
             </Text>
             <View className="bg-amber-100 px-3 py-1 rounded-full mb-1">

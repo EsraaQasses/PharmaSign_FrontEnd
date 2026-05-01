@@ -1,12 +1,13 @@
-import React, { useEffect } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
-import { 
-  Hand, 
-  Cpu, 
-  CheckCircle2
-} from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import { useRouter } from "expo-router";
+import {
+  CheckCircle2,
+  Cpu,
+  Hand
+} from "lucide-react-native";
+import React, { useEffect } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
 export default function GeneratingSign() {
   const router = useRouter();
@@ -14,9 +15,7 @@ export default function GeneratingSign() {
   useEffect(() => {
     // Simulate generation delay
     const timer = setTimeout(() => {
-      // In a real app, we'd go back to the meds list
-      // For this flow, we'll go to the "Finalize Prescription" or back to NewPrescription
-      router.push("/pharmacist/NewPrescription?addedMed=true");
+      router.replace("/pharmacist/NewPrescription?addedMed=true&keepDraft=true");
     }, 4000);
 
     return () => clearTimeout(timer);
@@ -27,10 +26,13 @@ export default function GeneratingSign() {
       {/* Rounded Integrated Header Overlay */}
       <View className="absolute top-0 left-0 right-0 h-1/4 bg-pharmacist rounded-b-[4rem] shadow-2xl shadow-pharmacist/40" />
       
+      {/* Absolute Back Button — floating mode handles safe area + right positioning */}
+      <HeaderBackButton fallback="/pharmacist/VerifyText" color="#05997F" floating />
+
       <View className="flex-1 items-center justify-center p-8">
         <View className="w-32 h-32 bg-white/20 rounded-full items-center justify-center mb-10 border border-white/20">
           <View className="absolute inset-0 items-center justify-center">
-             <ActivityIndicator size="large" color="#FFFFFF" scale={2} />
+            <ActivityIndicator size="large" color="#FFFFFF" scale={2} />
           </View>
           <Hand size={48} color="#FFFFFF" strokeWidth={2.5} />
         </View>
@@ -49,11 +51,11 @@ export default function GeneratingSign() {
               <CheckCircle2 size={16} color="#FFFFFF" />
             </View>
           </View>
-          
+
           <View className="flex-row items-center gap-4 justify-end mb-5">
             <Text className="text-sm font-bold text-white">توليد حركات اليدين والوجه</Text>
             <View className="w-8 h-8 rounded-full bg-white/20 items-center justify-center">
-               <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             </View>
           </View>
 

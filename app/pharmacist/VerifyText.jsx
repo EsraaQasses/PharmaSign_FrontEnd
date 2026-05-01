@@ -1,21 +1,22 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
-import { useRouter } from "expo-router";
-import { 
-  CheckCircle2, 
-  Edit3, 
-  ArrowLeft, 
-  ArrowRight,
-  FileText,
-  AlertCircle
-} from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import { useRouter } from "expo-router";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Edit3,
+  FileText
+} from "lucide-react-native";
+import React, { useState } from "react";
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function VerifyText() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  
+
   // Mock extracted text
   const [extractedText, setExtractedText] = useState(
     "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع. تجنب شرب العصائر الحمضية مع هذا الدواء."
@@ -33,16 +34,14 @@ export default function VerifyText() {
         <View className="bg-pharmacist pt-4 pb-12 px-6 rounded-b-[4rem] shadow-2xl shadow-pharmacist/30 relative overflow-hidden">
           {/* Background decorative element */}
           <View className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
-          
-          <View className="flex-row items-center justify-between mb-8">
-             <TouchableOpacity 
-               onPress={() => router.replace("/pharmacist/RecordAudio")}
-               className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center border border-white/10"
-             >
-                <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-             </TouchableOpacity>
-             <Text className="text-white text-xl font-extrabold">مراجعة النص</Text>
-             <View className="w-10" />
+
+          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
+            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+              <HeaderBackButton fallback="/pharmacist/RecordAudio" color="#05997F" />
+            </View>
+            <View className="items-center justify-center" style={{ minHeight: 44 }}>
+              <Text className="text-white text-xl font-extrabold">مراجعة النص</Text>
+            </View>
           </View>
 
           {/* Integrated Step Indicator */}
@@ -66,10 +65,10 @@ export default function VerifyText() {
 
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ 
-            paddingHorizontal: 20, 
+          contentContainerStyle={{
+            paddingHorizontal: 20,
             paddingTop: 24,
-            paddingBottom: 100 + insets.bottom 
+            paddingBottom: 100 + insets.bottom
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -88,7 +87,7 @@ export default function VerifyText() {
           {/* Text Content Area */}
           <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-50 min-h-[200px]">
             <View className="flex-row items-center justify-between mb-4 pb-4 border-b border-gray-50">
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setIsEditing(!isEditing)}
                 className="flex-row items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100"
               >
@@ -127,7 +126,7 @@ export default function VerifyText() {
         </ScrollView>
 
         {/* Fixed Footer */}
-        <View 
+        <View
           className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 px-6 py-4 flex-row gap-3"
           style={{ paddingBottom: Math.max(insets.bottom, 20) }}
         >
@@ -136,9 +135,10 @@ export default function VerifyText() {
             onPress={() => router.replace("/pharmacist/RecordAudio")}
             activeOpacity={0.8}
           >
+            <ArrowRight size={20} color="#6B7280" strokeWidth={2.5} />
             <Text className="font-bold text-gray-500 text-base">السابق</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             className="flex-[2] bg-pharmacist h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pharmacist/20"
             onPress={handleContinue}

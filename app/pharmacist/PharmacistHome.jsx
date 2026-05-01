@@ -69,8 +69,8 @@ export default function PharmacistHome() {
 
           <View className="mt-6">
             <View className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-              <Text className="text-sm text-gray-400 font-bold mb-1 text-left">الوصفات اليوم</Text>
-              <Text className="text-3xl font-extrabold text-pharmacist text-left">48</Text>
+              <Text className="text-sm text-gray-400 font-bold mb-1 text-right">الوصفات اليوم</Text>
+              <Text className="text-3xl font-extrabold text-pharmacist text-right">48</Text>
               <View className="flex-row items-center gap-1 mt-2">
                 <TrendingUp size={14} color="#059669" />
                 <Text className="text-[10px] text-emerald-600 font-bold">+12% منذ الأمس</Text>
@@ -98,7 +98,7 @@ export default function PharmacistHome() {
                   className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm flex-row-reverse items-center gap-3"
                   activeOpacity={0.7}
                 >
-                  <View 
+                  <View
                     className="w-16 h-16 min-w-[64px] rounded-2xl items-center justify-center flex-shrink-0 bg-primary/10"
                     style={{ overflow: 'hidden' }}
                   >

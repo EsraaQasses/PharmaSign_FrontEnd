@@ -16,7 +16,7 @@ export default function PharmacyDetail() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="تفاصيل الصيدلية" showBackButton role="patient" />
+      <PageHeader title="تفاصيل الصيدلية" showBackButton role="patient" backTo="/patient/PatientPharmacies" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView

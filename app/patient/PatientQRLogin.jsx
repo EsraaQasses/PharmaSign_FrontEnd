@@ -24,7 +24,7 @@ export default function PatientQRLogin() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="تسجيل الدخول بالرمز" showBackButton role="patient" />
+      <PageHeader title="تسجيل الدخول بالرمز" showBackButton role="patient" backTo="/patient/PatientLogin" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView

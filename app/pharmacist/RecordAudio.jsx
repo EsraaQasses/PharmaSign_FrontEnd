@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
-import { 
-  Mic, 
-  MicOff, 
-  CheckCircle, 
-  RefreshCw, 
-  Square, 
-  ArrowRight, 
-  ArrowLeft, 
-  Lightbulb 
-} from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import { useRouter } from "expo-router";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  Lightbulb,
+  Mic,
+  MicOff,
+  RefreshCw,
+  Square
+} from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function RecordAudio() {
@@ -61,16 +62,14 @@ export default function RecordAudio() {
         <View className="bg-pharmacist pt-4 pb-12 px-6 rounded-b-[4rem] shadow-2xl shadow-pharmacist/30 relative overflow-hidden">
           {/* Background decorative element */}
           <View className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32" />
-          
-          <View className="flex-row items-center justify-between mb-8">
-             <TouchableOpacity 
-               onPress={() => router.replace("/pharmacist/NewPrescription")}
-               className="w-10 h-10 bg-white/10 rounded-xl items-center justify-center border border-white/10"
-             >
-                <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-             </TouchableOpacity>
-             <Text className="text-white text-xl font-extrabold">تسجيل التعليمات</Text>
-             <View className="w-10" />
+
+          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
+            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+              <HeaderBackButton fallback="/pharmacist/NewPrescription" color="#05997F" />
+            </View>
+            <View className="items-center justify-center" style={{ minHeight: 44 }}>
+              <Text className="text-white text-xl font-extrabold">تسجيل التعليمات</Text>
+            </View>
           </View>
 
           {/* Integrated Step Indicator */}
@@ -94,10 +93,10 @@ export default function RecordAudio() {
 
         <ScrollView
           className="flex-1"
-          contentContainerStyle={{ 
-            paddingHorizontal: 20, 
+          contentContainerStyle={{
+            paddingHorizontal: 20,
             paddingTop: 24,
-            paddingBottom: 100 + insets.bottom 
+            paddingBottom: 100 + insets.bottom
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -116,10 +115,9 @@ export default function RecordAudio() {
                   <View className="absolute inset-6 bg-pharmacist/10 rounded-full" />
                 </>
               )}
-              <View 
-                className={`w-28 h-28 rounded-full items-center justify-center shadow-2xl ${
-                  isRecording ? "bg-pharmacist shadow-pharmacist/40" : "bg-gray-200 shadow-gray-200/50"
-                }`}
+              <View
+                className={`w-28 h-28 rounded-full items-center justify-center shadow-2xl ${isRecording ? "bg-pharmacist shadow-pharmacist/40" : "bg-gray-200 shadow-gray-200/50"
+                  }`}
               >
                 {isRecording ? (
                   <Mic size={48} color="#FFFFFF" strokeWidth={2.5} />
@@ -144,10 +142,10 @@ export default function RecordAudio() {
                   <Text className="text-base font-extrabold text-pharmacist">تم إيقاف التسجيل</Text>
                 </View>
 
-                <TouchableOpacity 
-                   activeOpacity={0.7}
-                   onPress={startRecording}
-                   className="flex-row items-center gap-2 bg-gray-50 px-5 py-3 rounded-xl border border-gray-100"
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={startRecording}
+                  className="flex-row items-center gap-2 bg-gray-50 px-5 py-3 rounded-xl border border-gray-100"
                 >
                   <RefreshCw size={18} color="#4B5563" strokeWidth={2.5} />
                   <Text className="text-sm font-bold text-gray-600">إعادة التسجيل</Text>
@@ -169,16 +167,17 @@ export default function RecordAudio() {
               <Lightbulb size={22} color="#D97706" strokeWidth={2.5} />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-extrabold text-amber-900 mb-1 text-left">نصيحة للمحتوى:</Text>
-              <Text className="text-xs text-amber-700 leading-relaxed text-left font-medium">
-                "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع"
+              <Text className="text-sm font-extrabold text-amber-900 mb-1 text-right">نصيحة للمحتوى:</Text>
+              <Text className="text-xs text-amber-700 leading-relaxed text-right font-medium">
+                اذكر اسم الدواء، الجرعة، عدد مرات الاستخدام، وقت تناول الدواء، مدة العلاج، وأي تحذيرات مهمة.{"\n"}
+                مثال: تناول حبة واحدة من الدواء مرتين يومياً، صباحاً ومساءً، بعد الطعام لمدة أسبوع. تجنب تناوله مع العصير الحمضي.
               </Text>
             </View>
           </View>
         </ScrollView>
 
         {/* Fixed Footer */}
-        <View 
+        <View
           className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 px-6 py-4 flex-row gap-3"
           style={{ paddingBottom: Math.max(insets.bottom, 20) }}
         >
@@ -190,11 +189,10 @@ export default function RecordAudio() {
             <ArrowRight size={20} color="#6B7280" strokeWidth={2.5} />
             <Text className="font-bold text-gray-500 text-base">السابق</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
-            className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${
-              isRecording ? "bg-red-500 shadow-red-500/20" : "bg-pharmacist shadow-pharmacist/20"
-            }`}
+            className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${isRecording ? "bg-red-500 shadow-red-500/20" : "bg-pharmacist shadow-pharmacist/20"
+              }`}
             onPress={isRecording ? stopRecording : hasRecorded ? handleNext : startRecording}
             activeOpacity={0.8}
           >

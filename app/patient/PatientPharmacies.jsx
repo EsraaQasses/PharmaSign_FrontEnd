@@ -6,6 +6,7 @@ import { ArrowRight, Search, MapPin, Hand, SlidersHorizontal, LocateFixed, Star,
 import { MOCK_PHARMACIES } from "@/lib/mockData";
 import MobileShell from "@/components/mobile/MobileShell";
 import PatientMap from "@/components/mobile/PatientMap";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function PatientPharmacies() {
   const router = useRouter();
@@ -48,20 +49,17 @@ export default function PatientPharmacies() {
         className="absolute top-0 w-full z-10 px-6"
         style={{ paddingTop: Math.max(insets.top, 20) + 10 }}
       >
-        <View className="flex-row items-center justify-between mb-5">
-          <TouchableOpacity
-            onPress={() => router.replace("/patient/PatientHome")}
-            className="w-11 h-11 bg-white rounded-2xl items-center justify-center shadow-lg border border-white"
-            activeOpacity={0.8}
-          >
-            <ArrowRight size={22} color="#022451" strokeWidth={2.5} />
-          </TouchableOpacity>
-          <View className="bg-patient px-6 py-2 rounded-full shadow-lg border border-white/20">
-            <Text className="text-sm font-extrabold text-white text-center">
-              صيدليات دمشق
-            </Text>
+        <View className="mb-5" style={{ position: 'relative', minHeight: 44 }}>
+          <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+            <HeaderBackButton fallback="/patient/PatientHome" color="#022451" />
           </View>
-          <View className="w-11" />
+          <View className="items-center justify-center" style={{ minHeight: 44 }}>
+            <View className="bg-patient px-6 py-2 rounded-full shadow-lg border border-white/20">
+              <Text className="text-sm font-extrabold text-white text-center">
+                صيدليات دمشق
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Search Bar */}

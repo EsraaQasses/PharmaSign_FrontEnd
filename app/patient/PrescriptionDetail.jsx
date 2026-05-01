@@ -28,7 +28,7 @@ export default function PrescriptionDetail() {
   if (!rx) {
     return (
       <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-        <PageHeader title="تفاصيل الوصفة" showBackButton role="patient" />
+        <PageHeader title="تفاصيل الوصفة" showBackButton role="patient" backTo="/patient/PatientPrescriptions" />
         <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 items-center justify-center p-8">
           <View className="w-20 h-20 bg-gray-50 rounded-full items-center justify-center mb-4">
             <AlertCircle size={40} color="#D1D5DB" />
@@ -37,7 +37,7 @@ export default function PrescriptionDetail() {
             الوصفة غير موجودة أو تم حذفها
           </Text>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => router.replace("/patient/PatientPrescriptions")}
             className="mt-8 bg-patient px-8 py-4 rounded-2xl w-full items-center"
           >
             <Text className="text-white font-extrabold">العودة للرئيسية</Text>
@@ -51,7 +51,7 @@ export default function PrescriptionDetail() {
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
-      <PageHeader title="تفاصيل الوصفة" showBackButton role="patient" />
+      <PageHeader title="تفاصيل الوصفة" showBackButton role="patient" backTo="/patient/PatientPrescriptions" />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
         <ScrollView

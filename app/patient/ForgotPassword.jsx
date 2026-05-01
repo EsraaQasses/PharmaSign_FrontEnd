@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import { KeyRound, Mail, ArrowRight, CheckCircle2 } from "lucide-react-native";
+import { KeyRound, Mail, CheckCircle2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -29,12 +30,11 @@ export default function ForgotPassword() {
           contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-          <TouchableOpacity 
-            onPress={() => router.back()}
-            className="w-10 h-10 bg-white rounded-xl items-center justify-center border border-gray-100 shadow-sm mb-8"
-          >
-            <ArrowRight size={20} color="#022451" />
-          </TouchableOpacity>
+          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
+            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+              <HeaderBackButton fallback="/patient/PatientLogin" color="#022451" />
+            </View>
+          </View>
 
           {!isSubmitted ? (
             <View className="flex-1">
@@ -42,10 +42,10 @@ export default function ForgotPassword() {
                 <View className="w-16 h-16 bg-patient/10 rounded-2xl items-center justify-center mb-6">
                   <KeyRound size={32} color="#022451" />
                 </View>
-                <Text className="text-3xl font-extrabold text-gray-900 mb-2 leading-tight text-left">
+                <Text className="text-3xl font-extrabold text-gray-900 mb-2 leading-tight text-right">
                   نسيت كلمة المرور؟
                 </Text>
-                <Text className="text-base text-gray-500 leading-relaxed text-left">
+                <Text className="text-base text-gray-500 leading-relaxed text-right">
                   لا تقلق! أدخل البريد الإلكتروني أو رقم الجوال المرتبط بحسابك وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.
                 </Text>
               </View>
@@ -91,7 +91,7 @@ export default function ForgotPassword() {
               
               <TouchableOpacity 
                 className="w-full bg-patient h-14 rounded-xl flex-row items-center justify-center shadow-sm"
-                onPress={() => router.back()}
+                onPress={() => router.replace("/patient/PatientLogin")}
                 activeOpacity={0.8}
               >
                 <Text className="text-white font-bold text-lg">العودة لتسجيل الدخول</Text>

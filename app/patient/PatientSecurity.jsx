@@ -42,7 +42,7 @@ export default function PatientSecurity() {
         title="الأمان والخصوصية" 
         showBackButton 
         role="patient" 
-        backTo="/patient/PatientProfile"
+        backTo="/patient/PatientSettings"
       />
 
       <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-5 overflow-hidden">
@@ -100,8 +100,8 @@ export default function PatientSecurity() {
                     <Smartphone size={20} color="#022451" />
                   </View>
                   <View>
-                    <Text className="text-sm font-bold text-gray-900 text-left">iPhone 13 Pro</Text>
-                    <Text className="text-[10px] text-gray-500 mt-0.5 text-left">الرياض، السعودية • نشط الآن</Text>
+                    <Text className="text-sm font-bold text-gray-900 text-right">iPhone 13 Pro</Text>
+                    <Text className="text-[10px] text-gray-500 mt-0.5 text-right">الرياض، السعودية • نشط الآن</Text>
                   </View>
                 </View>
                 <View className="bg-emerald-100 px-2 py-1 rounded">
@@ -114,8 +114,8 @@ export default function PatientSecurity() {
           <View className="bg-red-50 rounded-2xl p-4 mt-8 border border-red-100 flex-row gap-3">
             <AlertTriangle size={24} color="#EF4444" />
             <View className="flex-1">
-              <Text className="text-sm font-bold text-red-700 mb-1 text-left">حذف الحساب</Text>
-              <Text className="text-xs text-red-600 text-left mb-3">سيؤدي هذا إلى حذف جميع بياناتك وسجلك الطبي نهائياً ولن تتمكن من استعادتها.</Text>
+              <Text className="text-sm font-bold text-red-700 mb-1 text-right">حذف الحساب</Text>
+              <Text className="text-xs text-red-600 text-right mb-3">سيؤدي هذا إلى حذف جميع بياناتك وسجلك الطبي نهائياً ولن تتمكن من استعادتها.</Text>
               <TouchableOpacity className="bg-red-100 self-start px-4 py-2 rounded-lg">
                 <Text className="text-xs font-bold text-red-700">طلب حذف الحساب</Text>
               </TouchableOpacity>
