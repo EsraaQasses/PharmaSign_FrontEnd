@@ -1,12 +1,40 @@
 import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Phone, Lock, Building2, ShieldCheck, MessageSquare } from "lucide-react-native";
+import { User, Phone, Lock, Building2, ShieldCheck, MessageSquare, AlertCircle } from "lucide-react-native";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import { ActivityIndicator } from "react-native";
+
+const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default", error, onBlur }) => (
+  <View className="mb-5">
+    <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1 text-right">{label}</Text>
+    <View className={`flex-row items-center border rounded-2xl bg-white px-4 h-15 shadow-sm ${error ? "border-red-500" : "border-gray-100 focus:border-primary"}`}>
+      <TextInput
+        className="flex-1 text-base text-gray-900 h-full font-medium"
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
+        textAlign="right"
+        onBlur={onBlur}
+      />
+      <View className="ml-3">
+        <Icon size={20} color={error ? "#EF4444" : "#9CA3AF"} />
+      </View>
+    </View>
+    {error ? (
+      <View className="flex-row items-center justify-end mt-1.5 mr-1 gap-1">
+        <Text className="text-red-500 text-[11px] font-bold text-right">{error}</Text>
+        <AlertCircle size={12} color="#EF4444" />
+      </View>
+    ) : null}
+  </View>
+);
 
 export default function PharmacistRegister() {
   const router = useRouter();
@@ -16,6 +44,7 @@ export default function PharmacistRegister() {
   const [formData, setFormData] = useState({
     name: "",
     pharmacyName: "",
+    license_number: "",
     phone: "",
     password: "",
     confirmPassword: "",
@@ -25,46 +54,76 @@ export default function PharmacistRegister() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+
+  const validateStep1 = () => {
+    const newErrors = {};
+
+    // 1. Full Name Validation
+    const nameTrimmed = formData.name.trim();
+    const arabicWords = nameTrimmed.split(/\s+/).filter(word => /^[\u0600-\u06FF]{2,}$/.test(word));
+    if (!nameTrimmed) {
+      newErrors.name = "يرجى إدخال الاسم الثلاثي";
+    } else if (arabicWords.length < 3) {
+      newErrors.name = "الاسم الثلاثي يجب أن يحتوي على ثلاث كلمات عربية صحيحة على الأقل";
+    }
+
+    // 2. Pharmacy Name Validation (Relaxed)
+    const pharmacyTrimmed = formData.pharmacyName.trim();
+    const onlyArabicAndSpaces = /^[\u0600-\u06FF\s]+$/.test(pharmacyTrimmed);
+    const totalArabicLetters = pharmacyTrimmed.replace(/\s+/g, "").match(/[\u0600-\u06FF]/g)?.length || 0;
+    
+    if (!pharmacyTrimmed) {
+      newErrors.pharmacyName = "يرجى إدخال اسم الصيدلية";
+    } else if (!onlyArabicAndSpaces || totalArabicLetters < 3) {
+      newErrors.pharmacyName = "اسم الصيدلية غير صالح، أدخل اسم صيدلية واضح";
+    }
+
+    // 3. License Number Validation
+    const licenseTrimmed = formData.license_number.trim();
+    const hasDigit = /\d/.test(licenseTrimmed);
+    const validChars = /^[a-zA-Z0-9\/\-\u0600-\u06FF\s]+$/.test(licenseTrimmed);
+    if (!licenseTrimmed) {
+      newErrors.license_number = "رقم رخصة الصيدلي مطلوب للتحقق من الحساب";
+    } else if (licenseTrimmed.length < 5 || !hasDigit || !validChars) {
+      newErrors.license_number = "رقم رخصة الصيدلي غير صالح";
+    }
+
+    // 4. Phone Number Validation
+    const phoneTrimmed = formData.phone.trim();
+    if (!phoneTrimmed) {
+      newErrors.phone = "يرجى إدخال رقم الجوال";
+    } else if (!/^09\d{8}$/.test(phoneTrimmed)) {
+      newErrors.phone = "رقم الجوال يجب أن يبدأ بـ 09 ويتكون من 10 أرقام";
+    }
+
+    // 5. Password Validation
+    if (!formData.password) {
+      newErrors.password = "يرجى إدخال كلمة المرور";
+    } else if (formData.password.length < 8 || !(/[a-zA-Z\u0600-\u06FF]/.test(formData.password) && /\d/.test(formData.password))) {
+      newErrors.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على رقم وحرف";
+    }
+
+    // 6. Confirm Password
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "يرجى تأكيد كلمة المرور";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "كلمة المرور وتأكيدها غير متطابقين";
+    }
+
+    // 7. Terms
+    if (!acceptedTerms) {
+      newErrors.terms = "يجب الموافقة على سياسة الخدمة";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleRegisterStep1 = async () => {
-    if (!formData.name.trim()) {
-      setError("يرجى إدخال الاسم الثلاثي");
-      return;
-    }
-    if (!formData.pharmacyName.trim()) {
-      setError("يرجى إدخال اسم الصيدلية");
-      return;
-    }
-    if (!formData.phone.trim()) {
-      setError("يرجى إدخال رقم جوال صحيح");
-      return;
-    }
-    
-    const phoneDigits = formData.phone.trim();
-    if (!/^\d+$/.test(phoneDigits) || phoneDigits.length < 9) {
-      setError("يرجى إدخال رقم جوال صحيح");
-      return;
-    }
+    if (!validateStep1()) return;
 
-    if (!formData.password.trim()) {
-      setError("يرجى إدخال كلمة المرور");
-      return;
-    }
-    if (formData.password.length < 6) {
-      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError("كلمتا المرور غير متطابقتين");
-      return;
-    }
-    if (!acceptedTerms) {
-      setError("يرجى الموافقة على الشروط وسياسة الخصوصية");
-      return;
-    }
-
-    setError("");
+    setErrors({});
     setIsLoading(true);
 
     // Simulate sending OTP
@@ -76,16 +135,16 @@ export default function PharmacistRegister() {
 
   const handleVerifyOTP = async () => {
     if (!otp.trim()) {
-      setError("يرجى إدخال رمز التحقق");
+      setErrors({ otp: "يرجى إدخال رمز التحقق" });
       return;
     }
 
     if (otp !== "123456") {
-      setError("رمز التحقق غير صحيح");
+      setErrors({ otp: "رمز التحقق غير صحيح" });
       return;
     }
 
-    setError("");
+    setErrors({});
     setIsLoading(true);
 
     // Simulate registration submission to organization
@@ -95,26 +154,11 @@ export default function PharmacistRegister() {
     }, 2000);
   };
 
-  const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default" }) => (
-    <View className="mb-5">
-      <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1 text-right">{label}</Text>
-      <View className="flex-row items-center border border-gray-100 rounded-2xl bg-white px-4 h-15 shadow-sm focus:border-primary">
-        <TextInput
-          className="flex-1 text-base text-gray-900 h-full font-medium"
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
-          secureTextEntry={secureTextEntry}
-          keyboardType={keyboardType}
-          textAlign="right"
-        />
-        <View className="ml-3">
-          <Icon size={20} color="#9CA3AF" />
-        </View>
-      </View>
-    </View>
-  );
+  const clearFieldError = (field) => {
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
 
   return (
     <MobileShell className="bg-primary" edges={["top", "left", "right"]}>
@@ -130,7 +174,7 @@ export default function PharmacistRegister() {
           <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
             <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
               <HeaderBackButton 
-                onPress={step === 1 ? () => { setStep(0); setError(""); } : undefined}
+                onPress={step === 1 ? () => { setStep(0); setErrors({}); } : undefined}
                 fallback={step === 0 ? "/pharmacist/PharmacistLogin" : undefined} 
                 color="#05997F" 
               />
@@ -152,31 +196,76 @@ export default function PharmacistRegister() {
                 <Text className="text-base text-gray-400 font-bold text-right leading-relaxed">يرجى تعبئة بياناتك المهنية للتحقق من هويتك كصيدلي معتمد</Text>
               </View>
 
-              {error ? (
-                <View className="bg-red-50 border border-red-100 rounded-xl p-4 mb-5">
-                  <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
-                </View>
-              ) : null}
-
               <View className="flex-1">
-                <InputField icon={User} label="الاسم الثلاثي" value={formData.name} onChangeText={(t) => setFormData({...formData, name: t})} placeholder="أدخل اسمك الكامل" />
-                <InputField icon={Building2} label="اسم الصيدلية" value={formData.pharmacyName} onChangeText={(t) => setFormData({...formData, pharmacyName: t})} placeholder="أين تعمل حالياً؟" />
-                <InputField icon={Phone} label="رقم الجوال" value={formData.phone} onChangeText={(t) => setFormData({...formData, phone: t})} placeholder="05XXXXXXXX" keyboardType="number-pad" />
-                <InputField icon={Lock} label="كلمة المرور" value={formData.password} onChangeText={(t) => setFormData({...formData, password: t})} placeholder="اختر كلمة مرور قوية" secureTextEntry />
-                <InputField icon={Lock} label="تأكيد كلمة المرور" value={formData.confirmPassword} onChangeText={(t) => setFormData({...formData, confirmPassword: t})} placeholder="أعد إدخال كلمة المرور" secureTextEntry />
+                <InputField 
+                  icon={User} 
+                  label="الاسم الثلاثي" 
+                  value={formData.name} 
+                  onChangeText={(t) => { setFormData({...formData, name: t}); clearFieldError("name"); }} 
+                  placeholder="أدخل اسمك الكامل" 
+                  error={errors.name}
+                />
+                <InputField 
+                  icon={Building2} 
+                  label="اسم الصيدلية" 
+                  value={formData.pharmacyName} 
+                  onChangeText={(t) => { setFormData({...formData, pharmacyName: t}); clearFieldError("pharmacyName"); }} 
+                  placeholder="أين تعمل حالياً؟" 
+                  error={errors.pharmacyName}
+                />
+                <InputField 
+                  icon={ShieldCheck} 
+                  label="رقم رخصة الصيدلي" 
+                  value={formData.license_number} 
+                  onChangeText={(t) => { setFormData({...formData, license_number: t}); clearFieldError("license_number"); }} 
+                  placeholder="أدخل رقم الرخصة المهنية" 
+                  error={errors.license_number}
+                />
+                <InputField 
+                  icon={Phone} 
+                  label="رقم الجوال" 
+                  value={formData.phone} 
+                  onChangeText={(t) => { setFormData({...formData, phone: t}); clearFieldError("phone"); }} 
+                  placeholder="09XXXXXXXX" 
+                  keyboardType="number-pad" 
+                  error={errors.phone}
+                />
+                <InputField 
+                  icon={Lock} 
+                  label="كلمة المرور" 
+                  value={formData.password} 
+                  onChangeText={(t) => { setFormData({...formData, password: t}); clearFieldError("password"); }} 
+                  placeholder="اختر كلمة مرور قوية" 
+                  secureTextEntry 
+                  error={errors.password}
+                />
+                <InputField 
+                  icon={Lock} 
+                  label="تأكيد كلمة المرور" 
+                  value={formData.confirmPassword} 
+                  onChangeText={(t) => { setFormData({...formData, confirmPassword: t}); clearFieldError("confirmPassword"); }} 
+                  placeholder="أعد إدخال كلمة المرور" 
+                  secureTextEntry 
+                  error={errors.confirmPassword}
+                />
                 
-                <TouchableOpacity 
-                  onPress={() => setAcceptedTerms(!acceptedTerms)}
-                  className="flex-row items-start gap-3 mt-3 mb-8"
-                  activeOpacity={0.8}
-                >
-                  <View className={`w-6 h-6 rounded-lg border-2 items-center justify-center ${acceptedTerms ? 'border-primary bg-primary' : 'border-primary/20 bg-primary/5'}`}>
-                    {acceptedTerms && <View className="w-3 h-3 bg-white rounded-sm" />}
-                  </View>
-                  <Text className="text-xs text-gray-400 font-bold flex-1 leading-relaxed text-right">
-                    أقر بصحة جميع البيانات المدخلة وموافقتي على <Text className="text-primary font-extrabold underline">سياسة الخدمة</Text>
-                  </Text>
-                </TouchableOpacity>
+                <View className="mb-8">
+                  <TouchableOpacity 
+                    onPress={() => { setAcceptedTerms(!acceptedTerms); clearFieldError("terms"); }}
+                    className="flex-row items-start gap-3 mt-3"
+                    activeOpacity={0.8}
+                  >
+                    <View className={`w-6 h-6 rounded-lg border-2 items-center justify-center ${acceptedTerms ? 'border-primary bg-primary' : errors.terms ? 'border-red-500 bg-red-50' : 'border-primary/20 bg-primary/5'}`}>
+                      {acceptedTerms && <View className="w-3 h-3 bg-white rounded-sm" />}
+                    </View>
+                    <Text className="text-xs text-gray-400 font-bold flex-1 leading-relaxed text-right">
+                      أقر بصحة جميع البيانات المدخلة وموافقتي على <Text className="text-primary font-extrabold underline">سياسة الخدمة</Text>
+                    </Text>
+                  </TouchableOpacity>
+                  {errors.terms ? (
+                    <Text className="text-red-500 text-[11px] font-bold text-right mt-2 mr-1">{errors.terms}</Text>
+                  ) : null}
+                </View>
 
                 <TouchableOpacity 
                   className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-primary/20 w-full gap-2 ${
@@ -216,26 +305,24 @@ export default function PharmacistRegister() {
                 </Text>
               </View>
 
-              {error ? (
-                <View className="bg-red-50 border border-red-100 rounded-xl p-4 mb-8">
-                  <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
-                </View>
-              ) : null}
-
               <View className="mb-8">
                 <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">رمز التحقق</Text>
                 <TextInput
-                  className="bg-white border border-gray-100 rounded-2xl px-6 h-16 text-center text-2xl font-bold text-gray-900 shadow-sm"
+                  className={`bg-white border rounded-2xl px-6 h-16 text-center text-2xl font-bold text-gray-900 shadow-sm ${errors.otp ? "border-red-500" : "border-gray-100"}`}
                   value={otp}
-                  onChangeText={setOtp}
+                  onChangeText={(t) => { setOtp(t); clearFieldError("otp"); }}
                   placeholder="أدخل رمز التحقق"
                   placeholderTextColor="#D1D5DB"
                   keyboardType="number-pad"
                   maxLength={6}
                 />
-                <Text className="text-[10px] text-gray-400 font-bold text-center mt-4 leading-relaxed">
-                  لأغراض العرض، استخدم الرمز <Text className="text-primary font-extrabold">123456</Text>
-                </Text>
+                {errors.otp ? (
+                  <Text className="text-red-500 text-[11px] font-bold text-center mt-2">{errors.otp}</Text>
+                ) : (
+                  <Text className="text-[10px] text-gray-400 font-bold text-center mt-4 leading-relaxed">
+                    لأغراض العرض، استخدم الرمز <Text className="text-primary font-extrabold">123456</Text>
+                  </Text>
+                )}
               </View>
 
               <TouchableOpacity 
