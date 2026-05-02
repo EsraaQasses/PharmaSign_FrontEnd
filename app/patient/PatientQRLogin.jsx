@@ -1,25 +1,70 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { QrCode, Upload, Camera, ShieldCheck, HelpCircle } from "lucide-react-native";
+import { QrCode, Upload, Camera, ShieldCheck, HelpCircle, AlertCircle, CheckCircle2 } from "lucide-react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
 import PageHeader from "@/components/mobile/PageHeader";
 import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PatientQRLogin() {
   const router = useRouter();
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleScan = () => {
+  const handleScan = async () => {
+    if (!permission?.granted) {
+      const { granted } = await requestPermission();
+      if (!granted) {
+        setError("تعذر فتح الكاميرا. يرجى السماح بالوصول من إعدادات الجهاز.");
+        return;
+      }
+    }
+    
+    setError("");
     setScanning(true);
-    // Simulate scan success
+    
+    // Simulate QR code detection after 2 seconds
     setTimeout(() => {
-      router.replace("/patient/PatientHome");
-    }, 2000);
+      setSuccess(true);
+      setScanning(false);
+      setTimeout(() => {
+        router.replace("/patient/PatientHome");
+      }, 1500);
+    }, 2500);
   };
 
-  const handleUpload = () => {
-    // Simulate file picker and scan success
-    router.replace("/patient/PatientHome");
+  const handleUpload = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setError("");
+        setVerifying(true);
+        
+        // Simulate QR image verification
+        setTimeout(() => {
+          setSuccess(true);
+          setVerifying(false);
+          setTimeout(() => {
+            router.replace("/patient/PatientHome");
+          }, 1500);
+        }, 2000);
+      } else {
+        setError("لم يتم اختيار صورة");
+        setTimeout(() => setError(""), 3000);
+      }
+    } catch (e) {
+      setError("تعذر قراءة الرمز من الصورة. يرجى اختيار صورة أوضح.");
+      setTimeout(() => setError(""), 3000);
+    }
   };
 
   return (
@@ -40,6 +85,20 @@ export default function PatientQRLogin() {
             </Text>
           </View>
 
+          {error ? (
+            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 flex-row items-center justify-end gap-3">
+              <Text className="text-red-600 font-bold flex-1 text-right">{error}</Text>
+              <AlertCircle size={20} color="#DC2626" />
+            </View>
+          ) : null}
+
+          {success ? (
+            <View className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 flex-row items-center justify-end gap-3">
+              <Text className="text-emerald-700 font-bold flex-1 text-right">تم التحقق من الرمز بنجاح</Text>
+              <CheckCircle2 size={20} color="#059669" />
+            </View>
+          ) : null}
+
           {/* Option 1: Live Scan */}
           <View className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm mb-6">
             <View className="flex-row items-center justify-end gap-3 mb-6">
@@ -53,21 +112,27 @@ export default function PatientQRLogin() {
             </View>
 
             <TouchableOpacity 
-              onPress={handleScan}
+              onPress={!scanning && !success ? handleScan : null}
               activeOpacity={0.8}
               className="w-full aspect-square bg-gray-50 rounded-[40px] border-2 border-dashed border-gray-200 items-center justify-center relative overflow-hidden"
+              disabled={scanning || success || verifying}
             >
               {!scanning ? (
                 <>
                   <View className="bg-white p-6 rounded-full shadow-sm mb-4">
-                    <QrCode size={48} color="#D1D5DB" strokeWidth={1.5} />
+                    <QrCode size={48} color={success ? "#059669" : "#D1D5DB"} strokeWidth={1.5} />
                   </View>
-                  <Text className="text-patient font-extrabold text-base">ابدأ المسح الضوئي</Text>
+                  <Text className={success ? "text-emerald-600 font-extrabold text-base" : "text-patient font-extrabold text-base"}>
+                    {success ? "تم التعرف على الرمز" : "ابدأ المسح الضوئي"}
+                  </Text>
                 </>
               ) : (
-                <View className="items-center">
+                <View className="w-full h-full items-center justify-center">
+                  <CameraView className="absolute inset-0" />
                   <View className="w-full h-1 bg-patient absolute top-1/2 shadow-lg shadow-patient" />
-                  <Text className="text-patient font-extrabold mt-4">جاري قراءة الرمز...</Text>
+                  <View className="bg-black/40 px-4 py-2 rounded-full absolute bottom-6">
+                    <Text className="text-white font-bold">جاري قراءة الرمز...</Text>
+                  </View>
                 </View>
               )}
             </TouchableOpacity>
@@ -88,12 +153,24 @@ export default function PatientQRLogin() {
             <TouchableOpacity 
               onPress={handleUpload}
               activeOpacity={0.8}
-              className="w-full py-6 bg-patient/5 rounded-2xl border border-patient/10 items-center justify-center gap-3"
+              disabled={verifying || success || scanning}
+              className={`w-full py-6 rounded-2xl border items-center justify-center gap-3 ${
+                verifying ? "bg-gray-50 border-gray-100" : "bg-patient/5 border-patient/10"
+              }`}
             >
-              <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm">
-                <Upload size={20} color="#022451" />
-              </View>
-              <Text className="text-patient font-extrabold">اختر صورة من الاستديو</Text>
+              {verifying ? (
+                <View className="items-center gap-2">
+                  <ActivityIndicator color="#022451" />
+                  <Text className="text-patient font-extrabold">جاري التحقق من صورة الرمز...</Text>
+                </View>
+              ) : (
+                <>
+                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm">
+                    <Upload size={20} color="#022451" />
+                  </View>
+                  <Text className="text-patient font-extrabold">اختر صورة من الاستديو</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -103,6 +180,7 @@ export default function PatientQRLogin() {
               <ShieldCheck size={18} color="#059669" />
               <Text className="text-xs font-bold text-emerald-700">تشفير وحماية البيانات 256-bit</Text>
             </View>
+            <Text className="text-[10px] text-gray-400 mt-2 font-bold">يتم استخدام الرمز للتحقق من حسابك بشكل آمن.</Text>
           </View>
 
           <TouchableOpacity 

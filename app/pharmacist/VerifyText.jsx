@@ -10,7 +10,7 @@ import {
   FileText
 } from "lucide-react-native";
 import React, { useState } from "react";
-import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function VerifyText() {
@@ -22,9 +22,18 @@ export default function VerifyText() {
     "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع. تجنب شرب العصائر الحمضية مع هذا الدواء."
   );
   const [isEditing, setIsEditing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleContinue = () => {
-    router.push("/pharmacist/GeneratingSign");
+    if (extractedText.trim().length === 0) {
+      Alert.alert("نص مفقود", "يرجى كتابة أو التأكد من وجود النص قبل تحويله إلى لغة الإشارة.");
+      return;
+    }
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      router.push("/pharmacist/GeneratingSign");
+    }, 1000);
   };
 
   return (
@@ -140,12 +149,19 @@ export default function VerifyText() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="flex-[2] bg-pharmacist h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pharmacist/20"
+            className={`flex-[2] ${isProcessing ? "bg-pharmacist/70" : "bg-pharmacist"} h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pharmacist/20`}
             onPress={handleContinue}
             activeOpacity={0.8}
+            disabled={isProcessing}
           >
-            <Text className="font-extrabold text-white text-lg">متابعة وإنشاء الفيديو</Text>
-            <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
+            {isProcessing ? (
+              <Text className="font-extrabold text-white text-lg">جاري الإعداد...</Text>
+            ) : (
+              <>
+                <Text className="font-extrabold text-white text-lg">اعتماد ومتابعة</Text>
+                <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.5} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
       </View>

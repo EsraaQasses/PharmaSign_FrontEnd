@@ -9,7 +9,15 @@ import { MOCK_PRESCRIPTIONS } from "@/lib/mockData";
 export default function PharmacistPrescriptions() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filters = [
     { id: "all", label: "الكل" },
@@ -19,8 +27,8 @@ export default function PharmacistPrescriptions() {
 
   const filteredPrescriptions = MOCK_PRESCRIPTIONS.filter((rx) => {
     return (
-      rx.patientName.includes(searchQuery) ||
-      rx.medications.some((m) => m.name.includes(searchQuery))
+      (rx.patientName || "").includes(searchQuery) ||
+      (rx.medications || []).some((m) => (m.name || "").includes(searchQuery))
     );
   });
 
@@ -60,59 +68,69 @@ export default function PharmacistPrescriptions() {
           </View>
 
           <View className="gap-5">
-            {filteredPrescriptions.map((rx) => (
-              <TouchableOpacity
-                key={rx.id}
-                onPress={() => router.push(`/pharmacist/PharmacistPrescriptionDetail?id=${rx.id}`)}
-                className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm"
-                activeOpacity={0.8}
-              >
-                {/* Header */}
-                <View className="flex-row items-center justify-between mb-4 pb-4 border-b border-gray-50">
-                  <View className="flex-row items-center gap-3">
-                    <View className="w-12 h-12 rounded-2xl items-center justify-center bg-primary/5">
-                      <FileText size={24} color="#05997F" strokeWidth={2.5} />
-                    </View>
-                    <View>
-                      <Text className="text-base font-extrabold text-gray-900">{rx.patientName}</Text>
-                      <View className="flex-row items-center gap-1.5 mt-0.5">
-                        <Calendar size={12} color="#9CA3AF" />
-                        <Text className="text-[11px] font-bold text-gray-400">{rx.date}</Text>
-                      </View>
-                    </View>
-                  </View>
-
-                </View>
-
-                {/* Meds snippet */}
-                <View className="mb-4 pr-1">
-                  <View className="flex-row items-start gap-2">
-                    <View className="mt-1">
-                      <Pill size={14} color="#05997F" />
-                    </View>
-                    <Text className="flex-1 text-sm font-bold text-gray-600 leading-relaxed text-right">
-                      {rx.medications.map((m) => m.name).join("، ")}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="flex-row items-center justify-between pt-3 border-t border-gray-50">
-                  <View className="flex-row items-center gap-1.5">
-                    <Text className="text-xs font-extrabold text-pharmacist">عرض التفاصيل</Text>
-                    <ChevronLeft size={16} color="#05997F" strokeWidth={2.5} />
-                  </View>
-                  <Text className="text-[10px] font-extrabold text-gray-300 uppercase letter-spacing-1">ID: {rx.id.toUpperCase()}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-            
-            {filteredPrescriptions.length === 0 && (
+            {isLoading ? (
+              <View className="items-center justify-center py-20">
+                 <Text className="text-pharmacist text-2xl font-bold mb-2">...</Text>
+                 <Text className="text-gray-500 font-bold">جاري تحميل الوصفات...</Text>
+              </View>
+            ) : filteredPrescriptions.length === 0 ? (
               <View className="items-center justify-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
                 <View className="w-20 h-20 bg-white rounded-full shadow-sm items-center justify-center mb-4">
-                   <Search size={32} color="#D1D5DB" />
+                   {searchQuery ? <Search size={32} color="#D1D5DB" /> : <FileText size={32} color="#D1D5DB" />}
                 </View>
-                <Text className="text-base font-extrabold text-gray-400">لا توجد نتائج مطابقة</Text>
+                <Text className="text-lg font-extrabold text-gray-900 mb-2 text-center">
+                  {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد وصفات حتى الآن"}
+                </Text>
+                <Text className="text-sm text-gray-400 font-bold text-center px-4">
+                  {searchQuery ? "جرب البحث باسم مريض آخر أو دواء مختلف." : "لم تقم بصرف أي وصفات حتى الآن."}
+                </Text>
               </View>
+            ) : (
+              filteredPrescriptions.map((rx) => (
+                <TouchableOpacity
+                  key={rx.id}
+                  onPress={() => router.push(`/pharmacist/PharmacistPrescriptionDetail?id=${rx.id}`)}
+                  className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm"
+                  activeOpacity={0.8}
+                >
+                  {/* Header */}
+                  <View className="flex-row items-center justify-between mb-4 pb-4 border-b border-gray-50">
+                    <View className="flex-row items-center gap-3">
+                      <View className="w-12 h-12 rounded-2xl items-center justify-center bg-primary/5">
+                        <FileText size={24} color="#05997F" strokeWidth={2.5} />
+                      </View>
+                      <View>
+                        <Text className="text-base font-extrabold text-gray-900">{rx.patientName || "مريض غير محدد"}</Text>
+                        <View className="flex-row items-center gap-1.5 mt-0.5">
+                          <Calendar size={12} color="#9CA3AF" />
+                          <Text className="text-[11px] font-bold text-gray-400">{rx.date || "تاريخ غير متوفر"}</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                  </View>
+
+                  {/* Meds snippet */}
+                  <View className="mb-4 pr-1">
+                    <View className="flex-row items-start gap-2">
+                      <View className="mt-1">
+                        <Pill size={14} color="#05997F" />
+                      </View>
+                      <Text className="flex-1 text-sm font-bold text-gray-600 leading-relaxed text-right">
+                        {(rx.medications || []).map((m) => m.name || "دواء غير محدد").join("، ")}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View className="flex-row items-center justify-between pt-3 border-t border-gray-50">
+                    <View className="flex-row items-center gap-1.5">
+                      <Text className="text-xs font-extrabold text-pharmacist">عرض التفاصيل</Text>
+                      <ChevronLeft size={16} color="#05997F" strokeWidth={2.5} />
+                    </View>
+                    <Text className="text-[10px] font-extrabold text-gray-300 uppercase letter-spacing-1">ID: {(rx.id || "").toUpperCase()}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))
             )}
           </View>
         </ScrollView>

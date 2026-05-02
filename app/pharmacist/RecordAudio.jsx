@@ -21,6 +21,7 @@ export default function RecordAudio() {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     let interval;
@@ -52,7 +53,11 @@ export default function RecordAudio() {
   };
 
   const handleNext = () => {
-    router.push("/pharmacist/VerifyText");
+    setIsProcessing(true);
+    setTimeout(() => {
+      setIsProcessing(false);
+      router.push("/pharmacist/VerifyText");
+    }, 1000);
   };
 
   return (
@@ -191,12 +196,15 @@ export default function RecordAudio() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${isRecording ? "bg-red-500 shadow-red-500/20" : "bg-pharmacist shadow-pharmacist/20"
+            className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${isRecording ? "bg-red-500 shadow-red-500/20" : isProcessing ? "bg-pharmacist/70" : "bg-pharmacist shadow-pharmacist/20"
               }`}
             onPress={isRecording ? stopRecording : hasRecorded ? handleNext : startRecording}
             activeOpacity={0.8}
+            disabled={isProcessing}
           >
-            {isRecording ? (
+            {isProcessing ? (
+              <Text className="font-extrabold text-white text-lg">جاري المعالجة...</Text>
+            ) : isRecording ? (
               <>
                 <Square size={18} color="#FFFFFF" fill="#FFFFFF" />
                 <Text className="font-extrabold text-white text-lg">إيقاف</Text>

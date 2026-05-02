@@ -1,33 +1,44 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert } from "react-native";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import {
+  ArrowLeft,
   Camera,
   CheckCircle2,
-  ArrowLeft,
-  QrCode,
+  Clock,
   RefreshCw,
+  XCircle
 } from "lucide-react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import MobileShell from "@/components/mobile/MobileShell";
 
 export default function ScanPatient() {
   const router = useRouter();
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [scanned, setScanned] = useState(false);
+  const [scanState, setScanState] = useState("scanning"); // "scanning", "loading", "invalid", "expired", "success"
   const [permission, requestPermission] = useCameraPermissions();
 
   const handleBarcodeScanned = ({ type, data }) => {
-    if (scanned || showSuccess) return;
-    setScanned(true);
-    // In a real app, you would validate 'data' here
-    setShowSuccess(true);
+    if (scanState !== "scanning") return;
+    setScanState("loading");
+
+    // Simulate validation
+    setTimeout(() => {
+      setScanState("success");
+    }, 1500);
   };
 
   const simulateScan = () => {
-    setShowSuccess(true);
+    if (scanState !== "scanning") return;
+    setScanState("loading");
+    setTimeout(() => {
+      setScanState("success");
+    }, 1500);
+  };
+
+  const resetScan = () => {
+    setScanState("scanning");
   };
 
   const handleStartSession = () => {
@@ -40,9 +51,9 @@ export default function ScanPatient() {
   }
 
   return (
-    <View className={`flex-1 ${showSuccess ? 'bg-pharmacist' : 'bg-black'} relative`}>
+    <View className={`flex-1 ${scanState === "success" ? 'bg-pharmacist' : scanState === "invalid" || scanState === "expired" ? 'bg-red-900' : 'bg-black'} relative`}>
       {/* Dynamic Background */}
-      {!showSuccess ? (
+      {scanState !== "success" ? (
         <Image
           source={{
             uri: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?q=80&w=800&auto=format&fit=crop",
@@ -60,11 +71,11 @@ export default function ScanPatient() {
         </View>
       )}
 
-      <MobileShell 
-        className={showSuccess ? "bg-pharmacist" : "bg-transparent"} 
+      <MobileShell
+        className={scanState === "success" ? "bg-pharmacist" : "bg-transparent"}
         edges={["top", "bottom", "left", "right"]}
       >
-        {!showSuccess ? (
+        {scanState !== "success" ? (
           <View className="flex-1 w-full relative">
             {/* Header */}
             <View className="px-5 pt-4" style={{ position: 'relative', minHeight: 44 }}>
@@ -110,25 +121,51 @@ export default function ScanPatient() {
                     </Text>
                   </View>
 
-                  {/* Camera Scanner Square */}
+                  {/* Camera Scanner Square / Overlays */}
                   <View className="w-[300px] h-[300px] max-w-full border-2 border-pharmacist/30 rounded-[3rem] items-center justify-center bg-black/40 relative overflow-hidden">
-                    <CameraView
-                      style={StyleSheet.absoluteFill}
-                      facing="back"
-                      onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
-                      barcodeScannerSettings={{
-                        barcodeTypes: ["qr"],
-                      }}
-                    />
-                    
-                    {/* Corner Borders */}
-                    <View className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-pharmacist rounded-tl-[2.5rem]" />
-                    <View className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-pharmacist rounded-tr-[2.5rem]" />
-                    <View className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-pharmacist rounded-bl-[2.5rem]" />
-                    <View className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-pharmacist rounded-br-[2.5rem]" />
+                    {scanState === "scanning" && (
+                      <CameraView
+                        style={StyleSheet.absoluteFill}
+                        facing="back"
+                        onBarcodeScanned={handleBarcodeScanned}
+                        barcodeScannerSettings={{
+                          barcodeTypes: ["qr"],
+                        }}
+                      />
+                    )}
 
-                    {/* Scan Line Animation (Purely Visual) */}
-                    <View className="absolute top-1/2 w-full h-1 bg-pharmacist/80 shadow-lg shadow-pharmacist" />
+                    {scanState === "loading" && (
+                      <View className="absolute inset-0 bg-black/80 items-center justify-center">
+                        <Text className="text-pharmacist text-4xl mb-4 font-bold">...</Text>
+                        <Text className="text-white font-bold text-lg">جاري التحقق من الرمز...</Text>
+                      </View>
+                    )}
+
+                    {scanState === "invalid" && (
+                      <View className="absolute inset-0 bg-red-900/90 items-center justify-center p-6">
+                        <XCircle size={48} color="#FECACA" className="mb-4" />
+                        <Text className="text-white font-bold text-xl text-center mb-2">رمز غير صالح</Text>
+                        <Text className="text-red-200 text-center text-sm font-bold">هذا الرمز لا يتبع لنظام فارماساين، يرجى مسح رمز صحيح.</Text>
+                      </View>
+                    )}
+
+                    {scanState === "expired" && (
+                      <View className="absolute inset-0 bg-orange-900/90 items-center justify-center p-6">
+                        <Clock size={48} color="#FFEDD5" className="mb-4" />
+                        <Text className="text-white font-bold text-xl text-center mb-2">رمز منتهي الصلاحية</Text>
+                        <Text className="text-orange-200 text-center text-sm font-bold">انتهت صلاحية الجلسة المؤقتة للمريض. اطلب منه إعادة التحديث.</Text>
+                      </View>
+                    )}
+
+                    {scanState === "scanning" && (
+                      <>
+                        <View className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-pharmacist rounded-tl-[2.5rem]" />
+                        <View className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-pharmacist rounded-tr-[2.5rem]" />
+                        <View className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-pharmacist rounded-bl-[2.5rem]" />
+                        <View className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-pharmacist rounded-br-[2.5rem]" />
+                        <View className="absolute top-1/2 w-full h-1 bg-pharmacist/80 shadow-lg shadow-pharmacist" />
+                      </>
+                    )}
                   </View>
 
                   {/* Fallback Camera Control */}
@@ -169,37 +206,37 @@ export default function ScanPatient() {
                   </Text>
                 </View>
                 <View className="w-14 h-14 rounded-2xl border border-pharmacist/30 bg-white/10 items-center justify-center overflow-hidden">
-                   <Text className="text-3xl">👨</Text>
+                  <Text className="text-3xl">👨</Text>
                 </View>
               </View>
 
               <View className="h-px bg-white/10 w-full mb-4" />
 
               <View className="gap-2">
-                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                    <Text className="text-base font-extrabold text-white">28 سنة</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">العمر</Text>
-                 </View>
-                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                    <Text className="text-base font-extrabold text-white">A+</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">فصيلة الدم</Text>
-                 </View>
-                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                    <Text className="text-base font-extrabold text-white">لا يوجد</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">الحساسية</Text>
-                 </View>
-                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                    <Text className="text-base font-extrabold text-white">لا يوجد</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">الأمراض المزمنة</Text>
-                 </View>
-                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                    <Text className="text-base font-extrabold text-white">لا يوجد</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">الأدوية الدورية</Text>
-                 </View>
-                 <View className="flex-row justify-between items-center">
-                    <Text className="text-base font-extrabold text-white">لا يوجد</Text>
-                    <Text className="text-[10px] font-bold text-emerald-100/50">الحمل / الإرضاع</Text>
-                 </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">28 سنة</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">العمر</Text>
+                </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">A+</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">فصيلة الدم</Text>
+                </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">الحساسية</Text>
+                </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">الأمراض المزمنة</Text>
+                </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">الأدوية الدورية</Text>
+                </View>
+                <View className="flex-row justify-between items-center">
+                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">الحمل / الإرضاع</Text>
+                </View>
               </View>
             </View>
 

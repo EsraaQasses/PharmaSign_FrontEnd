@@ -14,6 +14,14 @@ export default function PatientPharmacies() {
   const scrollRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredPharmacies = MOCK_PHARMACIES.filter(
     (p) =>
@@ -123,11 +131,29 @@ export default function PatientPharmacies() {
           contentContainerStyle={{ paddingBottom: 20 }}
           className="gap-4"
         >
-          {filteredPharmacies.map((pharmacy) => (
-            <View
-              key={pharmacy.id}
-              className={`p-5 rounded-3xl border shadow-sm mb-4 ${selectedId === pharmacy.id ? 'bg-blue-50/50 border-patient/20' : 'bg-white border-gray-100'}`}
-            >
+          {isLoading ? (
+            <View className="items-center justify-center py-10">
+               <Text className="text-patient text-2xl font-bold mb-2">...</Text>
+               <Text className="text-gray-500 font-bold">جاري البحث عن الصيدليات...</Text>
+            </View>
+          ) : filteredPharmacies.length === 0 ? (
+            <View className="items-center justify-center py-10 px-6">
+              <View className="w-20 h-20 bg-gray-50 rounded-full items-center justify-center mb-4 border border-gray-100">
+                <MapPin size={40} color="#D1D5DB" />
+              </View>
+              <Text className="text-lg font-extrabold text-gray-900 mb-2 text-center">
+                {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد صيدليات متاحة حالياً"}
+              </Text>
+              <Text className="text-sm text-gray-400 text-center font-bold">
+                {searchQuery ? "جرب البحث باسم حي آخر أو تأكد من إملاء اسم الصيدلية." : "لم نتمكن من العثور على صيدليات قريبة منك في الوقت الحالي."}
+              </Text>
+            </View>
+          ) : (
+            filteredPharmacies.map((pharmacy) => (
+              <View
+                key={pharmacy.id}
+                className={`p-5 rounded-3xl border shadow-sm mb-4 ${selectedId === pharmacy.id ? 'bg-blue-50/50 border-patient/20' : 'bg-white border-gray-100'}`}
+              >
               <View className="flex-row justify-between items-start mb-5">
                 <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md self-start">
                   <Star size={10} color="#D97706" fill="#D97706" />
@@ -181,7 +207,7 @@ export default function PatientPharmacies() {
                 </TouchableOpacity>
               </View>
             </View>
-          ))}
+          )))}
         </ScrollView>
       </View>
     </MobileShell>

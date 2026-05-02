@@ -92,7 +92,11 @@ export default function NewPrescription() {
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [medicineImageUri, setMedicineImageUri] = useState(null);
+  const [medicineName, setMedicineName] = useState("");
   const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
+  const scrollRef = useRef(null);
 
   const [medications, setMedications] = useState([...prescriptionDraft.medications]);
   const [isAddingAnother, setIsAddingAnother] = useState(
@@ -119,8 +123,29 @@ export default function NewPrescription() {
       setSelectedSpecialty("");
       setCustomSpecialty("");
       setMedicineImageUri(null);
+      setMedicineName("");
+      setValidationErrors({});
     }
   }, []);
+
+  // Real-time clearing of validation errors
+  useEffect(() => {
+    if (medicineImageUri && validationErrors.image) {
+      setValidationErrors(prev => ({ ...prev, image: null }));
+    }
+  }, [medicineImageUri]);
+
+  useEffect(() => {
+    if (doctorName && doctorName.trim() !== "" && validationErrors.doctorName) {
+      setValidationErrors(prev => ({ ...prev, doctorName: null }));
+    }
+  }, [doctorName]);
+
+  useEffect(() => {
+    if (selectedSpecialty && selectedSpecialty !== "" && validationErrors.specialty) {
+      setValidationErrors(prev => ({ ...prev, specialty: null }));
+    }
+  }, [selectedSpecialty]);
 
   /*
     When coming back from GeneratingSign, add exactly one completed medicine.
@@ -163,6 +188,8 @@ export default function NewPrescription() {
   const resetCurrentMedicineForm = () => {
     setPrice("");
     setMedicineImageUri(null);
+    setMedicineName("");
+    setValidationErrors({});
     setIsAddingAnother(true);
   };
 
@@ -205,23 +232,42 @@ export default function NewPrescription() {
   };
 
   const handleNext = () => {
+    const errors = {};
+    if (!medicineImageUri) errors.image = "يرجى إضافة صورة الدواء";
+    if (!doctorName || doctorName.trim() === "") errors.doctorName = "يرجى إدخال اسم الطبيب";
+    if (!selectedSpecialty || selectedSpecialty === "") errors.specialty = "يرجى إدخال اختصاص الطبيب";
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      // Scroll to the top to see the first error (image)
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+      return;
+    }
+
     router.push("/pharmacist/RecordAudio");
   };
 
   const handleSendPrescription = () => {
-    alert("تم إرسال الوصفة الطبية بنجاح");
+    setIsSending(true);
+    setTimeout(() => {
+      setIsSending(false);
+      Alert.alert("نجاح", "تم حفظ وإرسال الوصفة الطبية بنجاح");
 
-    prescriptionDraft.medications = [];
-    setMedications([]);
-    setIsAddingAnother(true);
-    setPrice("");
-    setDoctorName("");
-    setDoctorSpecialty("");
-    setSelectedSpecialty("");
-    setCustomSpecialty("");
-    setMedicineImageUri(null);
+      prescriptionDraft.medications = [];
+      setMedications([]);
+      setIsAddingAnother(true);
+      setPrice("");
+      setDoctorName("");
+      setDoctorSpecialty("");
+      setSelectedSpecialty("");
+      setCustomSpecialty("");
+      setMedicineImageUri(null);
+      setMedicineName("");
+      setValidationErrors({});
 
-    router.push("/pharmacist/PharmacistHome");
+      router.push("/pharmacist/PharmacistHome");
+    }, 1500);
   };
 
   const handleCancel = () => {
@@ -234,6 +280,8 @@ export default function NewPrescription() {
     setMedications([]);
     setIsAddingAnother(true);
     setMedicineImageUri(null);
+    setMedicineName("");
+    setValidationErrors({});
 
     router.replace("/pharmacist/PharmacistHome");
   };
@@ -301,6 +349,7 @@ export default function NewPrescription() {
           </View>
 
           <ScrollView
+            ref={scrollRef}
             className="flex-1"
             contentContainerStyle={{
               paddingHorizontal: 20,
@@ -320,7 +369,9 @@ export default function NewPrescription() {
               </View>
 
               <View
-                className="w-full aspect-video bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl items-center justify-center mb-5 overflow-hidden relative"
+                className={`w-full aspect-video bg-gray-50 border-2 border-dashed rounded-2xl items-center justify-center mb-5 overflow-hidden relative ${
+                  validationErrors.image ? "border-red-500 bg-red-50/10" : "border-gray-200"
+                }`}
               >
                 {medicineImageUri ? (
                   <>
@@ -358,6 +409,12 @@ export default function NewPrescription() {
                 )}
               </View>
 
+              {validationErrors.image && (
+                <Text className="text-red-500 text-xs font-bold text-right mb-4 -mt-3">
+                  {validationErrors.image}
+                </Text>
+              )}
+
               <View className="flex-row gap-3">
                 <TouchableOpacity
                   onPress={handlePickImage}
@@ -378,6 +435,23 @@ export default function NewPrescription() {
                     التقاط
                   </Text>
                 </TouchableOpacity>
+              </View>
+
+              {/* Medicine Name Field */}
+              <View className="mt-5 border-t border-gray-100 pt-5">
+                <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">
+                  اسم الدواء (اختياري)
+                </Text>
+                <View className="flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16">
+                  <TextInput
+                    className="flex-1 text-base text-gray-900 h-full font-bold"
+                    placeholder="اكتب اسم الدواء إن وجد"
+                    placeholderTextColor="#9CA3AF"
+                    textAlign="right"
+                    value={medicineName}
+                    onChangeText={setMedicineName}
+                  />
+                </View>
               </View>
             </View>
 
@@ -480,7 +554,9 @@ export default function NewPrescription() {
                   اسم الطبيب المعالج
                 </Text>
 
-                <View className="flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16">
+                <View className={`flex-row items-center border bg-gray-50 rounded-2xl px-4 h-16 ${
+                  validationErrors.doctorName ? "border-red-500 bg-red-50/10" : "border-gray-100"
+                }`}>
                   <TextInput
                     className="flex-1 text-base text-gray-900 h-full font-bold"
                     placeholder="اسم الطبيب كما في الوصفة..."
@@ -490,6 +566,11 @@ export default function NewPrescription() {
                     onChangeText={setDoctorName}
                   />
                 </View>
+                {validationErrors.doctorName && (
+                  <Text className="text-red-500 text-xs font-bold text-right mt-2">
+                    {validationErrors.doctorName}
+                  </Text>
+                )}
               </View>
 
               <View>
@@ -500,7 +581,9 @@ export default function NewPrescription() {
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={() => setShowSpecialtyModal(true)}
-                  className="flex-row items-center justify-between border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16"
+                  className={`flex-row items-center justify-between border bg-gray-50 rounded-2xl px-4 h-16 ${
+                    validationErrors.specialty ? "border-red-500 bg-red-50/10" : "border-gray-100"
+                  }`}
                 >
                   <ChevronDown size={20} color="#9CA3AF" />
                   <Text
@@ -511,6 +594,11 @@ export default function NewPrescription() {
                     {selectedSpecialty || "اختر تخصص الطبيب..."}
                   </Text>
                 </TouchableOpacity>
+                {validationErrors.specialty && (
+                  <Text className="text-red-500 text-xs font-bold text-right mt-2">
+                    {validationErrors.specialty}
+                  </Text>
+                )}
 
                 {selectedSpecialty === "أخرى" && (
                   <View className="mt-3 flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16">
@@ -547,14 +635,19 @@ export default function NewPrescription() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="flex-1 bg-pharmacist h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pharmacist/20"
+                  className={`flex-1 ${isSending ? 'bg-pharmacist/70' : 'bg-pharmacist'} h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl shadow-pharmacist/20`}
                   onPress={handleSendPrescription}
                   activeOpacity={0.8}
+                  disabled={isSending}
                 >
-                  <CheckCircle size={20} color="#FFFFFF" strokeWidth={2.5} />
-                  <Text className="font-extrabold text-white text-base">
-                    إنهاء وإرسال الوصفة
-                  </Text>
+                  {isSending ? (
+                    <Text className="font-extrabold text-white text-base">جاري الإرسال...</Text>
+                  ) : (
+                    <>
+                      <CheckCircle size={20} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text className="font-extrabold text-white text-base">إنهاء وإرسال الوصفة</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             ) : (

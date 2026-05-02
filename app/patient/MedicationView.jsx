@@ -32,11 +32,13 @@ export default function MedicationView() {
   const rx = MOCK_PRESCRIPTIONS.find((p) => p.id === id) || null;
   const index = parseInt(medIndex, 10) || 0;
   const currentMed = rx?.medications?.[index] || {
-    name: "أموكسيسيلين 500mg",
-    instructions: "تناول قرصاً واحداً بعد الطعام مرتين يومياً",
-    duration: "7 أيام",
-    dosage: "14 قرص",
+    name: "دواء غير محدد",
+    instructions: "لا توجد معلومات إضافية",
+    duration: "غير متوفر",
+    dosage: "غير متوفر",
   };
+
+  const hasInstructions = currentMed.instructions && currentMed.instructions !== "لا توجد معلومات إضافية";
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
@@ -65,33 +67,42 @@ export default function MedicationView() {
           </View>
         </View>
 
-        <View className="w-full aspect-video bg-gray-900 rounded-[24px] overflow-hidden mb-6 relative">
-          <Image 
-            source={{ uri: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop" }}
-            className="absolute inset-0 w-full h-full opacity-60"
-          />
-          <View className="absolute inset-0 bg-black/30 items-center justify-center">
-            <TouchableOpacity 
-              onPress={() => setIsPlaying(!isPlaying)}
-              className="w-16 h-16 rounded-full bg-patient/90 items-center justify-center"
-              activeOpacity={0.8}
-            >
-              {isPlaying ? (
-                <Pause size={32} color="#FFFFFF" />
-              ) : (
-                <Play size={32} color="#FFFFFF" className="ml-1" />
-              )}
-            </TouchableOpacity>
+        {!hasInstructions ? (
+          <View className="w-full aspect-video bg-gray-50 rounded-[24px] overflow-hidden mb-6 items-center justify-center border border-gray-100">
+            <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-3">
+              <Type size={32} color="#D1D5DB" />
+            </View>
+            <Text className="text-gray-400 font-extrabold text-base">لا توجد تعليمات متاحة لهذه الوصفة</Text>
           </View>
-          
-          <View className="absolute bottom-0 left-0 right-0 p-4">
-            <View className="bg-black/60 px-4 py-3 rounded-xl self-start">
-              <Text className="text-white font-medium text-sm">
-                {currentMed.instructions}
-              </Text>
+        ) : (
+          <View className="w-full aspect-video bg-gray-900 rounded-[24px] overflow-hidden mb-6 relative">
+            <Image 
+              source={{ uri: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop" }}
+              className="absolute inset-0 w-full h-full opacity-60"
+            />
+            <View className="absolute inset-0 bg-black/30 items-center justify-center">
+              <TouchableOpacity 
+                onPress={() => setIsPlaying(!isPlaying)}
+                className="w-16 h-16 rounded-full bg-patient/90 items-center justify-center"
+                activeOpacity={0.8}
+              >
+                {isPlaying ? (
+                  <Pause size={32} color="#FFFFFF" />
+                ) : (
+                  <Play size={32} color="#FFFFFF" className="ml-1" />
+                )}
+              </TouchableOpacity>
+            </View>
+            
+            <View className="absolute bottom-0 left-0 right-0 p-4">
+              <View className="bg-black/60 px-4 py-3 rounded-xl self-start">
+                <Text className="text-white font-medium text-sm">
+                  {currentMed.instructions}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         <View className="bg-white rounded-[24px] p-5 flex-row items-center justify-between mb-6 shadow-sm border border-gray-100">
            <View className="flex-row items-center gap-4">

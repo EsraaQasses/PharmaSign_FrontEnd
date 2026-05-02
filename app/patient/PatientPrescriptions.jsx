@@ -35,6 +35,15 @@ export default function PatientPrescriptions() {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("الكل");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const patientId = user?.id || "p1"; // Fallback to p1
   
@@ -50,9 +59,9 @@ export default function PatientPrescriptions() {
     }
     const matchSearch =
       searchQuery === "" ||
-      p.doctorName.includes(searchQuery) ||
-      p.pharmacyName.includes(searchQuery) ||
-      p.medications.some((m) => m.name.includes(searchQuery));
+      (p.doctorName || "").includes(searchQuery) ||
+      (p.pharmacyName || "").includes(searchQuery) ||
+      (p.medications || []).some((m) => (m.name || "").includes(searchQuery));
 
     return matchFilter && matchSearch;
   });
@@ -88,13 +97,26 @@ export default function PatientPrescriptions() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
         >
-          {filtered.length === 0 ? (
+          {isLoading ? (
             <View className="items-center justify-center py-20">
-              <View className="w-20 h-20 bg-gray-50 rounded-full items-center justify-center mb-4">
-                 <FileText size={40} color="#D1D5DB" />
+              <View className="w-10 h-10 items-center justify-center mb-4">
+                {/* Use a simple text or an activity indicator for loading */}
+                <Text className="text-patient text-2xl font-bold">...</Text>
               </View>
-              <Text className="text-gray-400 font-bold mt-2">
-                لا توجد وصفات طبية
+              <Text className="text-gray-500 font-bold mt-2">
+                جاري تحميل الوصفات...
+              </Text>
+            </View>
+          ) : filtered.length === 0 ? (
+            <View className="items-center justify-center py-20 px-8">
+              <View className="w-24 h-24 bg-gray-50 rounded-full items-center justify-center mb-6 border border-gray-100">
+                 <FileText size={48} color="#D1D5DB" />
+              </View>
+              <Text className="text-lg font-extrabold text-gray-900 mb-2 text-center">
+                {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد وصفات محفوظة بعد"}
+              </Text>
+              <Text className="text-sm text-gray-400 text-center leading-relaxed font-bold">
+                {searchQuery ? "جرب البحث بكلمات مختلفة أو تأكد من الإملاء الصحيح." : "بمجرد قيام الطبيب بإضافة وصفة جديدة، ستظهر هنا مباشرة."}
               </Text>
             </View>
           ) : (
@@ -117,7 +139,7 @@ export default function PatientPrescriptions() {
                   >
                     {/* Status & Date */}
                     <View className="flex-row items-center justify-between mb-4">
-                      <Text className="text-xs font-bold text-gray-400">{p.date}</Text>
+                      <Text className="text-xs font-bold text-gray-400">{p.date || "تاريخ غير محدد"}</Text>
                       <View
                         className={`flex-row items-center gap-1.5 px-3 py-1 rounded-full ${statusConfig.bgColor}`}
                       >
@@ -133,18 +155,18 @@ export default function PatientPrescriptions() {
                     <View className="space-y-2 mb-5">
                       <View className="flex-row items-center justify-end gap-2">
                         <Text className="text-base font-extrabold text-gray-900">
-                          {p.doctorName}
+                          {p.doctorName || "طبيب غير محدد"}
                         </Text>
                         <View className="bg-blue-50 p-1.5 rounded-lg">
                            <Thermometer size={14} color="#3B82F6" />
                         </View>
                       </View>
                       <Text className="text-xs text-gray-400 text-right mr-9">
-                        {p.doctorSpecialty}
+                        {p.doctorSpecialty || "تخصص غير محدد"}
                       </Text>
                       <View className="flex-row items-center justify-end gap-2">
                         <Text className="text-xs text-gray-500 font-medium">
-                          {p.pharmacyName}
+                          {p.pharmacyName || "صيدلية غير محددة"}
                         </Text>
                         <MapPin size={14} color="#9CA3AF" />
                       </View>
@@ -152,13 +174,13 @@ export default function PatientPrescriptions() {
 
                     {/* Medications */}
                     <View className="flex-row flex-wrap justify-end gap-2 mb-5">
-                      {p.medications.map((med) => (
+                      {(p.medications || []).map((med, index) => (
                         <View
-                          key={med.id}
+                          key={med.id || index}
                           className="bg-patient/5 rounded-lg px-3 py-1.5 border border-patient/5"
                         >
                           <Text className="text-[11px] text-patient font-extrabold">
-                            {med.name}
+                            {med.name || "دواء غير محدد"}
                           </Text>
                         </View>
                       ))}

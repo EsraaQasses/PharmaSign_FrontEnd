@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { 
-  View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform 
+  View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal 
 } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Mail, Phone, Lock, Hash } from "lucide-react-native";
+import { User, Phone, Lock } from "lucide-react-native";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import { ActivityIndicator } from "react-native";
 
 export default function PatientRegister() {
   const router = useRouter();
@@ -15,19 +16,50 @@ export default function PatientRegister() {
   
   const [formData, setFormData] = useState({
     name: "",
-    nationalId: "",
     phone: "",
     password: "",
     confirmPassword: ""
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  const handleRegister = () => {
-    if (!formData.name || !formData.nationalId || !formData.phone || !formData.password) {
-      alert("الرجاء تعبئة جميع الحقول المطلوبة");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleRegister = async () => {
+    if (!formData.name.trim()) {
+      setError("يرجى إدخال الاسم الثلاثي");
       return;
     }
-    alert("تم إنشاء حسابك بنجاح!");
-    router.replace("/patient");
+    if (!formData.phone.trim()) {
+      setError("يرجى إدخال رقم جوال صحيح");
+      return;
+    }
+    if (!formData.password.trim()) {
+      setError("يرجى إدخال كلمة المرور");
+      return;
+    }
+    if (formData.password.length < 6) {
+      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError("كلمتا المرور غير متطابقتين");
+      return;
+    }
+    if (!acceptedTerms) {
+      setError("يرجى الموافقة على سياسة الخدمة");
+      return;
+    }
+
+    setError("");
+    setIsLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowSuccessModal(true);
+    }, 1500);
   };
 
   const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default" }) => (
@@ -79,21 +111,19 @@ export default function PatientRegister() {
             <Text className="text-base text-gray-400 font-bold text-right leading-relaxed">يرجى تعبئة بياناتك الشخصية للتمتع بخدمات فارماساين</Text>
           </View>
 
+          {error ? (
+            <View className="bg-red-50 border border-red-100 rounded-xl p-4 mb-5">
+              <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
+            </View>
+          ) : null}
+
           <View className="flex-1">
             <InputField 
               icon={User} 
-              label="الاسم الكامل" 
+              label="الاسم الثلاثي" 
               value={formData.name} 
               onChangeText={(t) => setFormData({...formData, name: t})} 
-              placeholder="الاسم الرباعي كما في الهوية" 
-            />
-            <InputField 
-              icon={Hash} 
-              label="رقم الهوية الوطنية" 
-              value={formData.nationalId} 
-              onChangeText={(t) => setFormData({...formData, nationalId: t})} 
-              placeholder="10XXXXXXXX" 
-              keyboardType="number-pad"
+              placeholder="الاسم الثلاثي كما في الهوية" 
             />
             <InputField 
               icon={Phone} 
@@ -120,21 +150,35 @@ export default function PatientRegister() {
               secureTextEntry 
             />
             
-            <View className="flex-row items-start gap-3 mt-3 mb-8">
-              <View className="w-6 h-6 rounded-lg border-2 border-patient/20 bg-patient/5 items-center justify-center">
-                 <View className="w-3 h-3 bg-patient rounded-sm" />
+            <TouchableOpacity 
+              onPress={() => setAcceptedTerms(!acceptedTerms)}
+              className="flex-row items-start gap-3 mt-3 mb-8"
+              activeOpacity={0.8}
+            >
+              <View className={`w-6 h-6 rounded-lg border-2 items-center justify-center ${acceptedTerms ? 'border-patient bg-patient' : 'border-patient/20 bg-patient/5'}`}>
+                 {acceptedTerms && <View className="w-3 h-3 bg-white rounded-sm" />}
               </View>
               <Text className="text-xs text-gray-400 font-bold flex-1 leading-relaxed text-right">
                 بالتسجيل في التطبيق، أنت توافق على <Text className="text-patient font-extrabold underline">الشروط</Text> و <Text className="text-patient font-extrabold underline">سياسة الخصوصية</Text>
               </Text>
-            </View>
+            </TouchableOpacity>
 
             <TouchableOpacity 
-              className="bg-patient h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-patient/20 w-full"
+              className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-patient/20 w-full gap-2 ${
+                (isLoading || !formData.name.trim() || !formData.phone.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || !acceptedTerms) ? "bg-patient/50" : "bg-patient"
+              }`}
               onPress={handleRegister}
+              disabled={isLoading || !formData.name.trim() || !formData.phone.trim() || !formData.password.trim() || !formData.confirmPassword.trim() || !acceptedTerms}
               activeOpacity={0.8}
             >
-              <Text className="text-white font-extrabold text-lg">إنشاء حساب</Text>
+              {isLoading ? (
+                <>
+                  <ActivityIndicator color="#FFFFFF" />
+                  <Text className="text-white font-extrabold text-lg">جاري إنشاء الحساب...</Text>
+                </>
+              ) : (
+                <Text className="text-white font-extrabold text-lg">إنشاء حساب</Text>
+              )}
             </TouchableOpacity>
 
             <View className="flex-row items-center justify-center mt-8 gap-1.5">
@@ -146,6 +190,33 @@ export default function PatientRegister() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Success Modal */}
+      <Modal
+        visible={showSuccessModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white w-full rounded-[2.5rem] p-8 items-center shadow-2xl">
+            <View className="w-20 h-20 bg-patient/10 rounded-full items-center justify-center mb-6">
+              <ActivityIndicator size="large" color="#022451" />
+            </View>
+            <Text className="text-2xl font-extrabold text-gray-900 mb-4 text-center">
+              تم إرسال طلب التسجيل
+            </Text>
+            <Text className="text-base text-gray-500 font-bold text-center leading-relaxed mb-8">
+              تم إرسال طلبك إلى المنظمة. سيتم مراجعة بياناتك وتفعيل الحساب بعد الموافقة.
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.replace("/patient/PatientLogin")}
+              className="bg-patient w-full h-14 rounded-2xl items-center justify-center shadow-xl shadow-patient/20"
+            >
+              <Text className="text-white font-extrabold text-lg">العودة إلى تسجيل الدخول</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </MobileShell>
   );
 }

@@ -9,7 +9,8 @@ import {
   Switch, 
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
 import { 
@@ -86,23 +87,51 @@ export default function PatientProfile() {
 
   const toggleSetting = (key) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileError, setProfileError] = useState("");
+
   const handleSaveProfile = () => {
-    Alert.alert("تم", "تم حفظ البيانات بنجاح");
-    setActiveModal(null);
+    if (!profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()) {
+      setProfileError("يرجى تعبئة الحقول الأساسية (الاسم، الجوال، البريد)");
+      return;
+    }
+    setProfileError("");
+    setIsSavingProfile(true);
+    
+    // Simulate save
+    setTimeout(() => {
+      setIsSavingProfile(false);
+      Alert.alert("تم", "تم حفظ البيانات بنجاح");
+      setActiveModal(null);
+    }, 1000);
   };
 
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   const handleUpdatePassword = () => {
-    if (!passwords.new || !passwords.confirm) {
-      Alert.alert("خطأ", "يرجى تعبئة كافة الحقول");
+    if (!passwords.current || !passwords.new || !passwords.confirm) {
+      setPasswordError("يرجى تعبئة كافة الحقول");
+      return;
+    }
+    if (passwords.new.length < 6) {
+      setPasswordError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
     if (passwords.new !== passwords.confirm) {
-      Alert.alert("خطأ", "كلمة المرور الجديدة غير متطابقة");
+      setPasswordError("كلمة المرور الجديدة غير متطابقة");
       return;
     }
-    Alert.alert("تم", "تم تحديث كلمة المرور بنجاح");
-    setPasswords({ current: "", new: "", confirm: "" });
-    setActiveModal(null);
+    setPasswordError("");
+    setIsUpdatingPassword(true);
+    
+    // Simulate save
+    setTimeout(() => {
+      setIsUpdatingPassword(false);
+      Alert.alert("تم", "تم تحديث كلمة المرور بنجاح");
+      setPasswords({ current: "", new: "", confirm: "" });
+      setActiveModal(null);
+    }, 1000);
   };
 
   // Helper Components
@@ -280,6 +309,12 @@ export default function PatientProfile() {
                 <View>
                   <ModalHeader title="تعديل الملف الشخصي" onClose={() => setActiveModal(null)} />
                   
+                  {profileError ? (
+                    <View className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
+                      <Text className="text-red-600 text-xs text-center font-bold">{profileError}</Text>
+                    </View>
+                  ) : null}
+
                   <Text className="text-base font-bold text-patient mb-4 text-right">البيانات الشخصية</Text>
                   <FormInput
                     label="الاسم الكامل"
@@ -326,9 +361,19 @@ export default function PatientProfile() {
 
                   <TouchableOpacity
                     onPress={handleSaveProfile}
-                    className="bg-patient h-16 rounded-2xl items-center justify-center mt-6"
+                    disabled={isSavingProfile || !profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()}
+                    className={`h-16 rounded-2xl items-center justify-center mt-6 flex-row gap-2 ${
+                      (isSavingProfile || !profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()) ? "bg-patient/50" : "bg-patient"
+                    }`}
                   >
-                    <Text className="text-white font-extrabold text-lg">حفظ التغييرات</Text>
+                    {isSavingProfile ? (
+                      <>
+                        <ActivityIndicator color="#FFFFFF" />
+                        <Text className="text-white font-extrabold text-lg">جاري الحفظ...</Text>
+                      </>
+                    ) : (
+                      <Text className="text-white font-extrabold text-lg">حفظ التغييرات</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               )}
@@ -427,6 +472,12 @@ export default function PatientProfile() {
                       <Lock size={20} color="#022451" />
                     </View>
                     
+                    {passwordError ? (
+                      <View className="bg-red-50 border border-red-100 rounded-xl p-3 mb-4">
+                        <Text className="text-red-600 text-xs text-center font-bold">{passwordError}</Text>
+                      </View>
+                    ) : null}
+                    
                     <FormInput
                       label="كلمة المرور الحالية"
                       secureTextEntry
@@ -450,11 +501,21 @@ export default function PatientProfile() {
                     />
                     
                     <TouchableOpacity 
-                      className="bg-patient h-14 rounded-xl flex-row items-center justify-center mt-2"
+                      className={`h-14 rounded-xl flex-row items-center justify-center mt-2 gap-2 ${
+                        (isUpdatingPassword || !passwords.current || !passwords.new || !passwords.confirm) ? "bg-patient/50" : "bg-patient"
+                      }`}
                       onPress={handleUpdatePassword}
+                      disabled={isUpdatingPassword || !passwords.current || !passwords.new || !passwords.confirm}
                       activeOpacity={0.8}
                     >
-                      <Text className="text-white font-bold text-base">تحديث كلمة المرور</Text>
+                      {isUpdatingPassword ? (
+                        <>
+                          <ActivityIndicator color="#FFFFFF" />
+                          <Text className="text-white font-bold text-base">جاري التحديث...</Text>
+                        </>
+                      ) : (
+                        <Text className="text-white font-bold text-base">تحديث كلمة المرور</Text>
+                      )}
                     </TouchableOpacity>
                   </View>
 

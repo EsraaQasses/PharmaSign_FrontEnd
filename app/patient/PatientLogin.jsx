@@ -19,22 +19,52 @@ import BrandLogo from "@/components/mobile/BrandLogo";
 export default function PatientLogin() {
   const router = useRouter();
   const { loginAsPatient, isLoadingAuth } = useAuth();
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError("يرجى ملء جميع الحقول");
+    // 1. Check if empty
+    if (!phone.trim()) {
+      setError("يرجى إدخال رقم الجوال");
       return;
     }
+    if (!password.trim()) {
+      setError("يرجى إدخال كلمة المرور");
+      return;
+    }
+    
+    // 2. Validate phone format (digits only, length check)
+    const phoneDigits = phone.trim();
+    const isDigitsOnly = /^\d+$/.test(phoneDigits);
+    // Syria numbers are usually 9 digits after country code (e.g. 9XXXXXXXX)
+    if (!isDigitsOnly || phoneDigits.length < 9) {
+      setError("يرجى إدخال رقم جوال صحيح");
+      return;
+    }
+
     setError("");
-    const result = await loginAsPatient(email, password);
+
+    // 3. Mock logic
+    // Patient approved mock account: +963 950000000 / 123456
+    const MOCK_PATIENT = {
+      countryCode: "+963",
+      phone: "950000000",
+      password: "123456"
+    };
+
+    if (phoneDigits !== MOCK_PATIENT.phone || password !== MOCK_PATIENT.password) {
+      setError("رقم الجوال أو كلمة المرور غير صحيحة");
+      return;
+    }
+
+    // Success
+    const result = await loginAsPatient(phoneDigits, password);
     if (result.success) {
       router.replace("/patient/PatientHome");
     } else {
-      setError("فشل تسجيل الدخول. يرجى المحاولة مرة أخرى");
+      setError("فشل تسجيل الدخول. يرجى التحقق من بياناتك والمحاولة مرة أخرى");
     }
   };
 
@@ -78,21 +108,25 @@ export default function PatientLogin() {
               </View>
             ) : null}
 
-            {/* Email */}
             <View>
               <Text className="text-gray-700 text-sm font-bold mb-2 ml-1">
-                البريد الإلكتروني
+                رقم الجوال
               </Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="example@email.com"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base"
-                style={{ textAlign: "right" }}
-              />
+              <View className="flex-row gap-2">
+                <View className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-4 items-center justify-center">
+                  <Text className="text-gray-500 font-bold text-base">+963</Text>
+                </View>
+                <TextInput
+                  value={phone}
+                  onChangeText={setPhone}
+                  placeholder="9XXXXXXXX"
+                  placeholderTextColor="#9CA3AF"
+                  keyboardType="number-pad"
+                  autoCapitalize="none"
+                  className="flex-1 bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base"
+                  style={{ textAlign: "right" }}
+                />
+              </View>
             </View>
 
             {/* Password */}
@@ -139,13 +173,18 @@ export default function PatientLogin() {
             <TouchableOpacity
               onPress={handleLogin}
               disabled={isLoadingAuth}
-              className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm ${
+              className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm flex-row justify-center gap-2 ${
                 isLoadingAuth ? "bg-patient/50" : "bg-patient"
               }`}
               activeOpacity={0.8}
             >
               {isLoadingAuth ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <>
+                  <ActivityIndicator color="#FFFFFF" />
+                  <Text className="text-white font-bold text-base">
+                    جاري تسجيل الدخول...
+                  </Text>
+                </>
               ) : (
                 <Text className="text-white font-bold text-base">
                   تسجيل الدخول
