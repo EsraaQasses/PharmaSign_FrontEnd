@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
+import { normalizePhoneNumber } from "@/utils/phoneUtils";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/lib/AuthContext";
@@ -35,36 +36,31 @@ export default function PharmacistLogin() {
       return;
     }
     
-    // 2. Validate phone format (digits only, length check)
-    const phoneDigits = phone.trim();
-    const isDigitsOnly = /^\d+$/.test(phoneDigits);
-    // Syria numbers are usually 9 digits after country code (e.g. 9XXXXXXXX)
-    if (!isDigitsOnly || phoneDigits.length < 9) {
-      setError("يرجى إدخال رقم جوال صحيح");
+    // 2. Validate phone format
+    const normalizedPhone = normalizePhoneNumber(phone);
+    if (!normalizedPhone || normalizedPhone.length < 10) {
+      setError("رقم الجوال يجب أن يبدأ بـ 09 ويتكون من 10 أرقام");
       return;
     }
 
     setError("");
 
-    // 3. Mock logic
-    // Pharmacist approved mock account: +963 955555555 / 123456
-    const MOCK_PHARMACIST_ACC = {
-      countryCode: "+963",
-      phone: "955555555",
-      password: "123456"
-    };
-
-    if (phoneDigits !== MOCK_PHARMACIST_ACC.phone || password !== MOCK_PHARMACIST_ACC.password) {
-      setError("رقم الجوال أو كلمة المرور غير صحيحة");
-      return;
-    }
-
-    // Success
-    const result = await loginAsPharmacist(phoneDigits, password);
+    // 3. Authenticate
+    const result = await loginAsPharmacist(normalizedPhone, password);
     if (result.success) {
       router.replace("/pharmacist/PharmacistHome");
     } else {
-      setError("فشل تسجيل الدخول. يرجى التحقق من بياناتك والمحاولة مرة أخرى");
+      if (result.status === 403) {
+        if (result.approval_status === "pending") {
+          setError("حسابك قيد مراجعة المنظمة. سيتم تفعيله بعد الموافقة.");
+        } else if (result.approval_status === "rejected") {
+          setError(`تم رفض طلب إنشاء الحساب. يرجى مراجعة المنظمة.\n${result.rejection_reason || ""}`);
+        } else {
+          setError(result.message || "لا تملك صلاحية الدخول");
+        }
+      } else {
+        setError(result.message || "رقم الجوال أو كلمة المرور غير صحيحة");
+      }
     }
   };
 

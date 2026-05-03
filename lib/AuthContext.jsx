@@ -1,7 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { MOCK_PATIENTS, MOCK_PHARMACIST } from "@/lib/mockData";
-
+import { authApi } from "@/api/authApi";
+import { tokenStorage } from "@/utils/tokenStorage";
 const AuthContext = createContext();
 
 /**
@@ -24,59 +25,56 @@ export const AuthProvider = ({ children }) => {
    * Mock login for patient.
    * In production, this would call the auth API.
    */
-  const loginAsPatient = async (email, password) => {
+  const loginAsPatient = async (phone, password) => {
     setIsLoadingAuth(true);
     setAuthError(null);
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // Mock: accept any credentials for now
-      const mockUser = {
-        id: MOCK_PATIENTS[0].id,
-        name: MOCK_PATIENTS[0].name,
-        email: email || MOCK_PATIENTS[0].email,
-        phone: MOCK_PATIENTS[0].phone,
-        role: "patient",
-        ...MOCK_PATIENTS[0],
-      };
-
-      setUser(mockUser);
-      setUserRole("patient");
-      setIsAuthenticated(true);
+      const result = await authApi.login(phone, password);
       setIsLoadingAuth(false);
-      return { success: true, user: mockUser };
+
+      if (result.success) {
+        if (result.data?.user?.role !== "patient") {
+           return { success: false, error: "هذا الحساب ليس لمريض", status: 400 };
+        }
+        await tokenStorage.saveTokens(result.data.access, result.data.refresh);
+        setUser(result.data.user);
+        setUserRole("patient");
+        setIsAuthenticated(true);
+        return { success: true, user: result.data.user };
+      } else {
+        return { success: false, ...result };
+      }
     } catch (error) {
-      setAuthError({ type: "login_failed", message: "فشل تسجيل الدخول" });
       setIsLoadingAuth(false);
-      return { success: false, error };
+      return { success: false, message: "فشل الاتصال بالخادم", status: 0 };
     }
   };
 
   /**
    * Mock login for pharmacist.
    */
-  const loginAsPharmacist = async (email, password) => {
+  const loginAsPharmacist = async (phone, password) => {
     setIsLoadingAuth(true);
     setAuthError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      const mockUser = {
-        ...MOCK_PHARMACIST,
-        email: email || MOCK_PHARMACIST.email,
-        role: "pharmacist",
-      };
-
-      setUser(mockUser);
-      setUserRole("pharmacist");
-      setIsAuthenticated(true);
+      const result = await authApi.login(phone, password);
       setIsLoadingAuth(false);
-      return { success: true, user: mockUser };
+
+      if (result.success) {
+        if (result.data?.user?.role !== "pharmacist") {
+           return { success: false, error: "هذا الحساب ليس لصيدلي", status: 400 };
+        }
+        await tokenStorage.saveTokens(result.data.access, result.data.refresh);
+        setUser(result.data.user);
+        setUserRole("pharmacist");
+        setIsAuthenticated(true);
+        return { success: true, user: result.data.user };
+      } else {
+        return { success: false, ...result };
+      }
     } catch (error) {
-      setAuthError({ type: "login_failed", message: "فشل تسجيل الدخول" });
       setIsLoadingAuth(false);
-      return { success: false, error };
+      return { success: false, message: "فشل الاتصال بالخادم", status: 0 };
     }
   };
 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { 
-  View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal 
+  View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, ActivityIndicator 
 } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Phone, Lock, ShieldCheck, MessageSquare } from "lucide-react-native";
@@ -8,7 +8,8 @@ import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
-import { ActivityIndicator } from "react-native";
+import { authApi } from "@/api/authApi";
+import { normalizePhoneNumber } from "@/utils/phoneUtils";
 
 export default function PatientRegister() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function PatientRegister() {
     confirmPassword: ""
   });
   const [otp, setOtp] = useState("");
+  const [debugOtp, setDebugOtp] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -38,9 +40,9 @@ export default function PatientRegister() {
       return;
     }
     
-    const phoneDigits = formData.phone.trim();
-    if (!/^\d+$/.test(phoneDigits) || phoneDigits.length < 9) {
-      setError("يرجى إدخال رقم جوال صحيح");
+    const normalizedPhone = normalizePhoneNumber(formData.phone);
+    if (!normalizedPhone || normalizedPhone.length < 10) {
+      setError("رقم الجوال يجب أن يبدأ بـ 09 ويتكون من 10 أرقام");
       return;
     }
 
@@ -64,11 +66,19 @@ export default function PatientRegister() {
     setError("");
     setIsLoading(true);
     
-    // Simulate sending OTP
-    setTimeout(() => {
-      setIsLoading(false);
+    const res = await authApi.requestPatientOTP(normalizedPhone);
+    setIsLoading(false);
+
+    if (res.success) {
+      if (res.data?.debug_otp) {
+        setDebugOtp(res.data.debug_otp);
+      } else {
+        setDebugOtp("");
+      }
       setStep(1);
-    }, 1500);
+    } else {
+      setError(res.message);
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -77,19 +87,24 @@ export default function PatientRegister() {
       return;
     }
 
-    if (otp !== "123456") {
-      setError("رمز التحقق غير صحيح");
-      return;
-    }
-
     setError("");
     setIsLoading(true);
 
-    // Simulate registration submission
-    setTimeout(() => {
-      setIsLoading(false);
+    const payload = {
+      full_name: formData.name.trim(),
+      phone_number: normalizePhoneNumber(formData.phone),
+      password: formData.password,
+      otp: otp.trim()
+    };
+
+    const res = await authApi.registerPatient(payload);
+    setIsLoading(false);
+
+    if (res.success) {
       setShowSuccessModal(true);
-    }, 2000);
+    } else {
+      setError(res.message);
+    }
   };
 
   const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default" }) => (
@@ -256,9 +271,11 @@ export default function PatientRegister() {
                   keyboardType="number-pad"
                   maxLength={6}
                 />
-                <Text className="text-[10px] text-gray-400 font-bold text-center mt-4 leading-relaxed">
-                  لأغراض العرض، استخدم الرمز <Text className="text-patient font-extrabold">123456</Text>
-                </Text>
+                {debugOtp ? (
+                  <Text className="text-[10px] text-gray-400 font-bold text-center mt-4 leading-relaxed">
+                    لأغراض العرض، استخدم الرمز <Text className="text-patient font-extrabold">{debugOtp}</Text>
+                  </Text>
+                ) : null}
               </View>
 
               <TouchableOpacity 

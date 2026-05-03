@@ -7,7 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import { ActivityIndicator } from "react-native";
-
+import { authApi } from "@/api/authApi";
+import { normalizePhoneNumber } from "@/utils/phoneUtils";
 const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default", error, onBlur }) => (
   <View className="mb-5">
     <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1 text-right">{label}</Text>
@@ -50,6 +51,7 @@ export default function PharmacistRegister() {
     confirmPassword: "",
   });
   const [otp, setOtp] = useState("");
+  const [debugOtp, setDebugOtp] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -126,11 +128,20 @@ export default function PharmacistRegister() {
     setErrors({});
     setIsLoading(true);
 
-    // Simulate sending OTP
-    setTimeout(() => {
-      setIsLoading(false);
+    const normalizedPhone = normalizePhoneNumber(formData.phone);
+    const res = await authApi.requestPharmacistOTP(normalizedPhone);
+    setIsLoading(false);
+
+    if (res.success) {
+      if (res.data?.debug_otp) {
+        setDebugOtp(res.data.debug_otp);
+      } else {
+        setDebugOtp("");
+      }
       setStep(1);
-    }, 1500);
+    } else {
+      setErrors({ phone: res.message });
+    }
   };
 
   const handleVerifyOTP = async () => {
@@ -139,19 +150,27 @@ export default function PharmacistRegister() {
       return;
     }
 
-    if (otp !== "123456") {
-      setErrors({ otp: "رمز التحقق غير صحيح" });
-      return;
-    }
-
     setErrors({});
     setIsLoading(true);
 
-    // Simulate registration submission to organization
-    setTimeout(() => {
-      setIsLoading(false);
+    const payload = {
+      full_name: formData.name.trim(),
+      phone_number: normalizePhoneNumber(formData.phone),
+      password: formData.password,
+      license_number: formData.license_number.trim(),
+      pharmacy_name: formData.pharmacyName.trim(),
+      pharmacy_address: "غير محدد",
+      otp: otp.trim()
+    };
+
+    const res = await authApi.registerPharmacist(payload);
+    setIsLoading(false);
+
+    if (res.success) {
       setShowSuccessModal(true);
-    }, 2000);
+    } else {
+      setErrors({ otp: res.message });
+    }
   };
 
   const clearFieldError = (field) => {
@@ -318,10 +337,12 @@ export default function PharmacistRegister() {
                 />
                 {errors.otp ? (
                   <Text className="text-red-500 text-[11px] font-bold text-center mt-2">{errors.otp}</Text>
-                ) : (
+                ) : debugOtp ? (
                   <Text className="text-[10px] text-gray-400 font-bold text-center mt-4 leading-relaxed">
-                    لأغراض العرض، استخدم الرمز <Text className="text-primary font-extrabold">123456</Text>
+                    لأغراض العرض، استخدم الرمز <Text className="text-primary font-extrabold">{debugOtp}</Text>
                   </Text>
+                ) : (
+                  <View className="mt-4" />
                 )}
               </View>
 
