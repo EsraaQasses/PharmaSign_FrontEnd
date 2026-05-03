@@ -14,35 +14,71 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import MobileShell from "@/components/mobile/MobileShell";
 
+import { sessionApi } from "@/api/sessionApi";
+
+const REVERSE_BLOOD_TYPE_MAP = {
+  "A_POS": "A+",
+  "A_NEG": "A-",
+  "B_POS": "B+",
+  "B_NEG": "B-",
+  "AB_POS": "AB+",
+  "AB_NEG": "AB-",
+  "O_POS": "O+",
+  "O_NEG": "O-",
+};
+
 export default function ScanPatient() {
   const router = useRouter();
   const [scanState, setScanState] = useState("scanning"); // "scanning", "loading", "invalid", "expired", "success"
   const [permission, requestPermission] = useCameraPermissions();
+  const [patientData, setPatientData] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleBarcodeScanned = ({ type, data }) => {
+  const handleBarcodeScanned = async ({ type, data }) => {
     if (scanState !== "scanning") return;
     setScanState("loading");
+    setErrorMessage("");
 
-    // Simulate validation
-    setTimeout(() => {
-      setScanState("success");
-    }, 1500);
+    try {
+      const res = await sessionApi.startSessionByQR(data);
+      
+      if (res.success) {
+        setPatientData(res.data);
+        setSessionId(res.data.session.id);
+        setScanState("success");
+      } else {
+        // Handle specific errors based on status or message
+        if (res.status === 400 || res.message?.includes("expired") || res.message?.includes("منتهي")) {
+          setScanState("expired");
+        } else {
+          setScanState("invalid");
+          setErrorMessage(res.message || "رمز غير صالح");
+        }
+      }
+    } catch (error) {
+      setScanState("invalid");
+      setErrorMessage("فشل الاتصال بالخادم");
+    }
   };
 
   const simulateScan = () => {
-    if (scanState !== "scanning") return;
-    setScanState("loading");
-    setTimeout(() => {
-      setScanState("success");
-    }, 1500);
+    // For development/web testing where camera might not be available
+    handleBarcodeScanned({ data: "MOCK_TOKEN" });
   };
 
   const resetScan = () => {
     setScanState("scanning");
+    setPatientData(null);
+    setSessionId(null);
+    setErrorMessage("");
   };
 
   const handleStartSession = () => {
-    router.push("/pharmacist/NewPrescription");
+    router.push({
+      pathname: "/pharmacist/NewPrescription",
+      params: { session_id: sessionId }
+    });
   };
 
   if (!permission) {
@@ -145,7 +181,7 @@ export default function ScanPatient() {
                       <View className="absolute inset-0 bg-red-900/90 items-center justify-center p-6">
                         <XCircle size={48} color="#FECACA" className="mb-4" />
                         <Text className="text-white font-bold text-xl text-center mb-2">رمز غير صالح</Text>
-                        <Text className="text-red-200 text-center text-sm font-bold">هذا الرمز لا يتبع لنظام فارماساين، يرجى مسح رمز صحيح.</Text>
+                        <Text className="text-red-200 text-center text-sm font-bold">{errorMessage || "هذا الرمز لا يتبع لنظام فارماساين، يرجى مسح رمز صحيح."}</Text>
                       </View>
                     )}
 
@@ -199,10 +235,10 @@ export default function ScanPatient() {
               <View className="flex-row items-center justify-end mb-4">
                 <View className="items-end mr-4">
                   <Text className="text-xl font-extrabold text-white mb-0.5">
-                    أحمد الشهري
+                    {patientData?.patient?.full_name || "مريض"}
                   </Text>
                   <Text className="text-white/70 text-xs font-bold">
-                    جلسة نشطة • PAT-8821
+                    جلسة نشطة • SES-{sessionId}
                   </Text>
                 </View>
                 <View className="w-14 h-14 rounded-2xl border border-pharmacist/30 bg-white/10 items-center justify-center overflow-hidden">
@@ -214,27 +250,39 @@ export default function ScanPatient() {
 
               <View className="gap-2">
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">28 سنة</Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">العمر</Text>
+                  <Text className="text-base font-extrabold text-white">
+                    {patientData?.patient?.date_of_birth || patientData?.patient?.birth_date || "---"}
+                  </Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">تاريخ الميلاد</Text>
                 </View>
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">A+</Text>
+                  <Text className="text-base font-extrabold text-white">
+                    {REVERSE_BLOOD_TYPE_MAP[patientData?.medical_info?.blood_type] || patientData?.medical_info?.blood_type || "---"}
+                  </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">فصيلة الدم</Text>
                 </View>
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                    {patientData?.medical_info?.allergies || "لا يوجد"}
+                  </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">الحساسية</Text>
                 </View>
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                    {patientData?.medical_info?.chronic_conditions || "لا يوجد"}
+                  </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">الأمراض المزمنة</Text>
                 </View>
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                    {patientData?.medical_info?.regular_medications || "لا يوجد"}
+                  </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">الأدوية الدورية</Text>
                 </View>
                 <View className="flex-row justify-between items-center">
-                  <Text className="text-base font-extrabold text-white">لا يوجد</Text>
+                  <Text className="text-base font-extrabold text-white">
+                    {patientData?.medical_info?.is_pregnant ? "حامل" : patientData?.medical_info?.is_breastfeeding ? "مرضع" : "لا يوجد"}
+                  </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">الحمل / الإرضاع</Text>
                 </View>
               </View>

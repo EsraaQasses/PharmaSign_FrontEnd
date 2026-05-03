@@ -7,20 +7,51 @@ import PageHeader from "@/components/mobile/PageHeader";
 import MobileShell from "@/components/mobile/MobileShell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { ActivityIndicator, Alert } from "react-native";
+import QRCode from "react-native-qrcode-svg";
+import { sessionApi } from "@/api/sessionApi";
+
 export default function SessionQR() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const [timeLeft, setTimeLeft] = useState(119); // 2 minute temporary session
+  const [qrData, setQrData] = useState("");
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    fetchQR();
+  }, []);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
     const timer = setInterval(() => {
       setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [timeLeft]);
+
+  const fetchQR = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await sessionApi.createSessionQR();
+      if (res.success) {
+        setQrData(res.data.qr_payload || res.data.qr_token);
+        setTimeLeft(res.data.expires_in_seconds || 300);
+      } else {
+        setError(res.message || "تعذر إنشاء الرمز");
+      }
+    } catch (err) {
+      setError("فشل الاتصال بالخادم");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const formatTime = (seconds) => {
+    if (seconds <= 0) return "00:00";
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
@@ -47,7 +78,7 @@ export default function SessionQR() {
             </Text>
           </View>
 
-          {/* Temporary QR Container */}
+          {/* QR Container */}
           <View className="items-center justify-center mb-8">
             <View className="bg-white p-8 rounded-[48px] shadow-2xl shadow-primary/20 border border-gray-50 relative w-[300px] h-[300px] items-center justify-center">
               {/* Corner Accents */}
@@ -57,22 +88,60 @@ export default function SessionQR() {
               <View className="absolute bottom-8 right-8 w-10 h-10 border-b-4 border-r-4 border-patient rounded-br-2xl" />
 
               <View className="flex-1 items-center justify-center bg-gray-50 rounded-3xl w-full h-full border border-gray-100 overflow-hidden">
-                  <QrCode size={180} color="#022451" strokeWidth={1} />
-                  {/* Scan Line Animation Simulation */}
-                  <View className="absolute top-1/2 left-0 right-0 h-0.5 bg-patient/30 shadow-sm shadow-patient" />
+                  {isLoading ? (
+                    <ActivityIndicator size="large" color="#022451" />
+                  ) : error ? (
+                    <View className="items-center px-4">
+                      <AlertCircle size={40} color="#EF4444" />
+                      <Text className="text-red-500 font-bold text-center mt-2">{error}</Text>
+                      <TouchableOpacity onPress={fetchQR} className="mt-4 bg-patient px-4 py-2 rounded-xl">
+                        <Text className="text-white font-bold">إعادة المحاولة</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : qrData && timeLeft > 0 ? (
+                    <>
+                      <QRCode
+                        value={qrData}
+                        size={200}
+                        color="#022451"
+                        backgroundColor="transparent"
+                      />
+                      {/* Scan Line Animation Simulation */}
+                      <View className="absolute top-1/2 left-0 right-0 h-0.5 bg-patient/30 shadow-sm shadow-patient" />
+                    </>
+                  ) : (
+                    <View className="items-center px-4">
+                      <Clock size={40} color="#F59E0B" />
+                      <Text className="text-amber-600 font-bold text-center mt-2">انتهت صلاحية الرمز</Text>
+                      <TouchableOpacity onPress={fetchQR} className="mt-4 bg-patient px-4 py-2 rounded-xl">
+                        <Text className="text-white font-bold">تحديث الرمز</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
               </View>
             </View>
           </View>
 
-          {/* Session Expiry */}
-          <View className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm items-center">
-            <View className="flex-row items-baseline gap-2 mb-2">
-              <Text className="text-3xl font-extrabold text-patient">{formatTime(timeLeft)}</Text>
-              <Text className="text-xs font-bold text-gray-400 uppercase tracking-tighter">صلاحية الرمز</Text>
             </View>
-            <Text className="text-[10px] text-gray-400 font-medium text-center">
-              ينتهي هذا الرمز تلقائياً فور استخدامه أو عند انتهاء الوقت لدواعي أمان بياناتك الصحية.
-            </Text>
+          </View>
+
+          {/* Session Expiry & Refresh */}
+          <View className="flex-row items-center gap-3 mb-8">
+            <TouchableOpacity 
+              onPress={fetchQR} 
+              disabled={isLoading}
+              className="bg-white w-14 h-14 rounded-2xl items-center justify-center border border-gray-100 shadow-sm"
+            >
+              <RefreshCw size={24} color="#022451" className={isLoading ? "opacity-30" : ""} />
+            </TouchableOpacity>
+            
+            <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm items-center flex-row justify-center gap-4">
+              <View className="items-center">
+                <Text className="text-2xl font-extrabold text-patient">{formatTime(timeLeft)}</Text>
+              </View>
+              <View className="w-px h-8 bg-gray-100" />
+              <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">صلاحية الرمز</Text>
+            </View>
           </View>
 
           {/* Shared Info Preview */}

@@ -35,7 +35,8 @@ import {
   AlertTriangle,
   Lock,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  Calendar
 } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
 import BottomNav from "@/components/mobile/BottomNav";
@@ -152,6 +153,7 @@ export default function PatientProfile() {
     bloodType: "",
     allergies: "",
     chronic: "",
+    birthDate: "",
   });
 
   // Settings state
@@ -194,6 +196,7 @@ export default function PatientProfile() {
         bloodType: REVERSE_BLOOD_TYPE_MAP[p.blood_type] || p.blood_type || "",
         allergies: p.allergies || "",
         chronic: p.chronic_conditions || "",
+        birthDate: p.date_of_birth || "",
       });
 
       // Sync back to AuthContext to ensure other screens (like Home) are updated
@@ -254,6 +257,14 @@ export default function PatientProfile() {
       setProfileError("يرجى تعبئة الحقول الأساسية (الاسم)");
       return;
     }
+    
+    // Simple YYYY-MM-DD validation if not empty
+    const bDate = profileData.birthDate.trim();
+    if (bDate && !/^\d{4}-\d{2}-\d{2}$/.test(bDate)) {
+      setProfileError("أدخل تاريخ الميلاد بصيغة YYYY-MM-DD");
+      return;
+    }
+
     setProfileError("");
     setIsSavingProfile(true);
     
@@ -261,6 +272,7 @@ export default function PatientProfile() {
     const payload = {
       full_name: profileData.name.trim(),
       phone: profileData.phone.trim(),
+      date_of_birth: bDate || null,
       blood_type: BLOOD_TYPE_MAP[profileData.bloodType.trim()] || profileData.bloodType.trim(),
       allergies: profileData.allergies.trim(),
       chronic_conditions: profileData.chronic.trim(),
@@ -353,6 +365,9 @@ export default function PatientProfile() {
             {profileData.name || (isLoading ? "جاري التحميل..." : "---")}
           </Text>
           <Text className="text-sm text-white/80">{profileData.phone || "---"}</Text>
+          {profileData.birthDate ? (
+            <Text className="text-xs text-white/60 mt-1">تاريخ الميلاد: {profileData.birthDate}</Text>
+          ) : null}
 
           <View className="flex-row items-center gap-2 mt-4 bg-white/15 px-4 py-2 rounded-full">
             <Activity size={16} color="#FFFFFF" />
@@ -447,6 +462,13 @@ export default function PatientProfile() {
                     onChangeText={(t) => setProfileData({ ...profileData, phone: t })}
                     icon={Phone}
                     editable={false}
+                  />
+                  <FormInput
+                    label="تاريخ الميلاد"
+                    value={profileData.birthDate}
+                    onChangeText={(t) => setProfileData({ ...profileData, birthDate: t })}
+                    placeholder="YYYY-MM-DD"
+                    icon={Calendar}
                   />
 
                   <View className="h-px bg-gray-100 my-6" />
