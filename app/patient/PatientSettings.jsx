@@ -6,10 +6,14 @@ import PageHeader from "@/components/mobile/PageHeader";
 import MobileShell from "@/components/mobile/MobileShell";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { profileApi } from "@/api/profileApi";
+import { useEffect } from "react";
+
 export default function PatientSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState({
     notifications: true,
     prescriptionReminders: true,
@@ -17,7 +21,32 @@ export default function PatientSettings() {
     useBiometrics: true,
   });
 
-  const toggleSetting = (key) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    setIsLoading(true);
+    const res = await profileApi.getPatientSettings();
+    setIsLoading(false);
+    if (res.success) {
+      setSettings(res.data);
+    }
+  };
+
+  const toggleSetting = async (key) => {
+    const newVal = !settings[key];
+    const prevSettings = { ...settings };
+    
+    // Optimistic update
+    setSettings((prev) => ({ ...prev, [key]: newVal }));
+
+    const res = await profileApi.updatePatientSettings({ [key]: newVal });
+    if (!res.success) {
+      setSettings(prevSettings);
+      alert("تعذر تحديث الإعدادات");
+    }
+  };
 
   const SettingRow = ({ icon: Icon, title, description, value, onValueChange, showDivider = true }) => (
     <View className={`flex-row items-center justify-between py-5 ${showDivider ? 'border-b border-gray-50' : ''}`}>

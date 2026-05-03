@@ -1,6 +1,5 @@
 import BottomNav from "@/components/mobile/BottomNav";
 import MobileShell from "@/components/mobile/MobileShell";
-import { MOCK_PHARMACIST } from "@/lib/mockData";
 import { useRouter } from "expo-router";
 import {
   ArrowRight,
@@ -16,7 +15,7 @@ import {
   User,
   X,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Alert,
   Modal,
@@ -26,12 +25,125 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  ActivityIndicator
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { profileApi } from "@/api/profileApi";
+import { useAuth } from "@/lib/AuthContext";
+
+// Sub-components moved outside to avoid re-creation on every render (fixes input lag)
+const ModalHeader = ({ title, onClose }) => (
+  <View className="flex-row items-center justify-between mb-8 pb-4 border-b border-gray-50">
+    <TouchableOpacity onPress={onClose} className="bg-gray-100 p-2 rounded-xl">
+      <X size={20} color="#6B7280" />
+    </TouchableOpacity>
+    <Text className="text-xl font-extrabold text-gray-900">{title}</Text>
+    <View className="w-10" />
+  </View>
+);
+
+const FormInput = ({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry = false,
+}) => (
+  <View className="mb-5">
+    <Text className="text-sm font-extrabold text-gray-700 mb-2 text-right">
+      {label}
+    </Text>
+    <TextInput
+      className="bg-gray-50 border border-gray-100 h-14 rounded-2xl px-5 text-right font-bold text-gray-900"
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      placeholderTextColor="#9CA3AF"
+      secureTextEntry={secureTextEntry}
+    />
+  </View>
+);
+
+const SettingRow = ({
+  icon: Icon,
+  title,
+  description,
+  value,
+  onValueChange,
+  showDivider = true,
+}) => (
+  <View
+    className={`flex-row items-center justify-between py-4 ${
+      showDivider ? "border-b border-gray-50" : ""
+    }`}
+  >
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: "#E5E7EB", true: "#05997F" }}
+      thumbColor="#FFFFFF"
+      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+    />
+    <View className="flex-1 flex-row items-center gap-4 justify-end">
+      <View className="flex-1">
+        <Text className="text-base font-extrabold text-gray-900 text-right">
+          {title}
+        </Text>
+        {description && (
+          <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">
+            {description}
+          </Text>
+        )}
+      </View>
+      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
+        <Icon size={22} color="#05997F" strokeWidth={2.5} />
+      </View>
+    </View>
+  </View>
+);
+
+const ClickableRow = ({
+  icon: Icon,
+  title,
+  subtitle,
+  onPress,
+  showDivider = true,
+}) => (
+  <TouchableOpacity
+    onPress={onPress}
+    className={`flex-row items-center justify-between py-4 ${
+      showDivider ? "border-b border-gray-50" : ""
+    }`}
+    activeOpacity={0.6}
+  >
+    <ArrowRight
+      size={16}
+      color="#D1D5DB"
+      style={{ transform: [{ rotate: "180deg" }] }}
+    />
+    <View className="flex-1 flex-row items-center gap-4 justify-end">
+      <View className="flex-1">
+        <Text className="text-base font-extrabold text-gray-900 text-right">
+          {title}
+        </Text>
+        <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">
+          {subtitle}
+        </Text>
+      </View>
+      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
+        <Icon size={22} color="#05997F" strokeWidth={2.5} />
+      </View>
+    </View>
+  </TouchableOpacity>
+);
 
 export default function PharmacistSettings() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user, logout, setUser } = useAuth();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [settings, setSettings] = useState({
     notifications: true,
@@ -41,48 +153,130 @@ export default function PharmacistSettings() {
   });
 
   const [accountData, setAccountData] = useState({
-    name: MOCK_PHARMACIST.name,
-    phone: MOCK_PHARMACIST.phone || "055XXXXXXX",
-    email: "pharmacist@pharmasign.sa",
+    name: "",
+    phone: "",
   });
 
   const [pharmacyData, setPharmacyData] = useState({
-    name: MOCK_PHARMACIST.pharmacyName,
-    address: MOCK_PHARMACIST.pharmacyAddress,
-    contact: "92000XXXX",
+    name: "",
+    address: "",
+    contact: "",
   });
 
   const [activeModal, setActiveModal] = useState(null);
-  const [tempProfile, setTempProfile] = useState({ ...accountData });
-  const [tempPharmacy, setTempPharmacy] = useState({ ...pharmacyData });
+  const [tempProfile, setTempProfile] = useState({ name: "", phone: "" });
+  const [tempPharmacy, setTempPharmacy] = useState({ name: "", address: "", contact: "" });
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
     confirm: "",
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    setError("");
+
+    const [profileRes, pharmacyRes] = await Promise.all([
+      profileApi.getPharmacistProfile(),
+      profileApi.getPharmacyData(),
+    ]);
+
+    if (profileRes.success) {
+      const p = profileRes.data;
+      const data = {
+        name: p.full_name || "",
+        phone: p.phone_number || "",
+      };
+      setAccountData(data);
+      // Only set temp if modal not open (prevents resetting while typing)
+      if (!activeModal) setTempProfile(data);
+    }
+
+    if (pharmacyRes.success) {
+      const ph = pharmacyRes.data;
+      const data = {
+        name: ph.name || "",
+        address: ph.address || "",
+        contact: ph.contact_number || "",
+      };
+      setPharmacyData(data);
+      if (!activeModal) setTempPharmacy(data);
+    }
+
+    if (!profileRes.success && profileRes.status !== 401) {
+      setError("تعذر تحميل البيانات. حاول مرة أخرى.");
+    }
+
+    setIsLoading(false);
+  };
+
   const toggleSetting = (key) =>
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await logout();
     router.replace("/pharmacist/PharmacistLogin");
   };
 
-  const saveProfile = () => {
-    setAccountData({ ...tempProfile });
-    setActiveModal(null);
-    Alert.alert("تم", "تم تحديث البيانات الشخصية بنجاح");
+  const saveProfile = async () => {
+    if (!tempProfile.name.trim()) {
+      Alert.alert("خطأ", "يرجى إدخال اسم الصيدلي");
+      return;
+    }
+    
+    setIsSaving(true);
+    const res = await profileApi.updatePharmacistProfile({
+      full_name: tempProfile.name.trim(),
+      phone_number: tempProfile.phone.trim(),
+    });
+    setIsSaving(false);
+
+    if (res.success) {
+      const updatedData = { ...tempProfile };
+      setAccountData(updatedData);
+      if (setUser && user) {
+        setUser({ ...user, name: updatedData.name, phone: updatedData.phone });
+      }
+      setActiveModal(null);
+      Alert.alert("تم", "تم حفظ البيانات بنجاح");
+    } else {
+      Alert.alert("خطأ", "تعذر حفظ البيانات. حاول مرة أخرى.");
+    }
   };
 
-  const savePharmacy = () => {
-    setPharmacyData({ ...tempPharmacy });
-    setActiveModal(null);
-    Alert.alert("تم", "تم تحديث بيانات الصيدلية بنجاح");
+  const savePharmacy = async () => {
+    setIsSaving(true);
+    const res = await profileApi.updatePharmacyData({
+      name: tempPharmacy.name,
+      address: tempPharmacy.address,
+      contact_number: tempPharmacy.contact,
+    });
+    setIsSaving(false);
+
+    if (res.success) {
+      setPharmacyData({ ...tempPharmacy });
+      setActiveModal(null);
+      Alert.alert("تم", "تم حفظ البيانات بنجاح");
+    } else {
+      Alert.alert("خطأ", "تعذر حفظ البيانات. حاول مرة أخرى.");
+    }
   };
 
-  const handlePasswordUpdate = () => {
-    if (!passwords.new || !passwords.confirm) {
+  const handlePasswordUpdate = async () => {
+    if (!passwords.new || !passwords.confirm || !passwords.current) {
       Alert.alert("خطأ", "يرجى تعبئة كافة الحقول");
+      return;
+    }
+
+    if (passwords.new.length < 6) {
+      Alert.alert("خطأ", "كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
 
@@ -91,124 +285,21 @@ export default function PharmacistSettings() {
       return;
     }
 
-    setActiveModal(null);
-    setPasswords({ current: "", new: "", confirm: "" });
-    Alert.alert("تم", "تم تحديث كلمة المرور بنجاح");
+    setIsUpdatingPassword(true);
+    const res = await profileApi.updatePharmacistProfile({
+      current_password: passwords.current,
+      password: passwords.new,
+    });
+    setIsUpdatingPassword(false);
+
+    if (res.success) {
+      setActiveModal(null);
+      setPasswords({ current: "", new: "", confirm: "" });
+      Alert.alert("تم", "تم تحديث كلمة المرور بنجاح");
+    } else {
+      Alert.alert("خطأ", res.message || "كلمة المرور الحالية غير صحيحة");
+    }
   };
-
-  const SettingRow = ({
-    icon: Icon,
-    title,
-    description,
-    value,
-    onValueChange,
-    showDivider = true,
-  }) => (
-    <View
-      className={`flex-row items-center justify-between py-4 ${
-        showDivider ? "border-b border-gray-50" : ""
-      }`}
-    >
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: "#E5E7EB", true: "#05997F" }}
-        thumbColor="#FFFFFF"
-        style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-      />
-
-      <View className="flex-1 flex-row items-center gap-4 justify-end">
-        <View className="flex-1">
-          <Text className="text-base font-extrabold text-gray-900 text-right">
-            {title}
-          </Text>
-
-          {description && (
-            <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">
-              {description}
-            </Text>
-          )}
-        </View>
-
-        <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-          <Icon size={22} color="#05997F" strokeWidth={2.5} />
-        </View>
-      </View>
-    </View>
-  );
-
-  const ClickableRow = ({
-    icon: Icon,
-    title,
-    subtitle,
-    onPress,
-    showDivider = true,
-  }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      className={`flex-row items-center justify-between py-4 ${
-        showDivider ? "border-b border-gray-50" : ""
-      }`}
-      activeOpacity={0.6}
-    >
-      <ArrowRight
-        size={16}
-        color="#D1D5DB"
-        style={{ transform: [{ rotate: "180deg" }] }}
-      />
-
-      <View className="flex-1 flex-row items-center gap-4 justify-end">
-        <View className="flex-1">
-          <Text className="text-base font-extrabold text-gray-900 text-right">
-            {title}
-          </Text>
-
-          <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">
-            {subtitle}
-          </Text>
-        </View>
-
-        <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-          <Icon size={22} color="#05997F" strokeWidth={2.5} />
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const ModalHeader = ({ title, onClose }) => (
-    <View className="flex-row items-center justify-between mb-8 pb-4 border-b border-gray-50">
-      <TouchableOpacity onPress={onClose} className="bg-gray-100 p-2 rounded-xl">
-        <X size={20} color="#6B7280" />
-      </TouchableOpacity>
-
-      <Text className="text-xl font-extrabold text-gray-900">{title}</Text>
-
-      <View className="w-10" />
-    </View>
-  );
-
-  const FormInput = ({
-    label,
-    value,
-    onChangeText,
-    placeholder,
-    secureTextEntry = false,
-  }) => (
-    <View className="mb-5">
-      <Text className="text-sm font-extrabold text-gray-700 mb-2 text-right">
-        {label}
-      </Text>
-
-      <TextInput
-        className="bg-gray-50 border border-gray-100 h-14 rounded-2xl px-5 text-right font-bold text-gray-900"
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        secureTextEntry={secureTextEntry}
-      />
-    </View>
-  );
 
   return (
     <MobileShell className="bg-pharmacist" edges={["top", "left", "right"]}>
@@ -238,12 +329,12 @@ export default function PharmacistSettings() {
               </View>
 
               <Text className="text-2xl font-extrabold text-white mt-8 mb-1.5 tracking-tight">
-                {accountData.name}
+                {accountData.name || (isLoading ? "جاري التحميل..." : "---")}
               </Text>
 
               <View className="flex-row items-center gap-2 bg-white/10 px-5 py-2.5 rounded-2xl border border-white/10 mt-3">
                 <Text className="text-sm font-bold text-white/90">
-                  {pharmacyData.name}
+                  {pharmacyData.name || "صيدلية فارماساين"}
                 </Text>
 
                 <View className="w-1.5 h-1.5 bg-white/40 rounded-full" />
@@ -251,7 +342,7 @@ export default function PharmacistSettings() {
                 <MapPin size={14} color="rgba(255,255,255,0.8)" />
 
                 <Text className="text-xs font-bold text-white/70">
-                  {pharmacyData.address.split("،")[1] || "الرياض"}
+                  {pharmacyData.address ? (pharmacyData.address.split("،")[1] || pharmacyData.address) : "الرياض"}
                 </Text>
               </View>
             </View>
@@ -270,7 +361,7 @@ export default function PharmacistSettings() {
               <ClickableRow
                 icon={Settings}
                 title="بياناتي"
-                subtitle="تعديل الاسم ورقم الهاتف والبريد"
+                subtitle="تعديل الاسم ورقم الهاتف"
                 onPress={() => {
                   setTempProfile({ ...accountData });
                   setActiveModal("profile");
@@ -425,20 +516,13 @@ export default function PharmacistSettings() {
                   }
                 />
 
-                <FormInput
-                  label="البريد الإلكتروني"
-                  value={tempProfile.email}
-                  onChangeText={(t) =>
-                    setTempProfile({ ...tempProfile, email: t })
-                  }
-                />
-
                 <TouchableOpacity
                   onPress={saveProfile}
-                  className="bg-pharmacist h-16 rounded-2xl items-center justify-center mt-4"
+                  disabled={isSaving}
+                  className={`h-16 rounded-2xl items-center justify-center mt-4 ${isSaving ? "bg-primary/50" : "bg-pharmacist"}`}
                 >
                   <Text className="text-white font-extrabold text-lg">
-                    حفظ التغييرات
+                    {isSaving ? "جاري الحفظ..." : "حفظ التغييرات"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -478,10 +562,11 @@ export default function PharmacistSettings() {
 
                 <TouchableOpacity
                   onPress={handlePasswordUpdate}
-                  className="bg-pharmacist h-16 rounded-2xl items-center justify-center mt-4"
+                  disabled={isUpdatingPassword}
+                  className={`h-16 rounded-2xl items-center justify-center mt-4 ${isUpdatingPassword ? "bg-primary/50" : "bg-pharmacist"}`}
                 >
                   <Text className="text-white font-extrabold text-lg">
-                    تحديث كلمة المرور
+                    {isUpdatingPassword ? "جاري التحديث..." : "تحديث كلمة المرور"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -520,10 +605,11 @@ export default function PharmacistSettings() {
 
                 <TouchableOpacity
                   onPress={savePharmacy}
-                  className="bg-pharmacist h-16 rounded-2xl items-center justify-center mt-4"
+                  disabled={isSaving}
+                  className={`h-16 rounded-2xl items-center justify-center mt-4 ${isSaving ? "bg-primary/50" : "bg-pharmacist"}`}
                 >
                   <Text className="text-white font-extrabold text-lg">
-                    حفظ بيانات الصيدلية
+                    {isSaving ? "جاري الحفظ..." : "حفظ بيانات الصيدلية"}
                   </Text>
                 </TouchableOpacity>
               </View>

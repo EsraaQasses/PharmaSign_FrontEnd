@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   View, 
   Text, 
@@ -15,9 +15,6 @@ import {
 import { useRouter } from "expo-router";
 import { 
   Bell, 
-  Pill, 
-  Calendar, 
-  Info, 
   Settings, 
   Smartphone, 
   Moon, 
@@ -33,9 +30,7 @@ import {
   HelpCircle, 
   ChevronLeft,
   X,
-  Save,
   Phone,
-  Mail,
   Droplet,
   AlertTriangle,
   Lock,
@@ -46,26 +41,120 @@ import MobileShell from "@/components/mobile/MobileShell";
 import BottomNav from "@/components/mobile/BottomNav";
 import { useAuth } from "@/lib/AuthContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { profileApi } from "@/api/profileApi";
+
+const BLOOD_TYPE_MAP = {
+  "A+": "A_POS",
+  "A-": "A_NEG",
+  "B+": "B_POS",
+  "B-": "B_NEG",
+  "AB+": "AB_POS",
+  "AB-": "AB_NEG",
+  "O+": "O_POS",
+  "O-": "O_NEG",
+};
+
+const REVERSE_BLOOD_TYPE_MAP = Object.fromEntries(
+  Object.entries(BLOOD_TYPE_MAP).map(([k, v]) => [v, k])
+);
+
+// Sub-components moved outside to avoid re-creation on every render (fixes input lag)
+const ModalHeader = ({ title, onClose }) => (
+  <View className="flex-row items-center justify-between mb-6 pb-4 border-b border-gray-50">
+    <TouchableOpacity onPress={onClose} className="bg-gray-100 p-2 rounded-xl">
+      <X size={20} color="#6B7280" />
+    </TouchableOpacity>
+    <Text className="text-xl font-extrabold text-gray-900">{title}</Text>
+    <View className="w-10" />
+  </View>
+);
+
+const FormInput = ({ label, value, onChangeText, placeholder, icon: Icon, multiline = false, secureTextEntry = false, editable = true }) => (
+  <View className="mb-4">
+    <Text className="text-sm font-extrabold text-gray-700 mb-2 text-right">{label}</Text>
+    <View className={`flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 ${multiline ? 'h-24 py-2' : 'h-14'} ${!editable ? 'opacity-60' : ''}`}>
+      <TextInput
+        className="flex-1 text-base text-gray-900 h-full font-bold"
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#9CA3AF"
+        multiline={multiline}
+        textAlign="right"
+        secureTextEntry={secureTextEntry}
+        textAlignVertical={multiline ? "top" : "center"}
+        editable={editable}
+      />
+      {Icon && (
+        <View className="ml-3">
+          <Icon size={18} color="#9CA3AF" />
+        </View>
+      )}
+    </View>
+  </View>
+);
+
+const SettingRow = ({ icon: Icon, title, description, value, onValueChange, showDivider = true }) => (
+  <View className={`flex-row items-center justify-between py-4 ${showDivider ? 'border-b border-gray-50' : ''}`}>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: "#E5E7EB", true: "#022451" }}
+      thumbColor={"#FFFFFF"}
+      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+    />
+    <View className="flex-1 flex-row items-center gap-4 justify-end">
+      <View className="flex-1">
+        <Text className="text-base font-extrabold text-gray-900 text-right">{title}</Text>
+        {description && <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">{description}</Text>}
+      </View>
+      <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+        <Icon size={22} color="#022451" strokeWidth={2.5} />
+      </View>
+    </View>
+  </View>
+);
+
+const MenuLink = ({ icon: Icon, title, subtitle, onPress, color }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    className="flex-row items-center p-4 bg-white border-b border-gray-50"
+    activeOpacity={0.7}
+  >
+    <View className={`w-10 h-10 rounded-full items-center justify-center ${color}`}>
+      <Icon size={20} color="#FFFFFF" />
+    </View>
+    <View className="flex-1 px-4">
+      <Text className="text-sm font-bold text-gray-900 text-right">{title}</Text>
+      {subtitle && (
+        <Text className="text-xs text-gray-500 mt-0.5 text-right">{subtitle}</Text>
+      )}
+    </View>
+    <ChevronLeft size={20} color="#9CA3AF" />
+  </TouchableOpacity>
+);
 
 export default function PatientProfile() {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Modal states
   const [activeModal, setActiveModal] = useState(null);
 
   // Profile data state
   const [profileData, setProfileData] = useState({
-    name: user?.name || "أحمد محمد الشهري",
-    phone: user?.phone || "0551234567",
-    email: user?.email || "ahmed@email.com",
-    bloodType: user?.bloodType || "A+",
-    allergies: user?.allergies?.join("، ") || "بنسلين",
-    chronic: user?.chronicConditions?.join("، ") || "سكري نوع 2، ضغط دم",
+    name: "",
+    phone: "",
+    bloodType: "",
+    allergies: "",
+    chronic: "",
   });
 
-  // Settings state (from PatientSettings.jsx)
+  // Settings state
   const [settings, setSettings] = useState({
     notifications: true,
     prescriptionReminders: true,
@@ -73,43 +162,138 @@ export default function PatientProfile() {
     useBiometrics: true,
   });
 
-  // Security state (from PatientSecurity.jsx)
+  // Security state
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
     confirm: "",
   });
 
-  const handleLogout = () => {
-    logout();
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    setError("");
+    
+    const [profileRes, settingsRes] = await Promise.all([
+      profileApi.getPatientProfile(),
+      profileApi.getPatientSettings()
+    ]);
+
+    if (profileRes.success) {
+      const p = profileRes.data;
+      // Backend contract uses 'phone' in profile and 'phone_number' in user
+      const updatedName = p.full_name || user?.full_name || user?.name || "";
+      const updatedPhone = p.phone || p.phone_number || user?.phone_number || user?.phone || "";
+      
+      setProfileData({
+        name: updatedName,
+        phone: updatedPhone,
+        bloodType: REVERSE_BLOOD_TYPE_MAP[p.blood_type] || p.blood_type || "",
+        allergies: p.allergies || "",
+        chronic: p.chronic_conditions || "",
+      });
+
+      // Sync back to AuthContext to ensure other screens (like Home) are updated
+      if (setUser && user && (updatedName !== user.name || updatedPhone !== (user.phone_number || user.phone))) {
+        setUser({ 
+          ...user, 
+          name: updatedName, 
+          full_name: updatedName,
+          phone: updatedPhone, 
+          phone_number: updatedPhone 
+        });
+      }
+    } else {
+      // Fallback to AuthContext if profile fails
+      setProfileData(prev => ({
+        ...prev,
+        name: user?.full_name || user?.name || "",
+        phone: user?.phone_number || user?.phone || "",
+      }));
+    }
+
+    if (settingsRes.success) {
+      setSettings(settingsRes.data);
+    }
+
+    if (!profileRes.success && profileRes.status !== 401) {
+      setError("تعذر تحميل البيانات. حاول مرة أخرى.");
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
     router.replace("/RoleSelect");
   };
 
-  const toggleSetting = (key) => setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleSetting = async (key) => {
+    const newVal = !settings[key];
+    const prevSettings = { ...settings };
+    
+    // Optimistic update
+    setSettings((prev) => ({ ...prev, [key]: newVal }));
+
+    const res = await profileApi.updatePatientSettings({ [key]: newVal });
+    if (!res.success) {
+      // Revert on failure
+      setSettings(prevSettings);
+      Alert.alert("خطأ", "تعذر تحديث الإعدادات");
+    }
+  };
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
 
-  const handleSaveProfile = () => {
-    if (!profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()) {
-      setProfileError("يرجى تعبئة الحقول الأساسية (الاسم، الجوال، البريد)");
+  const handleSaveProfile = async () => {
+    if (!profileData.name.trim()) {
+      setProfileError("يرجى تعبئة الحقول الأساسية (الاسم)");
       return;
     }
     setProfileError("");
     setIsSavingProfile(true);
     
-    // Simulate save
-    setTimeout(() => {
-      setIsSavingProfile(false);
-      Alert.alert("تم", "تم حفظ البيانات بنجاح");
-      setActiveModal(null);
-    }, 1000);
+    // TODO: Backend currently does not persist blood_type despite accepting PATCH. Re-test after backend fix.
+    const payload = {
+      full_name: profileData.name.trim(),
+      phone: profileData.phone.trim(),
+      blood_type: BLOOD_TYPE_MAP[profileData.bloodType.trim()] || profileData.bloodType.trim(),
+      allergies: profileData.allergies.trim(),
+      chronic_conditions: profileData.chronic.trim(),
+    };
+
+    const res = await profileApi.updatePatientProfile(payload);
+    
+    if (res.success) {
+      // Refresh all data from server
+      const verifyRes = await profileApi.getPatientProfile();
+      await fetchInitialData();
+      
+      // Verify if blood type actually persisted
+      const backendBloodType = verifyRes.data?.blood_type;
+      const sentBloodType = payload.blood_type;
+      
+      if (sentBloodType && (backendBloodType !== sentBloodType)) {
+        // Backend didn't persist it - show warning as requested
+        setProfileError("تنبيه: لم يتم حفظ فصيلة الدم على الخادم.");
+      } else {
+        Alert.alert("تم", "تم حفظ البيانات بنجاح");
+        setActiveModal(null);
+      }
+    } else {
+      setProfileError(res.message || "تعذر حفظ البيانات. حاول مرة أخرى.");
+    }
+    setIsSavingProfile(false);
   };
 
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState("");
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (!passwords.current || !passwords.new || !passwords.confirm) {
       setPasswordError("يرجى تعبئة كافة الحقول");
       return;
@@ -125,99 +309,34 @@ export default function PatientProfile() {
     setPasswordError("");
     setIsUpdatingPassword(true);
     
-    // Simulate save
-    setTimeout(() => {
-      setIsUpdatingPassword(false);
+    const res = await profileApi.updatePatientProfile({
+      current_password: passwords.current,
+      password: passwords.new
+    });
+    
+    setIsUpdatingPassword(false);
+    
+    if (res.success) {
       Alert.alert("تم", "تم تحديث كلمة المرور بنجاح");
       setPasswords({ current: "", new: "", confirm: "" });
       setActiveModal(null);
-    }, 1000);
+    } else {
+      setPasswordError(res.message || "كلمة المرور الحالية غير صحيحة");
+    }
   };
 
-  // Helper Components
-  const ModalHeader = ({ title, onClose }) => (
-    <View className="flex-row items-center justify-between mb-6 pb-4 border-b border-gray-50">
-      <TouchableOpacity onPress={onClose} className="bg-gray-100 p-2 rounded-xl">
-        <X size={20} color="#6B7280" />
-      </TouchableOpacity>
-      <Text className="text-xl font-extrabold text-gray-900">{title}</Text>
-      <View className="w-10" />
-    </View>
-  );
-
-  const FormInput = ({ label, value, onChangeText, placeholder, icon: Icon, multiline = false, secureTextEntry = false }) => (
-    <View className="mb-4">
-      <Text className="text-sm font-extrabold text-gray-700 mb-2 text-right">{label}</Text>
-      <View className={`flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 ${multiline ? 'h-24 py-2' : 'h-14'}`}>
-        <TextInput
-          className="flex-1 text-base text-gray-900 h-full font-bold"
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor="#9CA3AF"
-          multiline={multiline}
-          textAlign="right"
-          secureTextEntry={secureTextEntry}
-          textAlignVertical={multiline ? "top" : "center"}
-        />
-        {Icon && (
-          <View className="ml-3">
-            <Icon size={18} color="#9CA3AF" />
-          </View>
-        )}
-      </View>
-    </View>
-  );
-
-  const SettingRow = ({ icon: Icon, title, description, value, onValueChange, showDivider = true }) => (
-    <View className={`flex-row items-center justify-between py-4 ${showDivider ? 'border-b border-gray-50' : ''}`}>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: "#E5E7EB", true: "#022451" }}
-        thumbColor={"#FFFFFF"}
-        style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-      />
-      <View className="flex-1 flex-row items-center gap-4 justify-end">
-        <View className="flex-1">
-          <Text className="text-base font-extrabold text-gray-900 text-right">{title}</Text>
-          {description && <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">{description}</Text>}
-        </View>
-        <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-          <Icon size={22} color="#022451" strokeWidth={2.5} />
-        </View>
-      </View>
-    </View>
-  );
-
-  const MenuLink = ({ icon: Icon, title, subtitle, modal, color }) => (
-    <TouchableOpacity
-      onPress={() => setActiveModal(modal)}
-      className="flex-row items-center p-4 bg-white border-b border-gray-50"
-      activeOpacity={0.7}
-    >
-      <View className={`w-10 h-10 rounded-full items-center justify-center ${color}`}>
-        <Icon size={20} color="#FFFFFF" />
-      </View>
-      <View className="flex-1 px-4">
-        <Text className="text-sm font-bold text-gray-900 text-right">{title}</Text>
-        {subtitle && (
-          <Text className="text-xs text-gray-500 mt-0.5 text-right">{subtitle}</Text>
-        )}
-      </View>
-      <ChevronLeft size={20} color="#9CA3AF" />
-    </TouchableOpacity>
-  );
-
   return (
-    <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+    <MobileShell className="bg-patient" edges={["left", "right"]}>
       <ScrollView
         className="flex-1 bg-background"
         contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View className="bg-patient px-5 pt-12 pb-8 rounded-b-[2rem] items-center">
+        {/* Header - Fixed clipping with dynamic padding */}
+        <View 
+          className="bg-patient px-5 pb-8 rounded-b-[2rem] items-center shadow-xl"
+          style={{ paddingTop: insets.top + 20 }}
+        >
           <View className="relative">
             <View className="w-24 h-24 bg-white/20 rounded-full items-center justify-center mb-4 border-2 border-white/40">
               <User size={48} color="#FFFFFF" strokeWidth={1.5} />
@@ -231,14 +350,14 @@ export default function PatientProfile() {
           </View>
 
           <Text className="text-xl font-extrabold text-white mb-1">
-            {profileData.name}
+            {profileData.name || (isLoading ? "جاري التحميل..." : "---")}
           </Text>
-          <Text className="text-sm text-white/80">{profileData.phone}</Text>
+          <Text className="text-sm text-white/80">{profileData.phone || "---"}</Text>
 
           <View className="flex-row items-center gap-2 mt-4 bg-white/15 px-4 py-2 rounded-full">
             <Activity size={16} color="#FFFFFF" />
             <Text className="text-sm text-white font-bold">
-              فصيلة الدم: {profileData.bloodType}
+              فصيلة الدم: {profileData.bloodType || "---"}
             </Text>
           </View>
         </View>
@@ -249,35 +368,35 @@ export default function PatientProfile() {
               icon={User}
               title="تعديل الملف الشخصي"
               subtitle="تحديث بياناتك الشخصية والصحية"
-              modal="editProfile"
+              onPress={() => setActiveModal("editProfile")}
               color="bg-blue-500"
             />
             <MenuLink
               icon={Settings}
               title="الإعدادات"
               subtitle="التنبيهات، اللغة، والمظهر"
-              modal="settings"
+              onPress={() => setActiveModal("settings")}
               color="bg-patient"
             />
             <MenuLink
               icon={Shield}
               title="الأمان والخصوصية"
               subtitle="كلمة المرور والأجهزة المتصلة"
-              modal="security"
+              onPress={() => setActiveModal("security")}
               color="bg-emerald-500"
             />
             <MenuLink
               icon={FileText}
               title="الشروط والأحكام"
               subtitle="سياسة الخصوصية واستخدام التطبيق"
-              modal="privacy"
+              onPress={() => setActiveModal("privacy")}
               color="bg-amber-500"
             />
             <MenuLink
               icon={HelpCircle}
               title="المساعدة والدعم"
               subtitle="الأسئلة الشائعة والتواصل معنا"
-              modal="help"
+              onPress={() => setActiveModal("help")}
               color="bg-violet-500"
             />
           </View>
@@ -327,12 +446,7 @@ export default function PatientProfile() {
                     value={profileData.phone}
                     onChangeText={(t) => setProfileData({ ...profileData, phone: t })}
                     icon={Phone}
-                  />
-                  <FormInput
-                    label="البريد الإلكتروني"
-                    value={profileData.email}
-                    onChangeText={(t) => setProfileData({ ...profileData, email: t })}
-                    icon={Mail}
+                    editable={false}
                   />
 
                   <View className="h-px bg-gray-100 my-6" />
@@ -361,9 +475,9 @@ export default function PatientProfile() {
 
                   <TouchableOpacity
                     onPress={handleSaveProfile}
-                    disabled={isSavingProfile || !profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()}
+                    disabled={isSavingProfile || !profileData.name.trim()}
                     className={`h-16 rounded-2xl items-center justify-center mt-6 flex-row gap-2 ${
-                      (isSavingProfile || !profileData.name.trim() || !profileData.phone.trim() || !profileData.email.trim()) ? "bg-patient/50" : "bg-patient"
+                      (isSavingProfile || !profileData.name.trim()) ? "bg-patient/50" : "bg-patient"
                     }`}
                   >
                     {isSavingProfile ? (

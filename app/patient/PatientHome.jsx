@@ -18,7 +18,8 @@ import {
   QrCode,
   Shield,
 } from "lucide-react-native";
-import React from "react";
+import { profileApi } from "@/api/profileApi";
+import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 function QuickAction({ icon: Icon, label, path, color }) {
@@ -42,13 +43,29 @@ function QuickAction({ icon: Icon, label, path, color }) {
 import MobileShell from "@/components/mobile/MobileShell";
 
 export default function PatientHome() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const router = useRouter();
+  const [profile, setProfile] = useState(null);
 
-  // Fallback to mock if user not present yet (for testing)
-  const patient = user || MOCK_PATIENTS[0];
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    const res = await profileApi.getPatientProfile();
+    if (res.success) {
+      setProfile(res.data);
+      // Sync back to AuthContext to ensure other screens get it
+      if (setUser && user) {
+        setUser({ ...user, name: res.data.full_name, phone: res.data.phone });
+      }
+    }
+  };
+
+  // Prioritize real profile name, then AuthContext, then mock for dev
+  const patientName = profile?.full_name || user?.name || "";
   const prescriptions = MOCK_PRESCRIPTIONS.filter(
-    (p) => p.patientId === patient.id
+    (p) => p.patientId === (user?.id || MOCK_PATIENTS[0].id)
   );
   const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
 
@@ -69,7 +86,7 @@ export default function PatientHome() {
               <View>
                 <Text className="text-white/70 text-sm">مرحباً 👋</Text>
                 <Text className="text-white text-xl font-extrabold">
-                  {patient.name}
+                  {patientName}
                 </Text>
               </View>
             </View>

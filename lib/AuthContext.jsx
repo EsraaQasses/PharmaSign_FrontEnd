@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { MOCK_PATIENTS, MOCK_PHARMACIST } from "@/lib/mockData";
 import { authApi } from "@/api/authApi";
+import { profileApi } from "@/api/profileApi";
 import { tokenStorage } from "@/utils/tokenStorage";
 const AuthContext = createContext();
 
@@ -18,8 +19,40 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [authChecked, setAuthChecked] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [userRole, setUserRole] = useState(null); // 'patient' | 'pharmacist' | null
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    try {
+      const { access } = await tokenStorage.getTokens();
+      if (!access) {
+        setAuthChecked(true);
+        return;
+      }
+
+      // Fetch user profile to verify token and get fresh data
+      const result = await profileApi.getMe();
+      
+      if (result.success) {
+        setUser(result.data.user);
+        setUserRole(result.data.user.role);
+        setIsAuthenticated(true);
+      } else if (result.status === 401) {
+        // Token is invalid/expired - logout
+        await logout();
+      }
+      // Note: If result.status === 0 (network error), we keep current state (usually null user) 
+      // but don't clear tokens to allow offline/later retry.
+    } catch (error) {
+      console.error("Auth check failed:", error);
+    } finally {
+      setAuthChecked(true);
+    }
+  };
 
   /**
    * Mock login for patient.
@@ -136,7 +169,8 @@ export const AuthProvider = ({ children }) => {
    * Logout — clears user state.
    * In production, would also clear tokens from SecureStore.
    */
-  const logout = () => {
+  const logout = async () => {
+    await tokenStorage.clearTokens();
     setUser(null);
     setIsAuthenticated(false);
     setUserRole(null);
@@ -158,6 +192,7 @@ export const AuthProvider = ({ children }) => {
         registerPharmacist,
         logout,
         setAuthError,
+        setUser, // Added to allow screens to update profile state
       }}
     >
       {children}

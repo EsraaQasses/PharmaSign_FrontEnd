@@ -7,16 +7,35 @@ import {
   QrCode,
   TrendingUp
 } from "lucide-react-native";
-import React from "react";
+import { profileApi } from "@/api/profileApi";
+import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 import MobileShell from "@/components/mobile/MobileShell";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function PharmacistHome() {
   const router = useRouter();
+  const { user, setUser } = useAuth();
+  const [profile, setProfile] = useState(null);
 
-  // Basic mock calculations
-  const pharmacist = MOCK_PHARMACIST;
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    const res = await profileApi.getPharmacistProfile();
+    if (res.success) {
+      setProfile(res.data);
+      // Sync back to AuthContext to ensure other screens get it
+      if (setUser && user) {
+        setUser({ ...user, name: res.data.full_name });
+      }
+    }
+  };
+
+  // Prioritize real profile name, then AuthContext, then mock for dev
+  const pharmacistName = profile?.full_name || user?.name || "";
   const recentPrescriptions = MOCK_PRESCRIPTIONS.slice(0, 3);
 
   return (
@@ -37,7 +56,7 @@ export default function PharmacistHome() {
               <View>
                 <Text className="text-white/70 text-xs font-bold">لوحة الصيدلي</Text>
                 <Text className="text-white text-xl font-extrabold">
-                  مرحباً {pharmacist.name}
+                  مرحباً {pharmacistName}
                 </Text>
               </View>
             </View>
