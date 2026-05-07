@@ -1,6 +1,5 @@
 import BottomNav from "@/components/mobile/BottomNav";
 import BrandLogo from "@/components/mobile/BrandLogo";
-import StatusBadge from "@/components/mobile/StatusBadge";
 import { useAuth } from "@/lib/AuthContext";
 import {
   MOCK_NOTIFICATIONS,
@@ -18,6 +17,7 @@ import {
   QrCode,
   Shield,
 } from "lucide-react-native";
+import { prescriptionApi } from "@/api/prescriptionApi";
 import { profileApi } from "@/api/profileApi";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -47,26 +47,50 @@ export default function PatientHome() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
 
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [isLoadingRx, setIsLoadingRx] = useState(true);
+
   useEffect(() => {
     fetchProfile();
+    fetchLatestPrescriptions();
   }, []);
 
   const fetchProfile = async () => {
-    const res = await profileApi.getPatientProfile();
-    if (res.success) {
-      setProfile(res.data);
-      // Sync back to AuthContext to ensure other screens get it
-      if (setUser && user) {
-        setUser({ ...user, name: res.data.full_name, phone: res.data.phone });
+    try {
+      const res = await profileApi.getPatientProfile();
+      if (res.success) {
+        setProfile(res.data);
+        // Sync back to AuthContext to ensure other screens get it
+        if (setUser && user) {
+          setUser({ ...user, name: res.data.full_name, phone: res.data.phone });
+        }
       }
+    } catch (err) {
+      console.log("Failed to fetch profile:", err);
     }
   };
 
-  // Prioritize real profile name, then AuthContext, then mock for dev
+  const fetchLatestPrescriptions = async () => {
+    setIsLoadingRx(true);
+    try {
+      const res = await prescriptionApi.getPatientPrescriptions();
+      if (res.success) {
+        // Handle nested response shapes
+        const data = res.data?.results || res.data?.prescriptions || res.data || [];
+        // Sort by date descending and take top 3
+        const sorted = (Array.isArray(data) ? data : [])
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 3);
+        setPrescriptions(sorted);
+      }
+    } catch (err) {
+      console.log("Failed to fetch latest prescriptions:", err);
+    } finally {
+      setIsLoadingRx(false);
+    }
+  };
+
   const patientName = profile?.full_name || user?.name || "";
-  const prescriptions = MOCK_PRESCRIPTIONS.filter(
-    (p) => p.patientId === (user?.id || MOCK_PATIENTS[0].id)
-  );
   const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
 
   return (
@@ -188,53 +212,65 @@ export default function PatientHome() {
             </View>
 
             <View className="gap-4">
-              {prescriptions.slice(0, 3).map((rx) => (
-                <TouchableOpacity
-                  key={rx.id}
-                  onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
-                  className="bg-white rounded-2xl p-5 border border-gray-100"
-                  activeOpacity={0.7}
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 3,
-                    elevation: 2,
-                  }}
-                >
-                  <View className="flex-row items-start justify-between mb-3">
-                    <View>
-                      <Text className="font-extrabold text-base text-gray-900">
-                        {rx.doctorName}
-                      </Text>
-                      <Text className="text-xs text-gray-400 mt-0.5">
-                        {rx.doctorSpecialty}
-                      </Text>
+              {isLoadingRx ? (
+                <View className="py-10 items-center">
+                  <Text className="text-gray-400 font-bold">جاري تحميل الوصفات الحديثة...</Text>
+                </View>
+              ) : prescriptions.length === 0 ? (
+                <View className="py-10 bg-gray-50 rounded-2xl items-center border border-dashed border-gray-200">
+                  <Text className="text-gray-400 font-bold">لا توجد وصفات حديثة حالياً</Text>
+                </View>
+              ) : (
+                prescriptions.map((rx) => (
+                  <TouchableOpacity
+                    key={rx.id}
+                    onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
+                    className="bg-white rounded-2xl p-5 border border-gray-100"
+                    activeOpacity={0.7}
+                    style={{
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 1 },
+                      shadowOpacity: 0.05,
+                      shadowRadius: 3,
+                      elevation: 2,
+                    }}
+                  >
+                    <View className="flex-row items-start justify-between mb-3">
+                      <View className="items-start">
+                        <Text className="font-extrabold text-base text-gray-900">
+                          {rx.doctor_name || "طبيب غير محدد"}
+                        </Text>
+                        <Text className="text-xs text-gray-400 mt-0.5">
+                          {rx.doctor_specialty || "تخصص غير محدد"}
+                        </Text>
+                      </View>
                     </View>
-                    <StatusBadge status={rx.status} />
-                  </View>
-                  <View className="flex-row items-center gap-4 mt-1">
-                    <View className="flex-row items-center gap-1">
-                      <Clock size={12} color="#9CA3AF" />
-                      <Text className="text-xs text-gray-500">{rx.date}</Text>
-                    </View>
-                    <Text className="text-xs text-gray-500">
-                      {rx.medications.length} أدوية
-                    </Text>
-                    <Text className="text-xs text-gray-500">
-                      {rx.pharmacyName}
-                    </Text>
-                  </View>
-                  {rx.signLanguageReady && (
-                    <View className="mt-4 flex-row items-center gap-1.5 pt-3 border-t border-gray-50">
-                      <Hand size={14} color="#022451" />
-                      <Text className="text-xs text-patient font-extrabold">
-                        لغة إشارة متاحة للمشاهدة
+                    <View className="flex-row items-center gap-4 mt-1">
+                      <View className="flex-row items-center gap-1">
+                        <Clock size={12} color="#9CA3AF" />
+                        <Text className="text-xs text-gray-500">{rx.created_at?.split('T')[0] || "---"}</Text>
+                      </View>
+                      <Text className="text-xs text-gray-500">
+                        {(rx.items || []).length} أدوية
                       </Text>
+                      {rx.pharmacy_name && rx.pharmacy_name !== "صيدلية غير محددة" && (
+                        <Text className="text-xs text-gray-500" numberOfLines={1}>
+                          {rx.pharmacy_name}
+                        </Text>
+                      )}
                     </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+                    {/* Check if any item has completed sign status or a video URL */}
+                    {(rx.items || []).some(item => item.sign_status === "completed" || item.video_url) && (
+                      <View className="mt-4 flex-row items-center gap-1.5 pt-3 border-t border-gray-50">
+                        <Hand size={14} color="#022451" />
+                        <Text className="text-xs text-patient font-extrabold">
+                          لغة إشارة متاحة للمشاهدة
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           </View>
 

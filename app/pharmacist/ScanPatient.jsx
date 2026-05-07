@@ -34,6 +34,7 @@ export default function ScanPatient() {
   const [patientData, setPatientData] = useState(null);
   const [sessionId, setSessionId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const [scanKey, setScanKey] = useState(0);
 
   const handleBarcodeScanned = async ({ type, data }) => {
     if (scanState !== "scanning") return;
@@ -62,6 +63,19 @@ export default function ScanPatient() {
     }
   };
 
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return "غير متوفر";
+    const today = new Date();
+    const birth = new Date(birthDate);
+    if (isNaN(birth.getTime())) return "غير متوفر";
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return `${age} سنة`;
+  };
+
   const simulateScan = () => {
     // For development/web testing where camera might not be available
     handleBarcodeScanned({ data: "MOCK_TOKEN" });
@@ -72,12 +86,17 @@ export default function ScanPatient() {
     setPatientData(null);
     setSessionId(null);
     setErrorMessage("");
+    setScanKey(prev => prev + 1);
   };
 
   const handleStartSession = () => {
     router.push({
       pathname: "/pharmacist/NewPrescription",
-      params: { session_id: sessionId }
+      params: { 
+        session_id: sessionId,
+        patient_id: patientData?.patient?.id,
+        patient_name: patientData?.patient?.full_name
+      }
     });
   };
 
@@ -161,6 +180,7 @@ export default function ScanPatient() {
                   <View className="w-[300px] h-[300px] max-w-full border-2 border-pharmacist/30 rounded-[3rem] items-center justify-center bg-black/40 relative overflow-hidden">
                     {scanState === "scanning" && (
                       <CameraView
+                        key={scanKey}
                         style={StyleSheet.absoluteFill}
                         facing="back"
                         onBarcodeScanned={handleBarcodeScanned}
@@ -208,7 +228,7 @@ export default function ScanPatient() {
                   <View className="flex-row items-center justify-center gap-10 mt-16">
                     <TouchableOpacity
                       activeOpacity={0.8}
-                      onPress={simulateScan}
+                      onPress={scanState === "scanning" ? simulateScan : resetScan}
                       className="w-20 h-20 rounded-full bg-white items-center justify-center shadow-xl shadow-white/20"
                     >
                       <Camera size={40} color="#05997F" />
@@ -254,6 +274,12 @@ export default function ScanPatient() {
                     {patientData?.patient?.date_of_birth || patientData?.patient?.birth_date || "---"}
                   </Text>
                   <Text className="text-[10px] font-bold text-emerald-100/50">تاريخ الميلاد</Text>
+                </View>
+                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                  <Text className="text-base font-extrabold text-white">
+                    {calculateAge(patientData?.patient?.date_of_birth || patientData?.patient?.birth_date)}
+                  </Text>
+                  <Text className="text-[10px] font-bold text-emerald-100/50">العمر</Text>
                 </View>
                 <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
                   <Text className="text-base font-extrabold text-white">

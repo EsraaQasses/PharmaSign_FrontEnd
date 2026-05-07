@@ -1,6 +1,6 @@
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,31 +9,72 @@ import {
   Edit3,
   FileText
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { tokenStorage } from "@/utils/tokenStorage";
+import { API_BASE_URL } from "@/api/client";
 
 export default function VerifyText() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { prescription_id, item_id, transcript } = params;
   const insets = useSafeAreaInsets();
 
-  // Mock extracted text
-  const [extractedText, setExtractedText] = useState(
-    "تناول قرصاً واحداً بعد الإفطار وقرصاً واحداً قبل النوم لمدة أسبوع. تجنب شرب العصائر الحمضية مع هذا الدواء."
-  );
+  const [extractedText, setExtractedText] = useState(transcript || "");
   const [isEditing, setIsEditing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (extractedText.trim().length === 0) {
       Alert.alert("نص مفقود", "يرجى كتابة أو التأكد من وجود النص قبل تحويله إلى لغة الإشارة.");
       return;
     }
+
+    if (!prescription_id || !item_id) {
+      Alert.alert("خطأ", "بيانات الجلسة مفقودة. يرجى البدء من جديد.");
+      return;
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
+
+    try {
+      const { access } = await tokenStorage.getTokens();
+      
+      console.log(`Approving transcript for: /pharmacist/prescriptions/${prescription_id}/items/${item_id}/approve-transcript/`);
+
+      const response = await fetch(`${API_BASE_URL}/pharmacist/prescriptions/${prescription_id}/items/${item_id}/approve-transcript/`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${access}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          approved_instruction_text: extractedText
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log("Transcript approved successfully");
+        router.push({
+          pathname: "/pharmacist/GeneratingSign",
+          params: { 
+            ...params,
+            verifiedText: extractedText 
+          }
+        });
+      } else {
+        const errorMsg = data.detail || "فشل اعتماد النص المعدل. يرجى المحاولة مرة أخرى.";
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error("Approve Transcript Error:", err);
+      Alert.alert("خطأ في الاعتماد", err.message || "حدث خطأ أثناء معالجة طلبك.");
+    } finally {
       setIsProcessing(false);
-      router.push("/pharmacist/GeneratingSign");
-    }, 1000);
+    }
   };
 
   return (
@@ -46,7 +87,13 @@ export default function VerifyText() {
 
           <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
             <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
-              <HeaderBackButton fallback="/pharmacist/RecordAudio" color="#05997F" />
+              <HeaderBackButton 
+                onPress={() => router.replace({
+                  pathname: "/pharmacist/RecordAudio",
+                  params: { ...params }
+                })}
+                color="#05997F" 
+              />
             </View>
             <View className="items-center justify-center" style={{ minHeight: 44 }}>
               <Text className="text-white text-xl font-extrabold">مراجعة النص</Text>
@@ -141,7 +188,10 @@ export default function VerifyText() {
         >
           <TouchableOpacity
             className="flex-1 bg-gray-50 border border-gray-100 h-14 rounded-2xl flex-row items-center justify-center gap-2"
-            onPress={() => router.replace("/pharmacist/RecordAudio")}
+            onPress={() => router.replace({
+              pathname: "/pharmacist/RecordAudio",
+              params: { ...params }
+            })}
             activeOpacity={0.8}
           >
             <ArrowRight size={20} color="#6B7280" strokeWidth={2.5} />

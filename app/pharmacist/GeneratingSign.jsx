@@ -1,6 +1,6 @@
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   CheckCircle2,
   Cpu,
@@ -11,11 +11,18 @@ import { ActivityIndicator, Text, View } from "react-native";
 
 export default function GeneratingSign() {
   const router = useRouter();
+  const params = useLocalSearchParams();
 
   useEffect(() => {
     // Simulate generation delay
     const timer = setTimeout(() => {
-      router.replace("/pharmacist/NewPrescription?addedMed=true&keepDraft=true");
+      router.replace({
+        pathname: "/pharmacist/NewPrescription",
+        params: { 
+          ...params,
+          keepDraft: "true" 
+        }
+      });
     }, 4000);
 
     return () => clearTimeout(timer);
@@ -27,7 +34,14 @@ export default function GeneratingSign() {
       <View className="absolute top-0 left-0 right-0 h-1/4 bg-pharmacist rounded-b-[4rem] shadow-2xl shadow-pharmacist/40" />
       
       {/* Absolute Back Button — floating mode handles safe area + right positioning */}
-      <HeaderBackButton fallback="/pharmacist/VerifyText" color="#05997F" floating />
+      <HeaderBackButton 
+        onPress={() => router.replace({
+          pathname: "/pharmacist/VerifyText",
+          params: { ...params }
+        })}
+        color="#05997F" 
+        floating 
+      />
 
       <View className="flex-1 items-center justify-center p-8">
         <View className="w-32 h-32 bg-white/20 rounded-full items-center justify-center mb-10 border border-white/20">

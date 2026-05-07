@@ -3,11 +3,12 @@ import {
   View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal, ActivityIndicator 
 } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Phone, Lock, ShieldCheck, MessageSquare } from "lucide-react-native";
+import { User, Phone, Lock, ShieldCheck, MessageSquare, Calendar } from "lucide-react-native";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import PageHeader from "@/components/mobile/PageHeader";
 import { authApi } from "@/api/authApi";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
 
@@ -20,7 +21,8 @@ export default function PatientRegister() {
     name: "",
     phone: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    birthDate: ""
   });
   const [otp, setOtp] = useState("");
   const [debugOtp, setDebugOtp] = useState("");
@@ -97,6 +99,10 @@ export default function PatientRegister() {
       otp: otp.trim()
     };
 
+    if (formData.birthDate) {
+      payload.birth_date = formData.birthDate;
+    }
+
     const res = await authApi.registerPatient(payload);
     setIsLoading(false);
 
@@ -108,11 +114,11 @@ export default function PatientRegister() {
   };
 
   const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default" }) => (
-    <View className="mb-5">
-      <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1 text-right">{label}</Text>
-      <View className="flex-row items-center border border-gray-100 rounded-2xl bg-white px-4 h-15 shadow-sm focus:border-patient">
+    <View>
+      <Text className="text-gray-700 text-sm font-bold mb-2 ml-1 text-right">{label}</Text>
+      <View className="relative">
         <TextInput
-          className="flex-1 text-base text-gray-900 h-full font-medium"
+          className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pr-12"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -121,7 +127,7 @@ export default function PatientRegister() {
           keyboardType={keyboardType}
           textAlign="right"
         />
-        <View className="ml-3">
+        <View className="absolute left-4 top-4">
           <Icon size={20} color="#9CA3AF" />
         </View>
       </View>
@@ -131,46 +137,50 @@ export default function PatientRegister() {
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView 
-        className="flex-1"
+        className="flex-1 bg-background"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          className="flex-1 bg-background"
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60 }}
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
-            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
-              <HeaderBackButton 
-                onPress={step === 1 ? () => { setStep(0); setError(""); } : undefined}
-                fallback={step === 0 ? "/patient/PatientLogin" : undefined} 
-                color="#022451" 
-              />
+          {/* Header */}
+          <View className="bg-patient px-5 pt-4 pb-8 rounded-b-[2rem]">
+            <View className="mb-4" style={{ position: 'relative', minHeight: 44 }}>
+              <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+                <HeaderBackButton 
+                  onPress={step === 1 ? () => { setStep(0); setError(""); } : undefined}
+                  fallback={step === 0 ? "/patient/PatientLogin" : undefined} 
+                  color="#022451" 
+                />
+              </View>
             </View>
-            <View className="items-center justify-center" style={{ minHeight: 44 }}>
-              <Text className="text-2xl font-extrabold text-gray-900">
+
+            <View className="items-center">
+              <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
+                <BrandLogo width={50} height={50} />
+              </View>
+              <Text className="text-white text-2xl font-extrabold text-center">
                 {step === 0 ? "إنشاء حساب جديد" : "التحقق من الرقم"}
+              </Text>
+              <Text className="text-white/70 text-sm mt-1 text-center">
+                {step === 0 ? "أهلاً بك في فارماساين، يرجى تعبئة بياناتك" : "تم إرسال رمز تحقق إلى رقم جوالك"}
               </Text>
             </View>
           </View>
 
-          {step === 0 ? (
-            <>
-              <View className="mb-10">
-                <View className="w-16 h-16 bg-white rounded-3xl p-3 shadow-sm border border-gray-50 items-center justify-center mb-6">
-                   <BrandLogo width={40} height={40} />
-                </View>
-                <Text className="text-3xl font-extrabold text-patient mb-2 text-right">أهلاً بك</Text>
-                <Text className="text-base text-gray-400 font-bold text-right leading-relaxed">يرجى تعبئة بياناتك الشخصية للتمتع بخدمات فارماساين</Text>
-              </View>
+          {/* Form Content */}
+          <View className="px-6 pt-8 pb-10 gap-5">
+            {step === 0 ? (
+              <>
+                {error ? (
+                  <View className="bg-red-50 border border-red-100 rounded-xl p-4">
+                    <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
+                  </View>
+                ) : null}
 
-              {error ? (
-                <View className="bg-red-50 border border-red-100 rounded-xl p-4 mb-5">
-                  <Text className="text-red-600 text-sm text-center font-bold">{error}</Text>
-                </View>
-              ) : null}
-
-              <View className="flex-1">
+                <View className="gap-5 flex-1">
                 <InputField 
                   icon={User} 
                   label="الاسم الثلاثي" 
@@ -203,6 +213,27 @@ export default function PatientRegister() {
                   secureTextEntry 
                 />
                 
+                  <View>
+                    <Text className="text-gray-700 text-sm font-bold mb-2 ml-1 text-right">تاريخ الميلاد (اختياري)</Text>
+                    <View className="relative">
+                      <TextInput
+                        className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pr-12"
+                        value={formData.birthDate}
+                        onChangeText={(t) => setFormData({...formData, birthDate: t})}
+                        placeholder="YYYY-MM-DD"
+                        placeholderTextColor="#9CA3AF"
+                        keyboardType="number-pad"
+                        textAlign="right"
+                      />
+                      <View className="absolute left-4 top-4">
+                        <Calendar size={20} color="#9CA3AF" />
+                      </View>
+                    </View>
+                    <Text className="text-[10px] text-gray-400 font-bold mr-1 mt-1.5 text-right italic">
+                      مثال: 1990-01-01
+                    </Text>
+                  </View>
+                
                 <TouchableOpacity 
                   onPress={() => setAcceptedTerms(!acceptedTerms)}
                   className="flex-row items-start gap-3 mt-3 mb-8"
@@ -217,7 +248,7 @@ export default function PatientRegister() {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-patient/20 w-full gap-2 ${
+                  className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm flex-row justify-center gap-2 ${
                     isLoading ? "bg-patient/50" : "bg-patient"
                   }`}
                   onPress={handleRegisterStep1}
@@ -226,11 +257,11 @@ export default function PatientRegister() {
                 >
                   {isLoading ? (
                     <>
-                      <ActivityIndicator color="#FFFFFF" />
-                      <Text className="text-white font-extrabold text-lg">جاري إرسال رمز التحقق...</Text>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text className="text-white font-bold text-base">جاري المعالجة...</Text>
                     </>
                   ) : (
-                    <Text className="text-white font-extrabold text-lg">إنشاء حساب</Text>
+                    <Text className="text-white font-bold text-base">إنشاء حساب</Text>
                   )}
                 </TouchableOpacity>
 
@@ -279,7 +310,7 @@ export default function PatientRegister() {
               </View>
 
               <TouchableOpacity 
-                className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-patient/20 w-full gap-2 ${
+                className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm flex-row justify-center gap-2 ${
                   isLoading ? "bg-patient/50" : "bg-patient"
                 }`}
                 onPress={handleVerifyOTP}
@@ -288,21 +319,21 @@ export default function PatientRegister() {
               >
                 {isLoading ? (
                   <>
-                    <ActivityIndicator color="#FFFFFF" />
-                    <Text className="text-white font-extrabold text-lg">جاري التحقق من الرمز...</Text>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text className="text-white font-bold text-base">جاري التحقق من الرمز...</Text>
                   </>
                 ) : (
-                  <Text className="text-white font-extrabold text-lg">تأكيد الرمز</Text>
+                  <Text className="text-white font-bold text-base">تأكيد الرمز</Text>
                 )}
               </TouchableOpacity>
-
               <TouchableOpacity className="mt-8 self-center">
                 <Text className="text-patient font-extrabold text-base">إعادة إرسال الرمز</Text>
               </TouchableOpacity>
             </View>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
 
       {/* Success Modal */}
       <Modal

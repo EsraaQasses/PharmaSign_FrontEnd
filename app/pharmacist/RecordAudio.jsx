@@ -1,6 +1,6 @@
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,8 +12,11 @@ import {
   Square
 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Audio } from "expo-av";
+import { tokenStorage } from "@/utils/tokenStorage";
+import { fetchClient, API_BASE_URL } from "@/api/client";
 
 export default function RecordAudio() {
   const router = useRouter();
@@ -22,6 +25,11 @@ export default function RecordAudio() {
   const [hasRecorded, setHasRecorded] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [recordingUri, setRecordingUri] = useState(null);
+  const [recording, setRecording] = useState(null);
+
+  const params = useLocalSearchParams();
+  const { prescription_id, item_id } = params;
 
   useEffect(() => {
     let interval;
@@ -41,23 +49,127 @@ export default function RecordAudio() {
     return `${mins}:${secs}`;
   };
 
-  const startRecording = () => {
-    setSeconds(0);
-    setIsRecording(true);
-    setHasRecorded(false);
+  const startRecording = async () => {
+    try {
+      const permission = await Audio.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        Alert.alert("تنبيه", "يجب السماح بالوصول إلى الميكروفون لبدء التسجيل.");
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      console.log("Starting recording...");
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
+      setSeconds(0);
+      setIsRecording(true);
+      setHasRecorded(false);
+      console.log("Recording started");
+    } catch (err) {
+      console.error("Failed to start recording", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء محاولة بدء التسجيل.");
+    }
   };
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    setHasRecorded(true);
+  const stopRecording = async () => {
+    try {
+      if (!recording) return;
+
+      console.log("Stopping recording...");
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      
+      const uri = recording.getURI();
+      setRecordingUri(uri);
+      setHasRecorded(true);
+      setRecording(null);
+      
+      console.log("Recording stopped and stored at:", uri);
+
+      // Reset audio mode
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+    } catch (err) {
+      console.error("Failed to stop recording", err);
+      Alert.alert("خطأ", "حدث خطأ أثناء إيقاف التسجيل.");
+    }
   };
 
-  const handleNext = () => {
+
+  const handleContinue = async () => {
+    if (!hasRecorded) {
+      Alert.alert("تنبيه", "يرجى تسجيل التعليمات أولاً قبل المتابعة.");
+      return;
+    }
+
+    if (!prescription_id || !item_id) {
+      Alert.alert("خطأ", "بيانات الوصفة غير مكتملة. يرجى العودة والمحاولة مرة أخرى.");
+      return;
+    }
+
     setIsProcessing(true);
-    setTimeout(() => {
+    
+    try {
+      const formData = new FormData();
+      
+      if (!recordingUri) {
+        Alert.alert("خطأ", "لم يتم العثور على ملف صوتي. يرجى إعادة التسجيل.");
+        return;
+      }
+      
+      const uri = recordingUri;
+      
+      // Strict React Native FormData structure for file upload
+      formData.append("audio", {
+        uri: uri,
+        name: "instructions.m4a",
+        type: "audio/m4a",
+      });
+
+      console.log(`Uploading audio via fetchClient: /pharmacist/prescriptions/${prescription_id}/items/${item_id}/transcribe-audio/`);
+
+      const res = await fetchClient(`/pharmacist/prescriptions/${prescription_id}/items/${item_id}/transcribe-audio/`, {
+        method: "POST",
+        body: formData,
+        requiresAuth: true,
+      });
+
+      if (res.success) {
+        const transcript = res.data.raw_transcript 
+          || res.data.instructions_transcript_edited 
+          || res.data.transcript 
+          || res.data.text;
+          
+        console.log("Transcription successful:", transcript);
+        router.push({
+          pathname: "/pharmacist/VerifyText",
+          params: { 
+            ...params,
+            transcript: transcript
+          }
+        });
+      } else {
+        // Detailed error from backend
+        console.log("Transcription failed from backend API:", res.data?.detail || res.message);
+        const errorMsg = res.data?.detail || "تعذر تحويل الصوت إلى نص. يرجى إعادة التسجيل أو المحاولة مرة أخرى.";
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      if (err.message !== "تعذر تحويل الصوت إلى نص. يرجى إعادة التسجيل أو المحاولة مرة أخرى.") {
+         console.log("Transcription request error details:", err.message);
+      }
+      Alert.alert("فشل العملية", err.message || "فشل تحويل الصوت إلى نص. يرجى المحاولة مرة أخرى.");
+    } finally {
       setIsProcessing(false);
-      router.push("/pharmacist/VerifyText");
-    }, 1000);
+    }
   };
 
   return (
@@ -70,7 +182,21 @@ export default function RecordAudio() {
 
           <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
             <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
-              <HeaderBackButton fallback="/pharmacist/NewPrescription" color="#05997F" />
+              <HeaderBackButton 
+                onPress={() => router.replace({
+                  pathname: "/pharmacist/NewPrescription",
+                  params: { 
+                    ...params, 
+                    keepDraft: "true",
+                    medName: params.medName,
+                    medPrice: params.medPrice,
+                    medDosage: params.medDosage,
+                    medDuration: params.medDuration,
+                    medFrequency: params.medFrequency
+                  }
+                })}
+                color="#05997F" 
+              />
             </View>
             <View className="items-center justify-center" style={{ minHeight: 44 }}>
               <Text className="text-white text-xl font-extrabold">تسجيل التعليمات</Text>
@@ -188,7 +314,18 @@ export default function RecordAudio() {
         >
           <TouchableOpacity
             className="flex-1 bg-gray-50 border border-gray-100 h-14 rounded-2xl flex-row items-center justify-center gap-2"
-            onPress={() => router.replace("/pharmacist/NewPrescription")}
+            onPress={() => router.replace({
+              pathname: "/pharmacist/NewPrescription",
+              params: { 
+                ...params, 
+                keepDraft: "true",
+                medName: params.medName,
+                medPrice: params.medPrice,
+                medDosage: params.medDosage,
+                medDuration: params.medDuration,
+                medFrequency: params.medFrequency
+              }
+            })}
             activeOpacity={0.8}
           >
             <ArrowRight size={20} color="#6B7280" strokeWidth={2.5} />
@@ -198,7 +335,7 @@ export default function RecordAudio() {
           <TouchableOpacity
             className={`flex-[2] h-14 rounded-2xl flex-row items-center justify-center gap-2 shadow-xl ${isRecording ? "bg-red-500 shadow-red-500/20" : isProcessing ? "bg-pharmacist/70" : "bg-pharmacist shadow-pharmacist/20"
               }`}
-            onPress={isRecording ? stopRecording : hasRecorded ? handleNext : startRecording}
+            onPress={isRecording ? stopRecording : hasRecorded ? handleContinue : startRecording}
             activeOpacity={0.8}
             disabled={isProcessing}
           >

@@ -1,20 +1,19 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Modal } from "react-native";
-import { useRouter } from "expo-router";
-import { User, Phone, Lock, Building2, ShieldCheck, MessageSquare, AlertCircle } from "lucide-react-native";
-import BrandLogo from "@/components/mobile/BrandLogo";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MobileShell from "@/components/mobile/MobileShell";
-import HeaderBackButton from "@/components/mobile/HeaderBackButton";
-import { ActivityIndicator } from "react-native";
 import { authApi } from "@/api/authApi";
+import BrandLogo from "@/components/mobile/BrandLogo";
+import HeaderBackButton from "@/components/mobile/HeaderBackButton";
+import MobileShell from "@/components/mobile/MobileShell";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
+import { useRouter } from "expo-router";
+import { AlertCircle, Building2, Lock, MessageSquare, Phone, ShieldCheck, User } from "lucide-react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secureTextEntry = false, keyboardType = "default", error, onBlur }) => (
-  <View className="mb-5">
-    <Text className="text-sm font-extrabold text-gray-700 mb-2 mr-1 text-right">{label}</Text>
-    <View className={`flex-row items-center border rounded-2xl bg-white px-4 h-15 shadow-sm ${error ? "border-red-500" : "border-gray-100 focus:border-primary"}`}>
+  <View>
+    <Text className="text-gray-700 text-sm font-bold mb-2 ml-1 text-right">{label}</Text>
+    <View className="relative">
       <TextInput
-        className="flex-1 text-base text-gray-900 h-full font-medium"
+        className={`bg-white border rounded-xl px-4 py-4 text-gray-800 text-base pr-12 ${error ? "border-red-500" : "border-gray-100"}`}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -24,7 +23,7 @@ const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secur
         textAlign="right"
         onBlur={onBlur}
       />
-      <View className="ml-3">
+      <View className="absolute left-4 top-4">
         <Icon size={20} color={error ? "#EF4444" : "#9CA3AF"} />
       </View>
     </View>
@@ -183,39 +182,43 @@ export default function PharmacistRegister() {
     <MobileShell className="bg-primary" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"} 
-        className="flex-1"
+        className="flex-1 bg-background"
       >
         <ScrollView 
-          className="flex-1 bg-background"
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60 }} 
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View className="mb-8" style={{ position: 'relative', minHeight: 44 }}>
-            <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
-              <HeaderBackButton 
-                onPress={step === 1 ? () => { setStep(0); setErrors({}); } : undefined}
-                fallback={step === 0 ? "/pharmacist/PharmacistLogin" : undefined} 
-                color="#05997F" 
-              />
+          {/* Header */}
+          <View className="bg-pharmacist px-5 pt-4 pb-8 rounded-b-[2rem]">
+            <View className="mb-4" style={{ position: 'relative', minHeight: 44 }}>
+              <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+                <HeaderBackButton 
+                  onPress={step === 1 ? () => { setStep(0); setErrors({}); } : undefined}
+                  fallback={step === 0 ? "/pharmacist/PharmacistLogin" : undefined} 
+                  color="#05997F" 
+                />
+              </View>
             </View>
-            <View className="items-center justify-center" style={{ minHeight: 44 }}>
-              <Text className="text-2xl font-extrabold text-gray-900">
+
+            <View className="items-center">
+              <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
+                <BrandLogo width={50} height={50} />
+              </View>
+              <Text className="text-white text-2xl font-extrabold text-center">
                 {step === 0 ? "إنشاء حساب جديد" : "التحقق من الرقم"}
+              </Text>
+              <Text className="text-white/70 text-sm mt-1 text-center">
+                {step === 0 ? "انضم إلى شبكة الصيادلة في فارماساين" : "تم إرسال رمز تحقق إلى رقم جوالك"}
               </Text>
             </View>
           </View>
 
-          {step === 0 ? (
-            <>
-              <View className="mb-10">
-                <View className="w-16 h-16 bg-white rounded-3xl p-3 shadow-sm border border-gray-50 items-center justify-center mb-6">
-                   <BrandLogo width={40} height={40} />
-                </View>
-                <Text className="text-3xl font-extrabold text-primary mb-2 text-right">انضم إلينا</Text>
-                <Text className="text-base text-gray-400 font-bold text-right leading-relaxed">يرجى تعبئة بياناتك المهنية للتحقق من هويتك كصيدلي معتمد</Text>
-              </View>
-
-              <View className="flex-1">
+          {/* Form Content */}
+          <View className="px-6 pt-8 pb-10 gap-5">
+            {step === 0 ? (
+              <>
+                <View className="gap-5 flex-1">
                 <InputField 
                   icon={User} 
                   label="الاسم الثلاثي" 
@@ -287,7 +290,7 @@ export default function PharmacistRegister() {
                 </View>
 
                 <TouchableOpacity 
-                  className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-primary/20 w-full gap-2 ${
+                  className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm flex-row justify-center gap-2 ${
                     isLoading ? "bg-primary/50" : "bg-primary"
                   }`}
                   onPress={handleRegisterStep1} 
@@ -296,11 +299,11 @@ export default function PharmacistRegister() {
                 >
                   {isLoading ? (
                     <>
-                      <ActivityIndicator color="#FFFFFF" />
-                      <Text className="text-white font-extrabold text-lg">جاري إرسال رمز التحقق...</Text>
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                      <Text className="text-white font-bold text-base">جاري المعالجة...</Text>
                     </>
                   ) : (
-                    <Text className="text-white font-extrabold text-lg">تقديم طلب التسجيل</Text>
+                    <Text className="text-white font-bold text-base">تقديم طلب التسجيل</Text>
                   )}
                 </TouchableOpacity>
 
@@ -310,8 +313,8 @@ export default function PharmacistRegister() {
                   </TouchableOpacity>
                   <Text className="text-gray-400 font-bold text-base">لديك حساب بالفعل؟</Text>
                 </View>
-              </View>
-            </>
+                </View>
+              </>
           ) : (
             <View className="flex-1">
               <View className="items-center mb-10">
@@ -347,7 +350,7 @@ export default function PharmacistRegister() {
               </View>
 
               <TouchableOpacity 
-                className={`h-16 rounded-2xl flex-row items-center justify-center shadow-xl shadow-primary/20 w-full gap-2 ${
+                className={`w-full py-4 rounded-xl items-center mt-2 shadow-sm flex-row justify-center gap-2 ${
                   isLoading ? "bg-primary/50" : "bg-primary"
                 }`}
                 onPress={handleVerifyOTP}
@@ -356,11 +359,11 @@ export default function PharmacistRegister() {
               >
                 {isLoading ? (
                   <>
-                    <ActivityIndicator color="#FFFFFF" />
-                    <Text className="text-white font-extrabold text-lg">جاري التحقق من الرمز...</Text>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text className="text-white font-bold text-base">جاري التحقق من الرمز...</Text>
                   </>
                 ) : (
-                  <Text className="text-white font-extrabold text-lg">تأكيد الرمز</Text>
+                  <Text className="text-white font-bold text-base">تأكيد الرمز</Text>
                 )}
               </TouchableOpacity>
 
@@ -369,6 +372,7 @@ export default function PharmacistRegister() {
               </TouchableOpacity>
             </View>
           )}
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
 

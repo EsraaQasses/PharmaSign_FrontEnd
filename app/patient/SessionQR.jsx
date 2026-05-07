@@ -57,6 +57,19 @@ export default function SessionQR() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  const calculateAge = (birthDate) => {
+    if (!birthDate) return "غير متوفر";
+    const today = new Date();
+    const birth = new Date(birthDate);
+    if (isNaN(birth.getTime())) return "غير متوفر";
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return `${age} سنة`;
+  };
+
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
       <PageHeader title="رمز ربط الجلسة" showBackButton role="patient" backTo="/patient/PatientHome" />
@@ -122,9 +135,6 @@ export default function SessionQR() {
             </View>
           </View>
 
-            </View>
-          </View>
-
           {/* Session Expiry & Refresh */}
           <View className="flex-row items-center gap-3 mb-8">
             <TouchableOpacity 
@@ -156,7 +166,7 @@ export default function SessionQR() {
               <View className="w-[48%] bg-white p-4 rounded-2xl items-center border border-gray-100 shadow-sm">
                 <Calendar size={20} color="#6B7280" />
                 <Text className="text-[10px] font-bold text-gray-400 mt-2">العمر</Text>
-                <Text className="text-sm font-extrabold text-gray-900">28 سنة</Text>
+                <Text className="text-sm font-extrabold text-gray-900">{calculateAge(user?.birth_date || user?.date_of_birth)}</Text>
               </View>
               <View className="w-[48%] bg-white p-4 rounded-2xl items-center border border-gray-100 shadow-sm">
                 <Activity size={20} color="#6B7280" />

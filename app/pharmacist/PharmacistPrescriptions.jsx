@@ -1,34 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, SlidersHorizontal, FileText, UserCheck, Calendar, Pill, ChevronLeft } from "lucide-react-native";
+import { Search, SlidersHorizontal, FileText, UserCheck, Calendar, Pill, ChevronLeft, AlertCircle } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
-import { MOCK_PRESCRIPTIONS } from "@/lib/mockData";
+import { prescriptionApi } from "@/api/prescriptionApi";
+import { ActivityIndicator } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 export default function PharmacistPrescriptions() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [error, setError] = useState("");
   const router = useRouter();
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchPrescriptions();
+    }, [])
+  );
+
+  const fetchPrescriptions = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await prescriptionApi.getPrescriptions();
+      if (res.success) {
+        setPrescriptions(res.data);
+      } else {
+        setError(res.message || "تعذر تحميل الوصفات");
+      }
+    } catch (err) {
+      setError("فشل الاتصال بالخادم");
+    } finally {
       setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  };
 
-  const filters = [
-    { id: "all", label: "الكل" },
-    { id: "pending", label: "قيد الانتظار" },
-    { id: "completed", label: "مكتملة" },
-  ];
-
-  const filteredPrescriptions = MOCK_PRESCRIPTIONS.filter((rx) => {
+  const filteredPrescriptions = (prescriptions || []).filter((rx) => {
+    const pName = rx.patient?.full_name || rx.patient_name || "";
+    const items = rx.items || rx.medications || [];
     return (
-      (rx.patientName || "").includes(searchQuery) ||
-      (rx.medications || []).some((m) => (m.name || "").includes(searchQuery))
+      pName.includes(searchQuery) ||
+      items.some((m) => (m.medicine_name || m.name || "").includes(searchQuery))
     );
   });
 
@@ -70,8 +86,16 @@ export default function PharmacistPrescriptions() {
           <View className="gap-5">
             {isLoading ? (
               <View className="items-center justify-center py-20">
-                 <Text className="text-pharmacist text-2xl font-bold mb-2">...</Text>
-                 <Text className="text-gray-500 font-bold">جاري تحميل الوصفات...</Text>
+                 <ActivityIndicator size="large" color="#05997F" />
+                 <Text className="text-gray-500 font-bold mt-4">جاري تحميل الوصفات...</Text>
+              </View>
+            ) : error ? (
+              <View className="items-center justify-center py-20 bg-red-50 rounded-3xl border border-red-100">
+                <AlertCircle size={40} color="#EF4444" />
+                <Text className="text-red-500 font-bold mt-2">{error}</Text>
+                <TouchableOpacity onPress={fetchPrescriptions} className="mt-4 bg-red-500 px-4 py-2 rounded-xl">
+                  <Text className="text-white font-bold">إعادة المحاولة</Text>
+                </TouchableOpacity>
               </View>
             ) : filteredPrescriptions.length === 0 ? (
               <View className="items-center justify-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
@@ -79,10 +103,10 @@ export default function PharmacistPrescriptions() {
                    {searchQuery ? <Search size={32} color="#D1D5DB" /> : <FileText size={32} color="#D1D5DB" />}
                 </View>
                 <Text className="text-lg font-extrabold text-gray-900 mb-2 text-center">
-                  {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد وصفات حتى الآن"}
+                   {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد وصفات حتى الآن"}
                 </Text>
                 <Text className="text-sm text-gray-400 font-bold text-center px-4">
-                  {searchQuery ? "جرب البحث باسم مريض آخر أو دواء مختلف." : "لم تقم بصرف أي وصفات حتى الآن."}
+                   {searchQuery ? "جرب البحث باسم مريض آخر أو دواء مختلف." : "لم تقم بصرف أي وصفات حتى الآن."}
                 </Text>
               </View>
             ) : (
@@ -100,10 +124,12 @@ export default function PharmacistPrescriptions() {
                         <FileText size={24} color="#05997F" strokeWidth={2.5} />
                       </View>
                       <View>
-                        <Text className="text-base font-extrabold text-gray-900">{rx.patientName || "مريض غير محدد"}</Text>
+                        <Text className="text-base font-extrabold text-gray-900">{rx.patient?.full_name || rx.patient_name || "مريض"}</Text>
                         <View className="flex-row items-center gap-1.5 mt-0.5">
                           <Calendar size={12} color="#9CA3AF" />
-                          <Text className="text-[11px] font-bold text-gray-400">{rx.date || "تاريخ غير متوفر"}</Text>
+                          <Text className="text-[11px] font-bold text-gray-400">{rx.created_at?.split('T')[0] || rx.date || "---"}</Text>
+                          <Text className="text-[11px] font-bold text-gray-400 mx-1">•</Text>
+                          <Text className="text-[11px] font-bold text-pharmacist">{rx.doctor_name}{rx.doctor_specialty ? ` (${rx.doctor_specialty})` : ""}</Text>
                         </View>
                       </View>
                     </View>
@@ -117,7 +143,7 @@ export default function PharmacistPrescriptions() {
                         <Pill size={14} color="#05997F" />
                       </View>
                       <Text className="flex-1 text-sm font-bold text-gray-600 leading-relaxed text-right">
-                        {(rx.medications || []).map((m) => m.name || "دواء غير محدد").join("، ")}
+                        {(rx.items || rx.medications || []).map((m) => m.medicine_name || m.name || "دواء").join("، ")}
                       </Text>
                     </View>
                   </View>
@@ -127,7 +153,7 @@ export default function PharmacistPrescriptions() {
                       <Text className="text-xs font-extrabold text-pharmacist">عرض التفاصيل</Text>
                       <ChevronLeft size={16} color="#05997F" strokeWidth={2.5} />
                     </View>
-                    <Text className="text-[10px] font-extrabold text-gray-300 uppercase letter-spacing-1">ID: {(rx.id || "").toUpperCase()}</Text>
+                    <Text className="text-[10px] font-extrabold text-gray-300 uppercase letter-spacing-1">ID: {String(rx.id).toUpperCase()}</Text>
                   </View>
                 </TouchableOpacity>
               ))

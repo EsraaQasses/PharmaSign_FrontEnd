@@ -42,4 +42,12 @@ export const authApi = {
       body: JSON.stringify({ phone_number, password }),
     });
   },
+
+  // Patient QR Login
+  loginByQR: async (qr_token) => {
+    return fetchClient('/auth/patient/qr-login/', {
+      method: 'POST',
+      body: JSON.stringify({ qr_token }),
+    });
+  },
 };

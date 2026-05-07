@@ -1,69 +1,91 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, TextInput, Keyboard, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { QrCode, Upload, Camera, ShieldCheck, HelpCircle, AlertCircle, CheckCircle2 } from "lucide-react-native";
+import { QrCode, Camera, ShieldCheck, HelpCircle, AlertCircle, CheckCircle2, Key, X, Play, RotateCcw } from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
 import PageHeader from "@/components/mobile/PageHeader";
 import MobileShell from "@/components/mobile/MobileShell";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function PatientQRLogin() {
   const router = useRouter();
+  const { loginByQR } = useAuth();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [manualToken, setManualToken] = useState("");
+  const [showHelp, setShowHelp] = useState(false);
+
+  const onBarcodeScanned = async ({ data }) => {
+    if (verifying || success || !scanning) return;
+    
+    setScanning(false);
+    setVerifying(true);
+    setError("");
+    
+    try {
+      const result = await loginByQR(data);
+      if (result.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          // TODO: Check result.must_set_password flag from backend
+          // If true, router.replace("/patient/SetInitialPassword");
+          // else:
+          router.replace("/patient/PatientHome");
+        }, 1500);
+      } else {
+        setError(result.message || "رمز الدخول غير صالح أو منتهي. يرجى المحاولة مرة أخرى.");
+        setVerifying(false);
+      }
+    } catch (e) {
+      setError("حدث خطأ أثناء الاتصال بالخادم.");
+      setVerifying(false);
+    }
+  };
 
   const handleScan = async () => {
     if (!permission?.granted) {
       const { granted } = await requestPermission();
       if (!granted) {
-        setError("تعذر فتح الكاميرا. يرجى السماح بالوصول من إعدادات الجهاز.");
+        setError("تعذر تشغيل الكاميرا. يرجى السماح بالكاميرا أو إدخال الرمز يدوياً.");
         return;
       }
     }
     
     setError("");
     setScanning(true);
-    
-    // Simulate QR code detection after 2 seconds
-    setTimeout(() => {
-      setSuccess(true);
-      setScanning(false);
-      setTimeout(() => {
-        router.replace("/patient/PatientHome");
-      }, 1500);
-    }, 2500);
   };
 
-  const handleUpload = async () => {
+  const handleManualLogin = async () => {
+    const token = manualToken.trim();
+    if (!token) {
+      setError("يرجى إدخال رمز الدخول");
+      return;
+    }
+    
+    Keyboard.dismiss();
+    setVerifying(true);
+    setError("");
+    
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: false,
-        quality: 1,
-      });
-
-      if (!result.canceled) {
-        setError("");
-        setVerifying(true);
-        
-        // Simulate QR image verification
+      const result = await loginByQR(token);
+      if (result.success) {
+        setSuccess(true);
         setTimeout(() => {
-          setSuccess(true);
-          setVerifying(false);
-          setTimeout(() => {
-            router.replace("/patient/PatientHome");
-          }, 1500);
-        }, 2000);
+          // TODO: Check result.must_set_password flag from backend
+          // If true, router.replace("/patient/SetInitialPassword");
+          // else:
+          router.replace("/patient/PatientHome");
+        }, 1500);
       } else {
-        setError("لم يتم اختيار صورة");
-        setTimeout(() => setError(""), 3000);
+        setError(result.message || "رمز الدخول غير صالح أو منتهي. يرجى المحاولة مرة أخرى.");
+        setVerifying(false);
       }
     } catch (e) {
-      setError("تعذر قراءة الرمز من الصورة. يرجى اختيار صورة أوضح.");
-      setTimeout(() => setError(""), 3000);
+      setError("حدث خطأ أثناء الاتصال بالخادم.");
+      setVerifying(false);
     }
   };
 
@@ -128,7 +150,13 @@ export default function PatientQRLogin() {
                 </>
               ) : (
                 <View className="w-full h-full items-center justify-center">
-                  <CameraView className="absolute inset-0" />
+                  <CameraView 
+                    className="absolute inset-0" 
+                    onBarcodeScanned={scanning ? onBarcodeScanned : undefined}
+                    barcodeScannerSettings={{
+                      barcodeTypes: ["qr"],
+                    }}
+                  />
                   <View className="w-full h-1 bg-patient absolute top-1/2 shadow-lg shadow-patient" />
                   <View className="bg-black/40 px-4 py-2 rounded-full absolute bottom-6">
                     <Text className="text-white font-bold">جاري قراءة الرمز...</Text>
@@ -138,40 +166,46 @@ export default function PatientQRLogin() {
             </TouchableOpacity>
           </View>
 
-          {/* Option 2: Upload */}
-          <View className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm">
+          {/* Option 2: Manual Entry */}
+          <View className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm mb-6">
             <View className="flex-row items-center justify-end gap-3 mb-6">
               <View className="items-end">
-                <Text className="text-lg font-extrabold text-gray-900">تحميل صورة الرمز</Text>
-                <Text className="text-[10px] text-gray-400 font-bold">رفع الرمز المرسل لك من المؤسسة</Text>
+                <Text className="text-lg font-extrabold text-gray-900">إدخال الرمز يدوياً</Text>
+                <Text className="text-[10px] text-gray-400 font-bold">أدخل الرمز النصي المقدم لك</Text>
               </View>
               <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-                <Upload size={22} color="#022451" />
+                <Key size={22} color="#022451" />
               </View>
             </View>
 
-            <TouchableOpacity 
-              onPress={handleUpload}
-              activeOpacity={0.8}
-              disabled={verifying || success || scanning}
-              className={`w-full py-6 rounded-2xl border items-center justify-center gap-3 ${
-                verifying ? "bg-gray-50 border-gray-100" : "bg-patient/5 border-patient/10"
-              }`}
-            >
-              {verifying ? (
-                <View className="items-center gap-2">
-                  <ActivityIndicator color="#022451" />
-                  <Text className="text-patient font-extrabold">جاري التحقق من صورة الرمز...</Text>
-                </View>
-              ) : (
-                <>
-                  <View className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm">
-                    <Upload size={20} color="#022451" />
-                  </View>
-                  <Text className="text-patient font-extrabold">اختر صورة من الاستديو</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <View className="gap-4">
+              <View className="bg-gray-50 rounded-2xl border border-gray-100 px-4 py-1">
+                <TextInput
+                  placeholder="أدخل رمز الدخول النصي"
+                  value={manualToken}
+                  onChangeText={setManualToken}
+                  placeholderTextColor="#9CA3AF"
+                  className="text-right py-3 font-bold text-gray-900"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+              
+              <TouchableOpacity 
+                onPress={handleManualLogin}
+                activeOpacity={0.8}
+                disabled={verifying || success || scanning}
+                className={`w-full py-4 rounded-2xl items-center justify-center ${
+                  verifying ? "bg-gray-100" : "bg-patient"
+                }`}
+              >
+                {verifying && !scanning ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white font-extrabold text-base">تسجيل الدخول بالرمز</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Security Status */}
@@ -186,6 +220,7 @@ export default function PatientQRLogin() {
           <TouchableOpacity 
             className="mt-10 flex-row items-center justify-center gap-2 py-4"
             activeOpacity={0.8}
+            onPress={() => setShowHelp(true)}
           >
             <HelpCircle size={20} color="#022451" opacity={0.5} />
             <Text className="text-sm font-bold text-gray-400">
@@ -194,6 +229,86 @@ export default function PatientQRLogin() {
           </TouchableOpacity>
         </ScrollView>
       </View>
+
+      {/* Help Modal */}
+      <Modal
+        visible={showHelp}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowHelp(false)}
+      >
+        <View className="flex-1 bg-black/60 justify-end">
+          <View className="bg-white rounded-t-[3rem] p-8 pb-12 shadow-2xl">
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-8">
+              <TouchableOpacity 
+                onPress={() => setShowHelp(false)}
+                className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+              >
+                <X size={20} color="#4B5563" />
+              </TouchableOpacity>
+              <Text className="text-xl font-extrabold text-gray-900">كيفية الحصول على الرمز</Text>
+            </View>
+
+            {/* Content Section */}
+            <ScrollView showsVerticalScrollIndicator={false} className="max-h-[60vh]">
+              <View className="bg-patient/5 rounded-3xl p-6 mb-8 border border-patient/10">
+                <View className="gap-4">
+                  <Text className="text-right text-gray-700 font-bold leading-6">
+                    • يمكنك الحصول على رمز الدخول من المنظمة أو الجهة الطبية المسؤولة.
+                  </Text>
+                  <Text className="text-right text-gray-700 font-bold leading-6">
+                    • قد تقوم المنظمة بعرض رمز QR لك لتقوم بمسحه مباشرة.
+                  </Text>
+                  <Text className="text-right text-gray-700 font-bold leading-6">
+                    • أو قد ترسل لك الرمز النصي الخاص بالدخول لتقوم بإدخاله يدوياً.
+                  </Text>
+                  <Text className="text-right text-gray-700 font-bold leading-6">
+                    • بعدها يمكنك تسجيل الدخول إما عبر مسح QR أو عبر إدخال الرمز النصي.
+                  </Text>
+                </View>
+              </View>
+
+              {/* Video Placeholder */}
+              <View className="items-center">
+                <Text className="text-sm font-extrabold text-gray-900 mb-4 text-right w-full">شرح لغة الإشارة</Text>
+                <View className="w-full aspect-video bg-gray-900 rounded-[2rem] items-center justify-center overflow-hidden border-4 border-gray-100 relative shadow-sm">
+                  <View className="absolute inset-0 bg-patient/10" />
+                  <View className="items-center gap-3">
+                    <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center border border-white/30 backdrop-blur-md">
+                      <Play size={32} color="#FFFFFF" fill="#FFFFFF" opacity={0.8} />
+                    </View>
+                    <Text className="text-white/60 text-xs font-bold px-10 text-center leading-relaxed">
+                      سيتم إضافة فيديو الشرح بلغة الإشارة قريباً
+                    </Text>
+                  </View>
+                  
+                  {/* Mock Controls */}
+                  <View className="absolute bottom-4 left-4 right-4 flex-row items-center justify-between px-2">
+                    <TouchableOpacity disabled className="opacity-50">
+                      <RotateCcw size={18} color="#FFFFFF" />
+                    </TouchableOpacity>
+                    <View className="h-1 flex-1 bg-white/20 mx-4 rounded-full overflow-hidden">
+                      <View className="w-1/3 h-full bg-patient" />
+                    </View>
+                    <TouchableOpacity disabled className="opacity-50">
+                      <Play size={18} color="#FFFFFF" fill="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity 
+                onPress={() => setShowHelp(false)}
+                className="bg-patient w-full py-4 rounded-2xl items-center justify-center mt-10 shadow-lg shadow-patient/20"
+                activeOpacity={0.9}
+              >
+                <Text className="text-white font-extrabold text-base">فهمت ذلك</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </MobileShell>
   );
 }

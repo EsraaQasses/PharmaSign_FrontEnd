@@ -65,16 +65,22 @@ export const AuthProvider = ({ children }) => {
       const result = await authApi.login(phone, password);
       setIsLoadingAuth(false);
 
-      if (result.success) {
-        if (result.data?.user?.role !== "patient") {
+      if (result.success && result.data) {
+        const { access, refresh, user: userData } = result.data;
+        
+        if (userData?.role !== "patient") {
+           setIsLoadingAuth(false);
            return { success: false, error: "هذا الحساب ليس لمريض", status: 400 };
         }
-        await tokenStorage.saveTokens(result.data.access, result.data.refresh);
-        setUser(result.data.user);
+
+        await tokenStorage.saveTokens(access, refresh);
+        setUser(userData);
         setUserRole("patient");
         setIsAuthenticated(true);
-        return { success: true, user: result.data.user };
+        setIsLoadingAuth(false);
+        return { success: true, user: userData };
       } else {
+        setIsLoadingAuth(false);
         return { success: false, ...result };
       }
     } catch (error) {
@@ -91,18 +97,52 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
     try {
       const result = await authApi.login(phone, password);
-      setIsLoadingAuth(false);
 
-      if (result.success) {
-        if (result.data?.user?.role !== "pharmacist") {
+      if (result.success && result.data) {
+        const { access, refresh, user: userData } = result.data;
+
+        if (userData?.role !== "pharmacist") {
+           setIsLoadingAuth(false);
            return { success: false, error: "هذا الحساب ليس لصيدلي", status: 400 };
         }
-        await tokenStorage.saveTokens(result.data.access, result.data.refresh);
-        setUser(result.data.user);
+
+        await tokenStorage.saveTokens(access, refresh);
+        setUser(userData);
         setUserRole("pharmacist");
         setIsAuthenticated(true);
-        return { success: true, user: result.data.user };
+        setIsLoadingAuth(false);
+        return { success: true, user: userData };
       } else {
+        setIsLoadingAuth(false);
+        return { success: false, ...result };
+      }
+    } catch (error) {
+      setIsLoadingAuth(false);
+      return { success: false, message: "فشل الاتصال بالخادم", status: 0 };
+    }
+  };
+
+  /**
+   * Patient QR Login.
+   */
+  const loginByQR = async (qrToken) => {
+    setIsLoadingAuth(true);
+    setAuthError(null);
+    try {
+      const result = await authApi.loginByQR(qrToken);
+      setIsLoadingAuth(false);
+
+      if (result.success && result.data) {
+        const { access, refresh, user: userData } = result.data;
+        
+        await tokenStorage.saveTokens(access, refresh);
+        setUser(userData);
+        setUserRole("patient");
+        setIsAuthenticated(true);
+        setIsLoadingAuth(false);
+        return { success: true, user: userData };
+      } else {
+        setIsLoadingAuth(false);
         return { success: false, ...result };
       }
     } catch (error) {
@@ -118,23 +158,29 @@ export const AuthProvider = ({ children }) => {
     setIsLoadingAuth(true);
     setAuthError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockUser = {
-        id: `p_${Date.now()}`,
-        role: "patient",
-        ...userData,
-      };
-
-      setUser(mockUser);
-      setUserRole("patient");
-      setIsAuthenticated(true);
+      const result = await authApi.registerPatient(userData);
       setIsLoadingAuth(false);
-      return { success: true, user: mockUser };
+
+      if (result.success && result.data) {
+        const { access, refresh, user: userDataResponse } = result.data;
+        
+        // Only auto-login if tokens are returned (usually after registration if approved immediately,
+        // or if the backend design allows it).
+        if (access && refresh) {
+          await tokenStorage.saveTokens(access, refresh);
+          setUser(userDataResponse);
+          setUserRole("patient");
+          setIsAuthenticated(true);
+        }
+        
+        return { success: true, data: result.data };
+      } else {
+        return { success: false, ...result };
+      }
     } catch (error) {
-      setAuthError({ type: "register_failed", message: "فشل التسجيل" });
+      console.error("Patient Registration Error:", error);
       setIsLoadingAuth(false);
-      return { success: false, error };
+      return { success: false, message: "فشل الاتصال بالخادم", status: 0 };
     }
   };
 
@@ -145,23 +191,29 @@ export const AuthProvider = ({ children }) => {
     setIsLoadingAuth(true);
     setAuthError(null);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const mockUser = {
-        id: `ph_${Date.now()}`,
-        role: "pharmacist",
-        ...userData,
-      };
-
-      setUser(mockUser);
-      setUserRole("pharmacist");
-      setIsAuthenticated(true);
+      const result = await authApi.registerPharmacist(userData);
       setIsLoadingAuth(false);
-      return { success: true, user: mockUser };
+
+      if (result.success && result.data) {
+        const { access, refresh, user: userDataResponse } = result.data;
+
+        // Note: For pharmacists, they usually require admin approval (approval_status: pending)
+        // so we likely won't get tokens here.
+        if (access && refresh) {
+          await tokenStorage.saveTokens(access, refresh);
+          setUser(userDataResponse);
+          setUserRole("pharmacist");
+          setIsAuthenticated(true);
+        }
+
+        return { success: true, data: result.data };
+      } else {
+        return { success: false, ...result };
+      }
     } catch (error) {
-      setAuthError({ type: "register_failed", message: "فشل التسجيل" });
+      console.error("Pharmacist Registration Error:", error);
       setIsLoadingAuth(false);
-      return { success: false, error };
+      return { success: false, message: "فشل الاتصال بالخادم", status: 0 };
     }
   };
 
@@ -188,6 +240,7 @@ export const AuthProvider = ({ children }) => {
         userRole,
         loginAsPatient,
         loginAsPharmacist,
+        loginByQR,
         registerPatient,
         registerPharmacist,
         logout,
