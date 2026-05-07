@@ -223,7 +223,9 @@ export default function PrescriptionDetail() {
           </View>
 
           {/* Notes from Doctor */}
-          {(rx.notes && rx.notes !== "لا توجد ملاحظات" && rx.notes !== "بدون ملاحظات") || (rx.diagnosis && rx.diagnosis !== "لا يوجد تشخيص") ? (
+          {rx.notes && 
+           !["لا توجد ملاحظات", "بدون ملاحظات", "Draft", "draft", "none", "null"].includes(rx.notes.trim()) && 
+           rx.notes.length > 2 ? (
             <View className="bg-amber-50 rounded-3xl p-5 mt-4 border border-amber-100 shadow-sm">
               <View className="flex-row items-center gap-2 mb-3">
                 <FileText size={18} color="#D97706" />
@@ -232,7 +234,7 @@ export default function PrescriptionDetail() {
                 </Text>
               </View>
               <Text className="text-xs text-amber-700 leading-relaxed font-medium text-right">
-                {rx.notes || rx.diagnosis}
+                {rx.notes}
               </Text>
             </View>
           ) : null}

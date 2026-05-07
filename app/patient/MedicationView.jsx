@@ -17,6 +17,7 @@ import {
   Pill,
   Pause,
   AlertCircle,
+  Hand,
 } from "lucide-react-native";
 import { Video, ResizeMode } from "expo-av";
 import PageHeader from "@/components/mobile/PageHeader";
@@ -87,148 +88,163 @@ export default function MedicationView() {
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
       <PageHeader title="طريقة الاستخدام" showBackButton role="patient" backTo={id ? `/patient/PrescriptionDetail?id=${id}` : "/patient/PatientPrescriptions"} />
-
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="bg-white rounded-[24px] p-4 flex-row items-center gap-4 shadow-sm border border-gray-100 mt-4 mb-6">
-          <View className="w-[80px] h-[80px] bg-patient/5 rounded-2xl items-center justify-center">
-            <Pill size={36} color="#022451" />
+      
+      <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 overflow-hidden">
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Medication Header Card */}
+          <View className="bg-white rounded-[24px] p-5 flex-row items-center gap-4 shadow-sm border border-gray-50 mb-6">
+            <View className="w-[70px] h-[70px] bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+              <Pill size={32} color="#022451" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-lg font-extrabold text-gray-900 mb-1 text-right">
+                {currentMed.medication_name}
+              </Text>
+              <View className="flex-row justify-end">
+                <View className="bg-patient/10 px-3 py-1 rounded-full">
+                  <Text className="text-[10px] font-extrabold text-patient">
+                    دواء موصوف
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-          <View className="flex-1 items-start">
-            <Text className="text-lg font-bold text-gray-900 mb-1 text-right w-full">
-              {currentMed.medication_name}
-            </Text>
-            <View className="bg-patient/10 px-3 py-1 rounded-full mb-1">
-              <Text className="text-[10px] font-bold text-patient">
-                دواء موصوف
+
+          {/* Sign Language Video Section */}
+          {!videoUrl ? (
+            <View className="w-full aspect-video bg-white rounded-[32px] overflow-hidden mb-6 items-center justify-center border border-gray-100 shadow-sm p-8">
+              <View className="w-16 h-16 bg-gray-50 rounded-full items-center justify-center mb-4">
+                <Hand size={32} color="#D1D5DB" />
+              </View>
+              <Text className="text-gray-400 font-extrabold text-sm text-center leading-relaxed">
+                فيديو لغة الإشارة غير متوفر حالياً.{"\n"}يرجى اتباع التعليمات النصية.
               </Text>
             </View>
-            <Text className="text-xs text-gray-600 text-right w-full" numberOfLines={2}>
+          ) : (
+            <View className="w-full aspect-video bg-gray-900 rounded-[32px] overflow-hidden mb-6 relative shadow-lg shadow-black/20">
+              <Video
+                style={{ width: '100%', height: '100%' }}
+                source={{ uri: videoUrl }}
+                useNativeControls={false}
+                resizeMode={ResizeMode.CONTAIN}
+                isLooping
+                shouldPlay={isPlaying}
+                rate={speed}
+              />
+              
+              <View className="absolute inset-0 items-center justify-center">
+                {!isPlaying && (
+                  <TouchableOpacity 
+                    onPress={() => setIsPlaying(true)}
+                    className="w-16 h-16 rounded-full bg-patient/90 items-center justify-center shadow-2xl"
+                    activeOpacity={0.8}
+                  >
+                    <Play size={32} color="#FFFFFF" className="ml-1" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {isPlaying && (
+                <TouchableOpacity 
+                  style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+                  onPress={() => setIsPlaying(false)}
+                />
+              )}
+            </View>
+          )}
+
+          {/* Instructions Card */}
+          <View className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-50 mb-6">
+            <View className="flex-row items-center justify-end gap-2 mb-4">
+              <Text className="text-sm font-extrabold text-gray-900">التعليمات والإرشادات</Text>
+              <Type size={18} color="#022451" />
+            </View>
+            <Text className="text-sm text-gray-600 leading-relaxed text-right font-medium">
               {instructions}
             </Text>
           </View>
-        </View>
 
-        {!videoUrl ? (
-          <View className="w-full aspect-video bg-gray-50 rounded-[24px] overflow-hidden mb-6 items-center justify-center border border-gray-100 p-6">
-            <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-3">
-              <Type size={32} color="#D1D5DB" />
+          {/* Playback Controls (Only if video exists) */}
+          {videoUrl && (
+            <View className="bg-white rounded-[24px] p-5 flex-row items-center justify-between mb-6 shadow-sm border border-gray-50">
+               <View className="flex-row items-center gap-4">
+                  <TouchableOpacity 
+                    className="items-center gap-1"
+                    onPress={() => setIsPlaying(true)}
+                  >
+                     <View className="w-12 h-12 rounded-full bg-patient items-center justify-center shadow-sm">
+                        <Repeat size={20} color="#FFFFFF" />
+                     </View>
+                     <Text className="text-xs font-bold text-patient">إعادة</Text>
+                  </TouchableOpacity>
+               </View>
+
+               <View className="flex-1 ml-6 relative items-center">
+                  <View className="flex-row justify-between w-full mb-2">
+                     <Text className="text-xs font-bold text-patient">{speed.toFixed(1)}x</Text>
+                     <Text className="text-xs text-gray-500">سرعة العرض</Text>
+                  </View>
+                  <View className="w-full h-1.5 bg-gray-100 rounded-full my-1">
+                     <View 
+                        className="absolute left-0 top-0 bottom-0 bg-patient rounded-full" 
+                        style={{ width: `${(speed / 2) * 100}%` }}
+                     />
+                  </View>
+                  <View className="flex-row justify-between w-full mt-1">
+                     <TouchableOpacity onPress={() => setSpeed(Math.max(0.5, speed - 0.25))}>
+                       <Text className="text-[10px] text-gray-400 font-bold">أبطأ</Text>
+                     </TouchableOpacity>
+                     <TouchableOpacity onPress={() => setSpeed(Math.min(2.0, speed + 0.25))}>
+                       <Text className="text-[10px] text-gray-400 font-bold">أسرع</Text>
+                     </TouchableOpacity>
+                  </View>
+               </View>
             </View>
-            <Text className="text-gray-400 font-extrabold text-base text-center px-4">فيديو لغة الإشارة غير متوفر حالياً لهذه المادة. يرجى قراءة التعليمات النصية أدناه.</Text>
-          </View>
-        ) : (
-          <View className="w-full aspect-video bg-gray-900 rounded-[24px] overflow-hidden mb-6 relative">
-            <Video
-              style={{ width: '100%', height: '100%' }}
-              source={{ uri: videoUrl }}
-              useNativeControls={false}
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping
-              shouldPlay={isPlaying}
-              rate={speed}
-            />
-            
-            <View className="absolute inset-0 items-center justify-center">
-              {!isPlaying && (
-                <TouchableOpacity 
-                  onPress={() => setIsPlaying(true)}
-                  className="w-16 h-16 rounded-full bg-patient/90 items-center justify-center shadow-xl"
-                  activeOpacity={0.8}
-                >
-                  <Play size={32} color="#FFFFFF" className="ml-1" />
-                </TouchableOpacity>
+          )}
+
+          {/* Details Row */}
+          <View className="flex-row flex-wrap gap-4 mb-6">
+              {currentMed.duration && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.duration) && (
+                <View className="flex-1 min-w-[140px] bg-amber-50 p-4 rounded-2xl flex-row items-center gap-3">
+                   <View className="bg-amber-100 w-10 h-10 rounded-xl items-center justify-center">
+                      <Calendar size={20} color="#D97706" />
+                   </View>
+                   <View className="flex-1">
+                      <Text className="text-[10px] text-amber-700 mb-0.5 text-right">المدة</Text>
+                      <Text className="text-sm font-bold text-amber-900 text-right">{currentMed.duration}</Text>
+                   </View>
+                </View>
               )}
-            </View>
 
-            {isPlaying && (
-              <TouchableOpacity 
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-                onPress={() => setIsPlaying(false)}
-              />
-            )}
-            
-            <View className="absolute bottom-0 left-0 right-0 p-4">
-              <View className="bg-black/60 px-4 py-3 rounded-xl self-start max-w-[90%]">
-                <Text className="text-white font-medium text-xs text-right">
-                  {instructions}
-                </Text>
-              </View>
-            </View>
+             {currentMed.dosage && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.dosage) && (
+               <View className="flex-1 min-w-[140px] bg-emerald-50 p-4 rounded-2xl flex-row items-center gap-3">
+                  <View className="bg-emerald-100 w-10 h-10 rounded-xl items-center justify-center">
+                     <Pill size={20} color="#059669" />
+                  </View>
+                  <View className="flex-1">
+                     <Text className="text-[10px] text-emerald-700 mb-0.5 text-right">الجرعة</Text>
+                     <Text className="text-sm font-bold text-emerald-900 text-right">{currentMed.dosage}</Text>
+                  </View>
+               </View>
+             )}
+
+            {currentMed.frequency && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.frequency) && (
+               <View className="flex-1 min-w-[140px] bg-blue-50 p-4 rounded-2xl flex-row items-center gap-3">
+                  <View className="bg-blue-100 w-10 h-10 rounded-xl items-center justify-center">
+                     <Clock size={20} color="#3B82F6" />
+                  </View>
+                  <View className="flex-1">
+                     <Text className="text-[10px] text-blue-700 mb-0.5 text-right">التكرار</Text>
+                     <Text className="text-sm font-bold text-blue-900 text-right">{currentMed.frequency}</Text>
+                  </View>
+               </View>
+             )}
           </View>
-        )}
-
-        <View className="bg-white rounded-[24px] p-5 flex-row items-center justify-between mb-6 shadow-sm border border-gray-100">
-           <View className="flex-row items-center gap-4">
-              <TouchableOpacity 
-                className="items-center gap-1"
-                onPress={() => setIsPlaying(true)}
-              >
-                 <View className="w-12 h-12 rounded-full bg-patient items-center justify-center shadow-sm">
-                    <Repeat size={20} color="#FFFFFF" />
-                 </View>
-                 <Text className="text-xs font-bold text-patient">إعادة</Text>
-              </TouchableOpacity>
-              
-              <View className="w-px h-10 bg-gray-200" />
-              
-              <TouchableOpacity className="items-center gap-1">
-                 <View className="w-12 h-12 rounded-full bg-gray-100 items-center justify-center">
-                    <Type size={20} color="#022451" />
-                 </View>
-                 <Text className="text-xs font-medium text-gray-700">تسميات</Text>
-              </TouchableOpacity>
-           </View>
-
-           <View className="flex-1 ml-6 relative items-center">
-              <View className="flex-row justify-between w-full mb-2">
-                 <Text className="text-xs font-bold text-patient">{speed.toFixed(1)}x</Text>
-                 <Text className="text-xs text-gray-500">سرعة العرض</Text>
-              </View>
-              <View className="w-full h-1.5 bg-gray-100 rounded-full my-1">
-                 <View 
-                    className="absolute left-0 top-0 bottom-0 bg-patient rounded-full" 
-                    style={{ width: `${(speed / 2) * 100}%` }}
-                 />
-              </View>
-              <View className="flex-row justify-between w-full mt-1">
-                 <TouchableOpacity onPress={() => setSpeed(Math.max(0.5, speed - 0.25))}>
-                   <Text className="text-[10px] text-gray-400 font-bold">أبطأ</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity onPress={() => setSpeed(Math.min(2.0, speed + 0.25))}>
-                   <Text className="text-[10px] text-gray-400 font-bold">أسرع</Text>
-                 </TouchableOpacity>
-              </View>
-           </View>
-        </View>
-
-         <View className="flex-row gap-4 mb-6">
-            {currentMed.duration && currentMed.duration !== "غير محدد" && currentMed.duration !== "غير محددة" && (
-              <View className="flex-1 bg-amber-50 p-4 rounded-2xl flex-row items-center gap-3">
-                 <View className="bg-amber-100 w-10 h-10 rounded-xl items-center justify-center">
-                    <Calendar size={20} color="#D97706" />
-                 </View>
-                 <View className="flex-1">
-                    <Text className="text-[10px] text-amber-700 mb-0.5 text-right">المدة</Text>
-                    <Text className="text-sm font-bold text-amber-900 text-right">{currentMed.duration}</Text>
-                 </View>
-              </View>
-            )}
-
-           {currentMed.dosage && currentMed.dosage !== "غير محدد" && currentMed.dosage !== "غير محددة" && (
-             <View className="flex-1 bg-emerald-50 p-4 rounded-2xl flex-row items-center gap-3">
-                <View className="bg-emerald-100 w-10 h-10 rounded-xl items-center justify-center">
-                   <Pill size={20} color="#059669" />
-                </View>
-                <View className="flex-1">
-                   <Text className="text-[10px] text-emerald-700 mb-0.5 text-right">الجرعة</Text>
-                   <Text className="text-sm font-bold text-emerald-900 text-right">{currentMed.dosage}</Text>
-                </View>
-             </View>
-           )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
     </MobileShell>
   );
 }

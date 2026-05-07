@@ -142,13 +142,21 @@ export default function PatientPrescriptions() {
                     activeOpacity={0.8}
                     className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm"
                   >
-                    {/* Date */}
+                    {/* Top Row: Date & Sign Status Badge */}
                     <View className="flex-row items-center justify-between mb-4">
-                      <Text className="text-xs font-bold text-gray-400">{formatDate(p.created_at)}</Text>
+                      {hasSignVideo ? (
+                        <View className="flex-row items-center gap-1.5 bg-patient/10 px-2.5 py-1 rounded-lg">
+                          <Hand size={12} color="#022451" />
+                          <Text className="text-[10px] font-extrabold text-patient">لغة الإشارة متاحة</Text>
+                        </View>
+                      ) : (
+                        <View />
+                      )}
+                      <Text className="text-[11px] font-bold text-gray-400">{formatDate(p.created_at)}</Text>
                     </View>
 
-                    {/* Doctor & Pharmacy */}
-                    <View className="space-y-2 mb-5">
+                    {/* Doctor & Pharmacy Info */}
+                    <View className="space-y-1.5 mb-5">
                       <View className="flex-row items-center justify-end gap-2">
                         <Text className="text-base font-extrabold text-gray-900">
                           {p.doctor_name || "طبيب غير محدد"}
@@ -160,54 +168,40 @@ export default function PatientPrescriptions() {
                       <Text className="text-xs text-gray-400 text-right mr-9">
                         {p.doctor_specialty || "تخصص غير محدد"}
                       </Text>
-                      <View className="flex-row items-center justify-end gap-2">
-                        <Text className="text-xs text-gray-500 font-medium">
-                          {p.pharmacy_name || "صيدلية غير محددة"}
-                        </Text>
-                        <MapPin size={14} color="#9CA3AF" />
-                      </View>
+                      
+                      {p.pharmacy_name && !["صيدلية غير محددة", "none", "null"].includes(p.pharmacy_name.trim()) && (
+                        <View className="flex-row items-center justify-end gap-2 mt-1">
+                          <Text className="text-xs text-gray-500 font-medium">
+                            {p.pharmacy_name}
+                          </Text>
+                          <MapPin size={14} color="#9CA3AF" />
+                        </View>
+                      )}
                     </View>
 
-                    {/* Medications */}
-                    <View className="flex-row flex-wrap justify-end gap-2 mb-5">
-                      {(p.items || []).map((med, index) => (
+                    {/* Medications Summary */}
+                    <View className="flex-row flex-wrap justify-end gap-2 mb-6">
+                      {(p.items || []).map((med, idx) => (
                         <View
-                          key={med.id || index}
-                          className="bg-patient/5 rounded-lg px-3 py-1.5 border border-patient/5"
+                          key={med.id || idx}
+                          className="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-100"
                         >
-                          <Text className="text-[11px] text-patient font-extrabold">
-                            {med.medication_name || "دواء غير محدد"}
+                          <Text className="text-[10px] text-gray-600 font-bold">
+                            {med.medication_name || "دواء"}
                           </Text>
                         </View>
                       ))}
                     </View>
 
-                    {/* Actions */}
-                    <View className="flex-row gap-3 pt-4 border-t border-gray-50">
-                      <TouchableOpacity
-                        onPress={() =>
-                          router.push(`/patient/PrescriptionDetail?id=${p.id}`)
-                        }
-                        className="flex-1 bg-gray-50 rounded-xl py-3.5 items-center justify-center"
-                      >
-                        <Text className="text-xs font-bold text-gray-600">
-                          عرض التفاصيل
-                        </Text>
-                      </TouchableOpacity>
-                      {hasSignVideo && (
-                        <TouchableOpacity
-                          onPress={() =>
-                            router.push(`/patient/PrescriptionDetail?id=${p.id}`)
-                          }
-                          className="flex-1 bg-patient rounded-xl py-3.5 flex-row items-center justify-center gap-2"
-                        >
-                          <Hand size={16} color="#FFFFFF" strokeWidth={2.5} />
-                          <Text className="text-xs font-extrabold text-white">
-                            لغة الإشارة
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
+                    {/* Single Action Button */}
+                    <TouchableOpacity
+                      onPress={() => router.push(`/patient/PrescriptionDetail?id=${p.id}`)}
+                      className="w-full bg-patient/5 border border-patient/10 rounded-2xl py-4 items-center justify-center"
+                    >
+                      <Text className="text-sm font-extrabold text-patient">
+                        عرض التفاصيل
+                      </Text>
+                    </TouchableOpacity>
                   </TouchableOpacity>
                 );
               })}

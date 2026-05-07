@@ -4,7 +4,6 @@ import { useAuth } from "@/lib/AuthContext";
 import {
   MOCK_NOTIFICATIONS,
   MOCK_PATIENTS,
-  MOCK_PRESCRIPTIONS,
 } from "@/lib/mockData";
 import { useRouter } from "expo-router";
 import {
@@ -16,11 +15,12 @@ import {
   MapPin,
   QrCode,
   Shield,
+  Thermometer,
 } from "lucide-react-native";
 import { prescriptionApi } from "@/api/prescriptionApi";
 import { profileApi } from "@/api/profileApi";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 
 function QuickAction({ icon: Icon, label, path, color }) {
   const router = useRouter();
@@ -214,62 +214,88 @@ export default function PatientHome() {
             <View className="gap-4">
               {isLoadingRx ? (
                 <View className="py-10 items-center">
-                  <Text className="text-gray-400 font-bold">جاري تحميل الوصفات الحديثة...</Text>
+                  <ActivityIndicator size="small" color="#022451" />
+                  <Text className="text-gray-400 font-bold mt-2">جاري تحميل الوصفات الحديثة...</Text>
                 </View>
               ) : prescriptions.length === 0 ? (
                 <View className="py-10 bg-gray-50 rounded-2xl items-center border border-dashed border-gray-200">
                   <Text className="text-gray-400 font-bold">لا توجد وصفات حديثة حالياً</Text>
                 </View>
               ) : (
-                prescriptions.map((rx) => (
-                  <TouchableOpacity
-                    key={rx.id}
-                    onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
-                    className="bg-white rounded-2xl p-5 border border-gray-100"
-                    activeOpacity={0.7}
-                    style={{
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: 0.05,
-                      shadowRadius: 3,
-                      elevation: 2,
-                    }}
-                  >
-                    <View className="flex-row items-start justify-between mb-3">
-                      <View className="items-start">
-                        <Text className="font-extrabold text-base text-gray-900">
-                          {rx.doctor_name || "طبيب غير محدد"}
-                        </Text>
-                        <Text className="text-xs text-gray-400 mt-0.5">
+                prescriptions.map((rx) => {
+                  const hasSignVideo = (rx.items || []).some(item => item.sign_status === "completed" || item.video_url);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={rx.id}
+                      onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
+                      className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm mb-4"
+                      activeOpacity={0.8}
+                    >
+                      {/* Top Row: Date & Sign Status Badge */}
+                      <View className="flex-row items-center justify-between mb-4">
+                        {hasSignVideo ? (
+                          <View className="flex-row items-center gap-1.5 bg-patient/10 px-2.5 py-1 rounded-lg">
+                            <Hand size={12} color="#022451" />
+                            <Text className="text-[10px] font-extrabold text-patient">لغة الإشارة متاحة</Text>
+                          </View>
+                        ) : (
+                          <View />
+                        )}
+                        <Text className="text-[11px] font-bold text-gray-400">{rx.created_at?.split('T')[0] || "---"}</Text>
+                      </View>
+
+                      {/* Doctor & Pharmacy Info */}
+                      <View className="space-y-1.5 mb-5">
+                        <View className="flex-row items-center justify-end gap-2">
+                          <Text className="text-base font-extrabold text-gray-900">
+                            {rx.doctor_name || "طبيب غير محدد"}
+                          </Text>
+                          <View className="bg-blue-50 p-1.5 rounded-lg">
+                             <Thermometer size={14} color="#3B82F6" />
+                          </View>
+                        </View>
+                        <Text className="text-xs text-gray-400 text-right mr-9">
                           {rx.doctor_specialty || "تخصص غير محدد"}
                         </Text>
+                        
+                        {rx.pharmacy_name && 
+                         !["صيدلية غير محددة", "none", "null"].includes(rx.pharmacy_name.trim()) && (
+                          <View className="flex-row items-center justify-end gap-2 mt-1">
+                            <Text className="text-xs text-gray-500 font-medium">
+                              {rx.pharmacy_name}
+                            </Text>
+                            <MapPin size={14} color="#9CA3AF" />
+                          </View>
+                        )}
                       </View>
-                    </View>
-                    <View className="flex-row items-center gap-4 mt-1">
-                      <View className="flex-row items-center gap-1">
-                        <Clock size={12} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-500">{rx.created_at?.split('T')[0] || "---"}</Text>
+
+                      {/* Medications Summary */}
+                      <View className="flex-row flex-wrap justify-end gap-2 mb-6">
+                        {(rx.items || []).map((med, idx) => (
+                          <View
+                            key={med.id || idx}
+                            className="bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-100"
+                          >
+                            <Text className="text-[10px] text-gray-600 font-bold">
+                              {med.medication_name || "دواء"}
+                            </Text>
+                          </View>
+                        ))}
                       </View>
-                      <Text className="text-xs text-gray-500">
-                        {(rx.items || []).length} أدوية
-                      </Text>
-                      {rx.pharmacy_name && rx.pharmacy_name !== "صيدلية غير محددة" && (
-                        <Text className="text-xs text-gray-500" numberOfLines={1}>
-                          {rx.pharmacy_name}
+
+                      {/* Single Action Button */}
+                      <TouchableOpacity
+                        onPress={() => router.push(`/patient/PrescriptionDetail?id=${rx.id}`)}
+                        className="w-full bg-patient/5 border border-patient/10 rounded-2xl py-4 items-center justify-center"
+                      >
+                        <Text className="text-sm font-extrabold text-patient">
+                          عرض التفاصيل
                         </Text>
-                      )}
-                    </View>
-                    {/* Check if any item has completed sign status or a video URL */}
-                    {(rx.items || []).some(item => item.sign_status === "completed" || item.video_url) && (
-                      <View className="mt-4 flex-row items-center gap-1.5 pt-3 border-t border-gray-50">
-                        <Hand size={14} color="#022451" />
-                        <Text className="text-xs text-patient font-extrabold">
-                          لغة إشارة متاحة للمشاهدة
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))
+                      </TouchableOpacity>
+                    </TouchableOpacity>
+                  );
+                })
               )}
             </View>
           </View>
