@@ -109,7 +109,7 @@ export default function VerifyText() {
                   الخطوة 3 من 3
                 </Text>
                 <Text className="text-2xl font-extrabold text-white">
-                  تحقيق النص المستخرج
+                  مراجعة النص المعتمد
                 </Text>
               </View>
             </View>
@@ -153,7 +153,7 @@ export default function VerifyText() {
                 </Text>
               </TouchableOpacity>
               <View className="flex-row items-center gap-2">
-                <Text className="text-sm font-extrabold text-gray-900">النص المستخرج</Text>
+                <Text className="text-sm font-extrabold text-gray-900">النص المعتمد للتحويل إلى لغة الإشارة</Text>
                 <FileText size={18} color="#05997F" />
               </View>
             </View>

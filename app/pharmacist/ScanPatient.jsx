@@ -35,9 +35,14 @@ export default function ScanPatient() {
   const [sessionId, setSessionId] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [scanKey, setScanKey] = useState(0);
+  const scanProcessingRef = React.useRef(false);
 
   const handleBarcodeScanned = async ({ type, data }) => {
-    if (scanState !== "scanning") return;
+    if (scanState !== "scanning" || scanProcessingRef.current) return;
+    
+    scanProcessingRef.current = true;
+    console.log("[Scan Audit] QR scan detected. Starting validation...");
+    
     setScanState("loading");
     setErrorMessage("");
 
@@ -45,10 +50,12 @@ export default function ScanPatient() {
       const res = await sessionApi.startSessionByQR(data);
       
       if (res.success) {
+        console.log(`[Scan Audit] Session started successfully. ID: ${res.data?.session?.id}`);
         setPatientData(res.data);
         setSessionId(res.data.session.id);
         setScanState("success");
       } else {
+        console.log("[Scan Audit] Session start failed:", res.message);
         // Handle specific errors based on status or message
         if (res.status === 400 || res.message?.includes("expired") || res.message?.includes("منتهي")) {
           setScanState("expired");
@@ -58,8 +65,14 @@ export default function ScanPatient() {
         }
       }
     } catch (error) {
+      console.log("[Scan Audit] Connection error during session start");
       setScanState("invalid");
       setErrorMessage("فشل الاتصال بالخادم");
+    } finally {
+      // Keep processing ref true if success to prevent rescans
+      if (scanState !== "success") {
+        scanProcessingRef.current = false;
+      }
     }
   };
 
@@ -82,6 +95,7 @@ export default function ScanPatient() {
   };
 
   const resetScan = () => {
+    scanProcessingRef.current = false;
     setScanState("scanning");
     setPatientData(null);
     setSessionId(null);

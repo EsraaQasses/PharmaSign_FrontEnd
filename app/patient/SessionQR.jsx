@@ -18,37 +18,68 @@ export default function SessionQR() {
   const [qrData, setQrData] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
+  const refreshTimerRef = React.useRef(null);
+  const isFetchingRef = React.useRef(false);
 
-  useEffect(() => {
-    fetchQR();
-  }, []);
-
-  useEffect(() => {
-    if (timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeLeft]);
-
-  const fetchQR = async () => {
-    setIsLoading(true);
+  const fetchQR = async (silent = false) => {
+    if (isFetchingRef.current) {
+      console.log("[QR Audit] Skip generation: already in progress");
+      return;
+    }
+    
+    isFetchingRef.current = true;
+    if (!silent) setIsLoading(true);
+    else setIsRefreshing(true);
+    
+    console.log("[QR Audit] Generating new QR session token...");
     setError("");
     try {
       const res = await sessionApi.createSessionQR();
       if (res.success) {
-        setQrData(res.data.qr_payload || res.data.qr_token);
-        setTimeLeft(res.data.expires_in_seconds || 300);
+        setQrData(res.data.qr_payload || res.data.qr_token || "");
+        const expiry = res.data.expires_in_seconds || 300;
+        setTimeLeft(expiry);
+        console.log(`[QR Audit] QR generated successfully. Expiry: ${expiry}s`);
       } else {
+        console.log("[QR Audit] QR generation failed:", res.message);
         setError(res.message || "تعذر إنشاء الرمز");
       }
     } catch (err) {
+      console.log("[QR Audit] Connection error during QR generation");
       setError("فشل الاتصال بالخادم");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
+      isFetchingRef.current = false;
     }
   };
+
+  useEffect(() => {
+    fetchQR();
+    return () => {
+      if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+    };
+  }, []);
+
+  // Countdown logic (Auto-refresh DISABLED for stability)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        const nextValue = prev > 0 ? prev - 1 : 0;
+        
+        if (nextValue === 0 && prev > 0) {
+          console.log("[QR Audit] QR token expired.");
+        }
+        
+        return nextValue;
+      });
+    }, 1000);
+    
+    refreshTimerRef.current = timer;
+    return () => clearInterval(timer);
+  }, []);
 
   const formatTime = (seconds) => {
     if (seconds <= 0) return "00:00";
@@ -86,7 +117,7 @@ export default function SessionQR() {
             <Text className="text-2xl font-extrabold text-gray-900 mb-2">
               إنشاء جلسة طبية
             </Text>
-            <Text className="text-sm text-gray-500 text-center px-6 leading-relaxed">
+            <Text className="text-sm text-gray-500 text-center px-6 leading-relaxed font-bold">
               أظهر هذا الرمز للصيدلي لبدء الجلسة. ستمكنه من عرض ملفك الطبي الأساسي وإرسال الوصفة.
             </Text>
           </View>
@@ -102,17 +133,25 @@ export default function SessionQR() {
 
               <View className="flex-1 items-center justify-center bg-gray-50 rounded-3xl w-full h-full border border-gray-100 overflow-hidden">
                   {isLoading ? (
-                    <ActivityIndicator size="large" color="#022451" />
+                    <View className="items-center">
+                      <ActivityIndicator size="large" color="#022451" />
+                      <Text className="text-xs text-gray-400 mt-4 font-bold">جاري إنشاء الرمز...</Text>
+                    </View>
                   ) : error ? (
                     <View className="items-center px-4">
                       <AlertCircle size={40} color="#EF4444" />
                       <Text className="text-red-500 font-bold text-center mt-2">{error}</Text>
-                      <TouchableOpacity onPress={fetchQR} className="mt-4 bg-patient px-4 py-2 rounded-xl">
+                      <TouchableOpacity onPress={() => fetchQR()} className="mt-4 bg-patient px-6 py-3 rounded-xl shadow-lg shadow-patient/20">
                         <Text className="text-white font-bold">إعادة المحاولة</Text>
                       </TouchableOpacity>
                     </View>
                   ) : qrData && timeLeft > 0 ? (
-                    <>
+                    <View className="items-center justify-center relative">
+                      {isRefreshing && (
+                        <View className="absolute inset-0 z-10 bg-gray-50/50 items-center justify-center rounded-3xl">
+                           <ActivityIndicator size="small" color="#022451" />
+                        </View>
+                      )}
                       <QRCode
                         value={qrData}
                         size={200}
@@ -121,13 +160,13 @@ export default function SessionQR() {
                       />
                       {/* Scan Line Animation Simulation */}
                       <View className="absolute top-1/2 left-0 right-0 h-0.5 bg-patient/30 shadow-sm shadow-patient" />
-                    </>
+                    </View>
                   ) : (
                     <View className="items-center px-4">
                       <Clock size={40} color="#F59E0B" />
-                      <Text className="text-amber-600 font-bold text-center mt-2">انتهت صلاحية الرمز</Text>
-                      <TouchableOpacity onPress={fetchQR} className="mt-4 bg-patient px-4 py-2 rounded-xl">
-                        <Text className="text-white font-bold">تحديث الرمز</Text>
+                      <Text className="text-amber-600 font-extrabold text-center mt-2">انتهت صلاحية الرمز</Text>
+                      <TouchableOpacity onPress={() => fetchQR()} className="mt-4 bg-patient px-6 py-3 rounded-xl shadow-lg shadow-patient/20">
+                        <Text className="text-white font-extrabold">تحديث الرمز</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -138,19 +177,22 @@ export default function SessionQR() {
           {/* Session Expiry & Refresh */}
           <View className="flex-row items-center gap-3 mb-8">
             <TouchableOpacity 
-              onPress={fetchQR} 
-              disabled={isLoading}
-              className="bg-white w-14 h-14 rounded-2xl items-center justify-center border border-gray-100 shadow-sm"
+              onPress={() => fetchQR()} 
+              disabled={isLoading || isRefreshing}
+              className={`bg-white w-14 h-14 rounded-2xl items-center justify-center border border-gray-100 shadow-sm ${isLoading || isRefreshing ? "opacity-50" : ""}`}
             >
-              <RefreshCw size={24} color="#022451" className={isLoading ? "opacity-30" : ""} />
+              <RefreshCw size={24} color="#022451" className={isLoading || isRefreshing ? "animate-spin" : ""} />
             </TouchableOpacity>
             
             <View className="flex-1 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm items-center flex-row justify-center gap-4">
               <View className="items-center">
-                <Text className="text-2xl font-extrabold text-patient">{formatTime(timeLeft)}</Text>
+                <Text className="text-2xl font-black text-patient">{formatTime(timeLeft)}</Text>
               </View>
               <View className="w-px h-8 bg-gray-100" />
-              <Text className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">صلاحية الرمز</Text>
+              <View className="items-end">
+                <Text className="text-[10px] text-gray-400 font-black uppercase tracking-tighter">صلاحية الرمز</Text>
+                <Text className="text-[10px] text-patient/60 font-bold">ينتهي الرمز خلال:</Text>
+              </View>
             </View>
           </View>
 

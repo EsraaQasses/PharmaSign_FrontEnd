@@ -125,21 +125,23 @@ export default function PrescriptionDetail() {
               معلومات الطبيب والصيدلية
             </Text>
 
-            <View className="flex-row items-center justify-end gap-3 mb-5">
-              <View className="items-end">
-                <Text className="text-base font-extrabold text-gray-800">
-                  {rx.doctor_name || "طبيب غير محدد"}
-                </Text>
-                <Text className="text-xs text-gray-400 mt-0.5">
-                  {rx.doctor_specialty || "تخصص غير محدد"}
-                </Text>
+            {rx.doctor_name && (
+              <View className="flex-row items-center justify-end gap-3 mb-5">
+                <View className="items-end">
+                  <Text className="text-base font-extrabold text-gray-800">
+                    {rx.doctor_name}
+                  </Text>
+                  <Text className="text-xs text-gray-400 mt-0.5">
+                    {rx.doctor_specialty || "طبيب ممارس"}
+                  </Text>
+                </View>
+                <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+                  <Thermometer size={22} color="#022451" />
+                </View>
               </View>
-              <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-                <Thermometer size={22} color="#022451" />
-              </View>
-            </View>
+            )}
 
-            {rx.pharmacy_name && rx.pharmacy_name !== "صيدلية غير محددة" && (
+            {Boolean(rx.pharmacy_name && rx.pharmacy_name !== "صيدلية غير محددة") ? (
               <>
                 <View className="h-px bg-gray-50 w-full mb-5" />
                 <View className="flex-row items-center justify-end gap-3">
@@ -156,10 +158,9 @@ export default function PrescriptionDetail() {
                   </View>
                 </View>
               </>
-            )}
+            ) : null}
           </View>
 
-          {/* Medications List */}
           <View className="mt-8 mb-4">
             <Text className="text-lg font-extrabold text-gray-900 mb-4 px-1">
               الأدوية الموصوفة ({(rx.items || []).length})
@@ -170,74 +171,61 @@ export default function PrescriptionDetail() {
                 const hasSignVideo = med.sign_status === "completed" || med.video_url;
                 const instructions = med.approved_instruction_text || med.instructions || med.raw_transcript || "لا توجد تعليمات متوفرة";
                 
+                const dosageText = typeof med.dosage === "string" ? med.dosage.trim() : "";
+                const hiddenValues = ["غير محدد", "غير محددة", "undefined", "null", "none", ".", "-"];
+                const shouldShowDosage = Boolean(dosageText && !hiddenValues.includes(dosageText));
+
                 return (
-                    <TouchableOpacity
-                      key={med.id || index}
-                      onPress={() => router.push({
-                        pathname: "/patient/MedicationView",
-                        params: { 
-                          id: rx.id, 
-                          medIndex: index,
-                          medication_name: med.medication_name,
-                          approved_instruction_text: med.approved_instruction_text,
-                          instructions: med.instructions,
-                          raw_transcript: med.raw_transcript,
-                          video_url: med.video_url,
-                          dosage: med.dosage,
-                          duration: med.duration,
-                          frequency: med.frequency
-                        }
-                      })}
-                      className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm flex-row items-center gap-4"
-                    >
-                      {hasSignVideo ? (
-                        <View className="w-12 h-12 bg-patient rounded-2xl items-center justify-center shadow-lg shadow-patient/20">
-                          <Hand size={22} color="#FFFFFF" strokeWidth={2.5} />
-                        </View>
-                      ) : (
-                        <View className="w-12 h-12 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100">
-                          <Pill size={24} color="#D1D5DB" />
-                        </View>
-                      )}
-  
-                      <View className="flex-1">
-                        <Text className="text-base font-extrabold text-gray-800 mb-1 text-right">
-                          {med.medication_name}
-                        </Text>
-                        {(med.dosage && med.dosage !== "غير محدد" && med.dosage !== "غير محددة") && (
-                          <View className="flex-row items-center justify-end gap-3 mt-1">
-                            <Text className="text-xs text-gray-500 font-bold">
-                              {med.dosage}
-                            </Text>
-                            <Clock size={12} color="#9CA3AF" />
-                          </View>
-                        )}
-                        <Text className="text-xs text-gray-400 mt-2 leading-relaxed text-right" numberOfLines={2}>
-                          {instructions}
-                        </Text>
+                  <TouchableOpacity
+                    key={med.id || index}
+                    onPress={() => router.push({
+                      pathname: "/patient/MedicationView",
+                      params: { 
+                        id: rx.id, 
+                        medIndex: index,
+                        medication_name: med.medication_name,
+                        approved_instruction_text: med.approved_instruction_text,
+                        instructions: med.instructions,
+                        raw_transcript: med.raw_transcript,
+                        video_url: med.video_url,
+                        dosage: med.dosage,
+                        duration: med.duration,
+                        frequency: med.frequency
+                      }
+                    })}
+                    className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm flex-row items-center gap-4"
+                  >
+                    {hasSignVideo ? (
+                      <View className="w-12 h-12 bg-patient rounded-2xl items-center justify-center shadow-lg shadow-patient/20">
+                        <Hand size={22} color="#FFFFFF" strokeWidth={2.5} />
                       </View>
-                    </TouchableOpacity>
+                    ) : (
+                      <View className="w-12 h-12 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100">
+                        <Pill size={24} color="#D1D5DB" />
+                      </View>
+                    )}
+
+                    <View className="flex-1">
+                      <Text className="text-base font-extrabold text-gray-800 mb-1 text-right">
+                        {med.medication_name}
+                      </Text>
+                      {shouldShowDosage ? (
+                        <View className="flex-row items-center justify-end gap-3 mt-1">
+                          <Text className="text-xs text-gray-500 font-bold">
+                            {dosageText}
+                          </Text>
+                          <Clock size={12} color="#9CA3AF" />
+                        </View>
+                      ) : null}
+                      <Text className="text-xs text-gray-400 mt-2 leading-relaxed text-right" numberOfLines={2}>
+                        {instructions}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 );
               })}
             </View>
           </View>
-
-          {/* Notes from Doctor */}
-          {rx.notes && 
-           !["لا توجد ملاحظات", "بدون ملاحظات", "Draft", "draft", "none", "null"].includes(rx.notes.trim()) && 
-           rx.notes.length > 2 ? (
-            <View className="bg-amber-50 rounded-3xl p-5 mt-4 border border-amber-100 shadow-sm">
-              <View className="flex-row items-center gap-2 mb-3">
-                <FileText size={18} color="#D97706" />
-                <Text className="text-sm font-extrabold text-amber-900">
-                  ملاحظات الطبيب الهامة
-                </Text>
-              </View>
-              <Text className="text-xs text-amber-700 leading-relaxed font-medium text-right">
-                {rx.notes}
-              </Text>
-            </View>
-          ) : null}
         </ScrollView>
       </View>
     </MobileShell>

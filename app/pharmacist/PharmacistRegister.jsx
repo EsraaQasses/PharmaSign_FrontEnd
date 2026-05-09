@@ -44,6 +44,11 @@ export default function PharmacistRegister() {
   const [formData, setFormData] = useState({
     name: "",
     pharmacyName: "",
+    pharmacyCity: "",
+    pharmacyRegion: "",
+    pharmacyAddress: "",
+    pharmacyPhone: "",
+    pharmacyLicense: "",
     license_number: "",
     phone: "",
     password: "",
@@ -69,15 +74,27 @@ export default function PharmacistRegister() {
       newErrors.name = "الاسم الثلاثي يجب أن يحتوي على ثلاث كلمات عربية صحيحة على الأقل";
     }
 
-    // 2. Pharmacy Name Validation (Relaxed)
+    // 2. Pharmacy Name Validation
     const pharmacyTrimmed = formData.pharmacyName.trim();
     const onlyArabicAndSpaces = /^[\u0600-\u06FF\s]+$/.test(pharmacyTrimmed);
     const totalArabicLetters = pharmacyTrimmed.replace(/\s+/g, "").match(/[\u0600-\u06FF]/g)?.length || 0;
-    
+
     if (!pharmacyTrimmed) {
       newErrors.pharmacyName = "يرجى إدخال اسم الصيدلية";
     } else if (!onlyArabicAndSpaces || totalArabicLetters < 3) {
       newErrors.pharmacyName = "اسم الصيدلية غير صالح، أدخل اسم صيدلية واضح";
+    }
+
+    if (!formData.pharmacyCity.trim()) {
+      newErrors.pharmacyCity = "يرجى إدخال المدينة";
+    }
+
+    if (!formData.pharmacyRegion.trim()) {
+      newErrors.pharmacyRegion = "يرجى إدخال المنطقة";
+    }
+
+    if (!formData.pharmacyAddress.trim()) {
+      newErrors.pharmacyAddress = "يرجى إدخال العنوان التفصيلي";
     }
 
     // 3. License Number Validation
@@ -158,8 +175,14 @@ export default function PharmacistRegister() {
       password: formData.password,
       license_number: formData.license_number.trim(),
       pharmacy_name: formData.pharmacyName.trim(),
-      pharmacy_address: "غير محدد",
+      // Combined address for compatibility with current backend
+      pharmacy_address: `${formData.pharmacyCity} - ${formData.pharmacyRegion} - ${formData.pharmacyAddress}`,
       otp: otp.trim()
+      // TODO: Backend should be updated to accept separate fields:
+      // pharmacy_city: formData.pharmacyCity,
+      // pharmacy_region: formData.pharmacyRegion,
+      // pharmacy_branch_phone: formData.pharmacyPhone,
+      // pharmacy_branch_license: formData.pharmacyLicense
     };
 
     const res = await authApi.registerPharmacist(payload);
@@ -227,14 +250,81 @@ export default function PharmacistRegister() {
                   placeholder="أدخل اسمك الكامل" 
                   error={errors.name}
                 />
+
+                <View className="mt-4 mb-2">
+                  <Text className="text-gray-900 text-lg font-extrabold text-right">بيانات الصيدلية</Text>
+                  <Text className="text-gray-400 text-[10px] font-bold text-right leading-relaxed mb-4">
+                    نحتاج هذه المعلومات لربط الصيدلي بالفرع الصحيح، لأن أسماء الصيدليات قد تتكرر في أكثر من منطقة.
+                  </Text>
+                </View>
+
                 <InputField 
                   icon={Building2} 
                   label="اسم الصيدلية" 
                   value={formData.pharmacyName} 
                   onChangeText={(t) => { setFormData({...formData, pharmacyName: t}); clearFieldError("pharmacyName"); }} 
-                  placeholder="أين تعمل حالياً؟" 
+                  placeholder="أدخل اسم الصيدلية/الفرع" 
                   error={errors.pharmacyName}
                 />
+
+                <View className="flex-row gap-4">
+                  <View className="flex-1">
+                    <InputField 
+                      icon={Building2} 
+                      label="المدينة" 
+                      value={formData.pharmacyCity} 
+                      onChangeText={(t) => { setFormData({...formData, pharmacyCity: t}); clearFieldError("pharmacyCity"); }} 
+                      placeholder="دمشق، حلب..." 
+                      error={errors.pharmacyCity}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <InputField 
+                      icon={Building2} 
+                      label="المنطقة" 
+                      value={formData.pharmacyRegion} 
+                      onChangeText={(t) => { setFormData({...formData, pharmacyRegion: t}); clearFieldError("pharmacyRegion"); }} 
+                      placeholder="المزة، الفرقان..." 
+                      error={errors.pharmacyRegion}
+                    />
+                  </View>
+                </View>
+
+                <InputField 
+                  icon={Building2} 
+                  label="العنوان التفصيلي" 
+                  value={formData.pharmacyAddress} 
+                  onChangeText={(t) => { setFormData({...formData, pharmacyAddress: t}); clearFieldError("pharmacyAddress"); }} 
+                  placeholder="الشارع، بجانب معلم معروف..." 
+                  error={errors.pharmacyAddress}
+                />
+
+                <View className="flex-row gap-4">
+                  <View className="flex-1">
+                    <InputField 
+                      icon={Phone} 
+                      label="هاتف الصيدلية (اختياري)" 
+                      value={formData.pharmacyPhone} 
+                      onChangeText={(t) => { setFormData({...formData, pharmacyPhone: t}); }} 
+                      placeholder="رقم الهاتف الأرضي" 
+                      keyboardType="number-pad"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <InputField 
+                      icon={ShieldCheck} 
+                      label="رقم ترخيص الصيدلية (اختياري)" 
+                      value={formData.pharmacyLicense} 
+                      onChangeText={(t) => { setFormData({...formData, pharmacyLicense: t}); }} 
+                      placeholder="رقم الرخصة" 
+                    />
+                  </View>
+                </View>
+
+                <View className="mt-6 mb-2">
+                  <Text className="text-gray-900 text-lg font-extrabold text-right">معلومات الحساب</Text>
+                </View>
+
                 <InputField 
                   icon={ShieldCheck} 
                   label="رقم رخصة الصيدلي" 

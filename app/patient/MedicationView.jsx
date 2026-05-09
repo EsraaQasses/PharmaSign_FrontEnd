@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, Image, ActivityIndicator, Modal, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Play,
@@ -18,6 +11,8 @@ import {
   Pause,
   AlertCircle,
   Hand,
+  Flag,
+  Clock,
 } from "lucide-react-native";
 import { Video, ResizeMode } from "expo-av";
 import PageHeader from "@/components/mobile/PageHeader";
@@ -35,6 +30,7 @@ export default function MedicationView() {
   const [rx, setRx] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     const fetchRx = async () => {
@@ -205,6 +201,18 @@ export default function MedicationView() {
             </View>
           )}
 
+          {/* Report Button (Patient only) */}
+          {videoUrl && (
+            <TouchableOpacity
+              onPress={() => setShowReportModal(true)}
+              activeOpacity={0.7}
+              className="bg-red-50 py-4 px-6 rounded-2xl flex-row items-center justify-center gap-3 border border-red-100 mb-8"
+            >
+              <Text className="text-red-600 font-extrabold text-sm">الإشارة غير واضحة</Text>
+              <Flag size={18} color="#EF4444" />
+            </TouchableOpacity>
+          )}
+
           {/* Details Row */}
           <View className="flex-row flex-wrap gap-4 mb-6">
               {currentMed.duration && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.duration) && (
@@ -245,6 +253,49 @@ export default function MedicationView() {
           </View>
         </ScrollView>
       </View>
+
+      {/* Report Confirmation Modal */}
+      <Modal
+        visible={showReportModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReportModal(false)}
+      >
+        <View className="flex-1 bg-black/60 items-center justify-center px-6">
+          <View className="bg-white w-full rounded-[32px] p-8 shadow-2xl">
+            <View className="w-16 h-16 bg-red-50 rounded-full items-center justify-center mb-6 self-center">
+              <AlertCircle size={32} color="#EF4444" />
+            </View>
+            
+            <Text className="text-xl font-extrabold text-gray-900 text-center mb-4">تأكيد إرسال بلاغ</Text>
+            
+            <Text className="text-sm text-gray-500 text-center leading-relaxed font-bold mb-8">
+              هل تريد إرسال بلاغ بأن فيديو الإشارة غير واضح؟ سيتم مراجعة البلاغ من قبل المشرف.
+            </Text>
+
+            <View className="gap-3">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowReportModal(false);
+                  setTimeout(() => {
+                    Alert.alert("تم الإرسال", "تم إرسال البلاغ للمراجعة");
+                  }, 500);
+                }}
+                className="bg-red-500 py-4 rounded-2xl items-center justify-center shadow-lg shadow-red-500/20"
+              >
+                <Text className="text-white font-extrabold text-base">إرسال البلاغ</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                onPress={() => setShowReportModal(false)}
+                className="bg-gray-50 py-4 rounded-2xl items-center justify-center border border-gray-100"
+              >
+                <Text className="text-gray-500 font-extrabold text-base">إلغاء</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </MobileShell>
   );
 }
