@@ -28,7 +28,7 @@ export const authApi = {
 
   // Pharmacist Registration
   registerPharmacist: async (payload) => {
-    // payload: { full_name, phone_number, password, license_number, pharmacy_name, pharmacy_address, otp }
+    // payload: { full_name, phone_number, password, license_number, pharmacy_id, otp }
     return fetchClient('/auth/pharmacist/register/', {
       method: 'POST',
       body: JSON.stringify(payload),

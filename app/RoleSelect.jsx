@@ -1,4 +1,4 @@
-import BrandLogo from "@/components/mobile/BrandLogo";
+import LogoCard from "@/components/mobile/LogoCard";
 import { useRouter } from "expo-router";
 import { Pill, User } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
@@ -93,9 +93,9 @@ export default function RoleSelect() {
         {/* Icon */}
         <Animated.View
           style={{ transform: [{ scale: iconScale }] }}
-          className="w-20 h-20 rounded-2xl bg-white shadow-sm border border-gray-100 items-center justify-center mb-6"
+          className="mb-6"
         >
-          <BrandLogo width={60} height={60} />
+          <LogoCard size={60} borderRadius={24} padding={12} />
         </Animated.View>
 
         {/* Title */}

@@ -8,10 +8,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function PrescriptionSuccess() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { prescription_id, doctor_name, medication_count, patient_name } = useLocalSearchParams();
+  const { prescription_id, doctor_name, medication_count, patient_name: rawPatientName, total_price } = useLocalSearchParams();
+  
+  const getPatientName = () => {
+    const val = String(rawPatientName || "").trim();
+    const hidden = ["مريض", "غير محدد", "null", "undefined", ".", "-", ""];
+    if (!val || hidden.includes(val)) return "مريض غير محدد";
+    return val;
+  };
 
   return (
-    <MobileShell className="bg-pharmacist" edges={["top", "bottom", "left", "right"]}>
+    <MobileShell className="bg-pharmacist" edges={["top", "left", "right"]}>
       <View className="flex-1 bg-background">
         {/* Rounded Integrated Header Overlay */}
         <View className="bg-pharmacist pt-8 pb-16 px-6 rounded-b-[4rem] shadow-2xl shadow-pharmacist/30 relative overflow-hidden">
@@ -51,7 +58,7 @@ export default function PrescriptionSuccess() {
               </View>
 
               <View className="flex-row items-center justify-between border-b border-gray-50 pb-4">
-                <Text className="text-base font-extrabold text-gray-900 text-right flex-1 ml-4" numberOfLines={1}>{patient_name || "---"}</Text>
+                <Text className="text-base font-extrabold text-gray-900 text-right flex-1 ml-4" numberOfLines={1}>{getPatientName()}</Text>
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm font-bold text-gray-500">المريض</Text>
                   <User size={16} color="#9CA3AF" />
@@ -66,13 +73,26 @@ export default function PrescriptionSuccess() {
                 </View>
               </View>
 
-              <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center justify-between border-b border-gray-50 pb-4">
                 <Text className="text-base font-extrabold text-gray-900">{medication_count || "0"}</Text>
                 <View className="flex-row items-center gap-2">
                   <Text className="text-sm font-bold text-gray-500">عدد الأدوية</Text>
                   <Pill size={16} color="#9CA3AF" />
                 </View>
               </View>
+
+              {parseFloat(total_price || 0) > 0 && (
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-1">
+                    <Text className="text-xl font-extrabold text-pharmacist">{new Intl.NumberFormat('en-US').format(total_price)}</Text>
+                    <Text className="text-[10px] font-bold text-pharmacist mt-1">ل.س</Text>
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <Text className="text-sm font-bold text-gray-500">إجمالي الوصفة</Text>
+                    <FileText size={16} color="#05997F" />
+                  </View>
+                </View>
+              )}
             </View>
           </View>
 

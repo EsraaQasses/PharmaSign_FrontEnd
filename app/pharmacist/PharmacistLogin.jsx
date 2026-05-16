@@ -13,7 +13,7 @@ import { normalizePhoneNumber } from "@/utils/phoneUtils";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/lib/AuthContext";
-import BrandLogo from "@/components/mobile/BrandLogo";
+import LogoCard from "@/components/mobile/LogoCard";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
@@ -84,9 +84,7 @@ export default function PharmacistLogin() {
             </View>
 
             <View className="items-center">
-              <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
-                <BrandLogo width={50} height={50} />
-              </View>
+              <LogoCard size={80} borderRadius={24} padding={16} style={{ marginBottom: 16 }} />
               <Text className="text-white text-2xl font-extrabold">
                 تسجيل الدخول
               </Text>

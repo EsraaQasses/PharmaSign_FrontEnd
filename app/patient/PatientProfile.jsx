@@ -389,7 +389,7 @@ export default function PatientProfile() {
             <MenuLink
               icon={Settings}
               title="الإعدادات"
-              subtitle="التنبيهات، اللغة، والمظهر"
+              subtitle="اللغة والمظهر"
               onPress={() => setActiveModal("settings")}
               color="bg-patient"
             />
@@ -524,21 +524,7 @@ export default function PatientProfile() {
                        <Text className="text-lg font-extrabold text-gray-900">التنبيهات</Text>
                        <View className="w-1 h-6 bg-patient rounded-full" />
                     </View>
-                    <SettingRow
-                      icon={Bell}
-                      title="إشعارات التطبيق"
-                      description="السماح للتطبيق بإرسال تنبيهات عامة"
-                      value={settings.notifications}
-                      onValueChange={() => toggleSetting("notifications")}
-                    />
-                    <SettingRow
-                      icon={Smartphone}
-                      title="تنبيهات الأدوية"
-                      description="تذكير بمواعيد الأدوية واستلام الوصفات"
-                      value={settings.prescriptionReminders}
-                      onValueChange={() => toggleSetting("prescriptionReminders")}
-                      showDivider={false}
-                    />
+
                   </View>
 
                   <View className="mb-6">

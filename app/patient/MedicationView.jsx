@@ -13,6 +13,7 @@ import {
   Hand,
   Flag,
   Clock,
+  X,
 } from "lucide-react-native";
 import { Video, ResizeMode } from "expo-av";
 import PageHeader from "@/components/mobile/PageHeader";
@@ -21,7 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { prescriptionApi } from "@/api/prescriptionApi";
 
 export default function MedicationView() {
-  const { id, medIndex } = useLocalSearchParams();
+  const { id, medIndex, itemId } = useLocalSearchParams();
   const router = useRouter();
   const { bottom } = useSafeAreaInsets();
   
@@ -31,6 +32,8 @@ export default function MedicationView() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [showEnlargeModal, setShowEnlargeModal] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
     const fetchRx = async () => {
@@ -54,6 +57,28 @@ export default function MedicationView() {
 
   const index = parseInt(medIndex, 10) || 0;
   const currentMed = rx?.items?.[index] || null;
+  const realItemId = itemId || currentMed?.id;
+
+  const handleReportSubmit = async () => {
+    if (!realItemId || isReporting) return;
+    
+    setIsReporting(true);
+    try {
+      const res = await prescriptionApi.reportSignIssue(realItemId);
+      if (res.success || res.code === "sign_quality_report_exists") {
+        setShowReportModal(false);
+        setTimeout(() => {
+          Alert.alert("تم الإرسال", "تم إرسال البلاغ للمراجعة");
+        }, 500);
+      } else {
+        Alert.alert("خطأ", res.message || "تعذر إرسال البلاغ، حاول مرة أخرى");
+      }
+    } catch (err) {
+      Alert.alert("خطأ", "تعذر إرسال البلاغ، حاول مرة أخرى");
+    } finally {
+      setIsReporting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -92,12 +117,25 @@ export default function MedicationView() {
         >
           {/* Medication Header Card */}
           <View className="bg-white rounded-[24px] p-5 flex-row items-center gap-4 shadow-sm border border-gray-50 mb-6">
-            <View className="w-[70px] h-[70px] bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-              <Pill size={32} color="#022451" />
-            </View>
+            <TouchableOpacity 
+              onPress={() => setShowEnlargeModal(true)}
+              disabled={!(currentMed.image_url || currentMed.medicine_image)}
+              className="w-[70px] h-[70px] bg-patient/5 rounded-2xl items-center justify-center border border-patient/10 overflow-hidden"
+              activeOpacity={0.8}
+            >
+              {currentMed.image_url || currentMed.medicine_image ? (
+                <Image 
+                  source={{ uri: currentMed.image_url || currentMed.medicine_image }} 
+                  style={{ width: '100%', height: '100%' }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Pill size={32} color="#022451" />
+              )}
+            </TouchableOpacity>
             <View className="flex-1">
               <Text className="text-lg font-extrabold text-gray-900 mb-1 text-right">
-                {currentMed.medication_name}
+                {currentMed.medication_name || currentMed.medicine_name || currentMed.name || "دواء"}
               </Text>
               <View className="flex-row justify-end">
                 <View className="bg-patient/10 px-3 py-1 rounded-full">
@@ -202,54 +240,74 @@ export default function MedicationView() {
           )}
 
           {/* Report Button (Patient only) */}
-          {videoUrl && (
+          <View className="mb-8">
             <TouchableOpacity
               onPress={() => setShowReportModal(true)}
-              activeOpacity={0.7}
-              className="bg-red-50 py-4 px-6 rounded-2xl flex-row items-center justify-center gap-3 border border-red-100 mb-8"
+              activeOpacity={videoUrl ? 0.7 : 1}
+              disabled={!videoUrl}
+              className={`py-4 px-6 rounded-2xl flex-row items-center justify-center gap-3 border ${videoUrl ? 'bg-red-50 border-red-100' : 'bg-gray-50 border-gray-100 opacity-60'}`}
             >
-              <Text className="text-red-600 font-extrabold text-sm">الإشارة غير واضحة</Text>
-              <Flag size={18} color="#EF4444" />
+              <Text className={`${videoUrl ? 'text-red-600' : 'text-gray-400'} font-extrabold text-sm`}>
+                الإشارة غير واضحة
+              </Text>
+              <Flag size={18} color={videoUrl ? "#EF4444" : "#9CA3AF"} />
             </TouchableOpacity>
-          )}
+            {!videoUrl && (
+              <Text className="text-[10px] text-gray-400 text-center mt-2 font-bold">
+                سيتم تفعيل البلاغ عند توفر فيديو الإشارة
+              </Text>
+            )}
+          </View>
 
           {/* Details Row */}
           <View className="flex-row flex-wrap gap-4 mb-6">
-              {currentMed.duration && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.duration) && (
-                <View className="flex-1 min-w-[140px] bg-amber-50 p-4 rounded-2xl flex-row items-center gap-3">
-                   <View className="bg-amber-100 w-10 h-10 rounded-xl items-center justify-center">
-                      <Calendar size={20} color="#D97706" />
-                   </View>
-                   <View className="flex-1">
-                      <Text className="text-[10px] text-amber-700 mb-0.5 text-right">المدة</Text>
-                      <Text className="text-sm font-bold text-amber-900 text-right">{currentMed.duration}</Text>
-                   </View>
-                </View>
-              )}
+              {(() => {
+                const val = String(currentMed.duration || "").trim();
+                const hidden = ["غير محدد", "غير محددة", "none", "null", "undefined", ".", "-", ""];
+                return val && !hidden.includes(val) ? (
+                  <View className="flex-1 min-w-[140px] bg-amber-50 p-4 rounded-2xl flex-row items-center gap-3">
+                     <View className="bg-amber-100 w-10 h-10 rounded-xl items-center justify-center">
+                        <Calendar size={20} color="#D97706" />
+                     </View>
+                     <View className="flex-1">
+                        <Text className="text-[10px] text-amber-700 mb-0.5 text-right">المدة</Text>
+                        <Text className="text-sm font-bold text-amber-900 text-right">{val}</Text>
+                     </View>
+                  </View>
+                ) : null;
+              })()}
 
-             {currentMed.dosage && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.dosage) && (
-               <View className="flex-1 min-w-[140px] bg-emerald-50 p-4 rounded-2xl flex-row items-center gap-3">
-                  <View className="bg-emerald-100 w-10 h-10 rounded-xl items-center justify-center">
-                     <Pill size={20} color="#059669" />
+             {(() => {
+                const val = String(currentMed.dosage || "").trim();
+                const hidden = ["غير محدد", "غير محددة", "none", "null", "undefined", ".", "-", ""];
+                return val && !hidden.includes(val) ? (
+                  <View className="flex-1 min-w-[140px] bg-emerald-50 p-4 rounded-2xl flex-row items-center gap-3">
+                     <View className="bg-emerald-100 w-10 h-10 rounded-xl items-center justify-center">
+                        <Pill size={20} color="#059669" />
+                     </View>
+                     <View className="flex-1">
+                        <Text className="text-[10px] text-emerald-700 mb-0.5 text-right">الجرعة</Text>
+                        <Text className="text-sm font-bold text-emerald-900 text-right">{val}</Text>
+                     </View>
                   </View>
-                  <View className="flex-1">
-                     <Text className="text-[10px] text-emerald-700 mb-0.5 text-right">الجرعة</Text>
-                     <Text className="text-sm font-bold text-emerald-900 text-right">{currentMed.dosage}</Text>
-                  </View>
-               </View>
-             )}
+                ) : null;
+              })()}
 
-            {currentMed.frequency && !["غير محدد", "غير محددة", "none", "null"].includes(currentMed.frequency) && (
-               <View className="flex-1 min-w-[140px] bg-blue-50 p-4 rounded-2xl flex-row items-center gap-3">
-                  <View className="bg-blue-100 w-10 h-10 rounded-xl items-center justify-center">
-                     <Clock size={20} color="#3B82F6" />
+             {(() => {
+                const val = String(currentMed.frequency || "").trim();
+                const hidden = ["غير محدد", "غير محددة", "none", "null", "undefined", ".", "-", ""];
+                return val && !hidden.includes(val) ? (
+                  <View className="flex-1 min-w-[140px] bg-blue-50 p-4 rounded-2xl flex-row items-center gap-3">
+                     <View className="bg-blue-100 w-10 h-10 rounded-xl items-center justify-center">
+                        <Clock size={20} color="#3B82F6" />
+                     </View>
+                     <View className="flex-1">
+                        <Text className="text-[10px] text-blue-700 mb-0.5 text-right">التكرار</Text>
+                        <Text className="text-sm font-bold text-blue-900 text-right">{val}</Text>
+                     </View>
                   </View>
-                  <View className="flex-1">
-                     <Text className="text-[10px] text-blue-700 mb-0.5 text-right">التكرار</Text>
-                     <Text className="text-sm font-bold text-blue-900 text-right">{currentMed.frequency}</Text>
-                  </View>
-               </View>
-             )}
+                ) : null;
+              })()}
           </View>
         </ScrollView>
       </View>
@@ -275,15 +333,15 @@ export default function MedicationView() {
 
             <View className="gap-3">
               <TouchableOpacity
-                onPress={() => {
-                  setShowReportModal(false);
-                  setTimeout(() => {
-                    Alert.alert("تم الإرسال", "تم إرسال البلاغ للمراجعة");
-                  }, 500);
-                }}
-                className="bg-red-500 py-4 rounded-2xl items-center justify-center shadow-lg shadow-red-500/20"
+                onPress={handleReportSubmit}
+                disabled={isReporting}
+                className={`py-4 rounded-2xl items-center justify-center shadow-lg ${isReporting ? 'bg-gray-300' : 'bg-red-500 shadow-red-500/20'}`}
               >
-                <Text className="text-white font-extrabold text-base">إرسال البلاغ</Text>
+                {isReporting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text className="text-white font-extrabold text-base">إرسال البلاغ</Text>
+                )}
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -294,6 +352,36 @@ export default function MedicationView() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      {/* Image Enlargement Modal */}
+      <Modal
+        visible={showEnlargeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowEnlargeModal(false)}
+      >
+        <View className="flex-1 bg-black/90 items-center justify-center relative">
+          <TouchableOpacity 
+            style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }}
+            onPress={() => setShowEnlargeModal(false)}
+            className="w-10 h-10 bg-white/10 rounded-full items-center justify-center"
+          >
+            <X size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            activeOpacity={1} 
+            className="w-full h-full items-center justify-center p-4"
+            onPress={() => setShowEnlargeModal(false)}
+          >
+            <Image 
+              source={{ uri: currentMed.image_url || currentMed.medicine_image }} 
+              style={{ width: '100%', height: '80%' }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
         </View>
       </Modal>
     </MobileShell>

@@ -29,27 +29,52 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       const { access } = await tokenStorage.getTokens();
+
+      // No access token stored — user has never logged in or already logged out.
+      // This is a normal, expected state. Do NOT show any error.
       if (!access) {
+        setIsAuthenticated(false);
+        setUser(null);
+        setUserRole(null);
         setAuthChecked(true);
         return;
       }
 
-      // Fetch user profile to verify token and get fresh data
+      // Attempt to verify the stored token against the backend.
+      // fetchClient will internally attempt a token refresh if this returns 401.
+      // If refresh also fails, fetchClient clears both tokens and returns status 401.
       const result = await profileApi.getMe();
-      
-      if (result.success) {
-        setUser(result.data.user);
-        setUserRole(result.data.user.role);
+
+      if (result.success && result.data) {
+        // Token is valid — restore user session.
+        const userData = result.data.user || result.data;
+        setUser(userData);
+        setUserRole(userData?.role || null);
         setIsAuthenticated(true);
       } else if (result.status === 401) {
-        // Token is invalid/expired - logout
-        await logout();
+        // Token is expired/invalid and refresh failed.
+        // fetchClient already cleared stored tokens at this point.
+        // Explicitly reset auth state so the user can log in again.
+        setIsAuthenticated(false);
+        setUser(null);
+        setUserRole(null);
+      } else if (result.status === 0) {
+        // Network error — server is unreachable.
+        // Do NOT clear tokens; the user may be offline temporarily.
+        // Keep isAuthenticated as false (initial state) to prevent accessing protected screens.
+        setIsAuthenticated(false);
+        setUser(null);
       }
-      // Note: If result.status === 0 (network error), we keep current state (usually null user) 
-      // but don't clear tokens to allow offline/later retry.
+      // All other error statuses (e.g. 500) are treated like network errors:
+      // tokens are preserved but session is not restored.
     } catch (error) {
-      console.error("Auth check failed:", error);
+      // Unexpected JS error — guard against crashing the app.
+      // Silently reset to unauthenticated state.
+      setIsAuthenticated(false);
+      setUser(null);
+      setUserRole(null);
     } finally {
+      // Always mark the auth check as done so the router can decide where to navigate.
       setAuthChecked(true);
     }
   };

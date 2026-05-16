@@ -253,91 +253,105 @@ export default function ScanPatient() {
             </View>
           </View>
         ) : (
-          <View className="flex-1 items-center justify-center px-8">
-            <View className="w-16 h-16 bg-pharmacist/20 rounded-full items-center justify-center mb-4 border-4 border-pharmacist/40">
-              <CheckCircle2 size={36} color="#FFFFFF" />
-            </View>
-
-            <Text className="text-2xl font-extrabold text-white text-center mb-1">
-              تم التحقق من المريض
-            </Text>
-            <Text className="text-xs text-emerald-100 text-center mb-6 opacity-80">
-              تم إنشاء جلسة ربط آمنة ومؤقتة
-            </Text>
-
-            <View className="w-full bg-white/10 rounded-[2rem] p-5 border border-white/10 mb-6 shadow-2xl">
-              <View className="flex-row items-center justify-end mb-4">
-                <View className="items-end mr-4">
-                  <Text className="text-xl font-extrabold text-white mb-0.5">
-                    {patientData?.patient?.full_name || "مريض"}
-                  </Text>
-                  <Text className="text-white/70 text-xs font-bold">
-                    جلسة نشطة • SES-{sessionId}
-                  </Text>
-                </View>
-                <View className="w-14 h-14 rounded-2xl border border-pharmacist/30 bg-white/10 items-center justify-center overflow-hidden">
-                  <Text className="text-3xl">👨</Text>
-                </View>
+          <View className="flex-1 w-full relative">
+            {/* Header for Success State */}
+            <View className="px-5 pt-4" style={{ position: 'relative', minHeight: 44 }}>
+              <View style={{ position: 'absolute', right: 20, top: 16, zIndex: 10 }}>
+                <HeaderBackButton fallback="/pharmacist/PharmacistHome" color="#FFFFFF" />
               </View>
-
-              <View className="h-px bg-white/10 w-full mb-4" />
-
-              <View className="gap-2">
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">
-                    {patientData?.patient?.date_of_birth || patientData?.patient?.birth_date || "---"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">تاريخ الميلاد</Text>
-                </View>
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">
-                    {calculateAge(patientData?.patient?.date_of_birth || patientData?.patient?.birth_date)}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">العمر</Text>
-                </View>
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white">
-                    {REVERSE_BLOOD_TYPE_MAP[patientData?.medical_info?.blood_type] || patientData?.medical_info?.blood_type || "---"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">فصيلة الدم</Text>
-                </View>
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
-                    {patientData?.medical_info?.allergies || "لا يوجد"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">الحساسية</Text>
-                </View>
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
-                    {patientData?.medical_info?.chronic_conditions || "لا يوجد"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">الأمراض المزمنة</Text>
-                </View>
-                <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
-                  <Text className="text-base font-extrabold text-white" numberOfLines={1}>
-                    {patientData?.medical_info?.regular_medications || "لا يوجد"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">الأدوية الدورية</Text>
-                </View>
-                <View className="flex-row justify-between items-center">
-                  <Text className="text-base font-extrabold text-white">
-                    {patientData?.medical_info?.is_pregnant ? "حامل" : patientData?.medical_info?.is_breastfeeding ? "مرضع" : "لا يوجد"}
-                  </Text>
-                  <Text className="text-[10px] font-bold text-emerald-100/50">الحمل / الإرضاع</Text>
-                </View>
+              <View className="items-center justify-center" style={{ minHeight: 44 }}>
+                <Text className="text-xl font-extrabold text-white text-center">
+                  تفاصيل المريض
+                </Text>
               </View>
             </View>
 
-            <TouchableOpacity
-              className="w-full h-14 bg-white rounded-full flex-row items-center justify-center gap-3 shadow-2xl shadow-black/20 mt-4"
-              activeOpacity={0.9}
-              onPress={handleStartSession}
-            >
-              <Text className="text-xl font-extrabold text-pharmacist">
-                متابعة وصرف الوصفة
+            <View className="flex-1 items-center justify-center px-8 pb-10">
+              <View className="w-16 h-16 bg-white/20 rounded-full items-center justify-center mb-4 border-4 border-white/30">
+                <CheckCircle2 size={36} color="#FFFFFF" />
+              </View>
+
+              <Text className="text-2xl font-extrabold text-white text-center mb-1">
+                تم التحقق من المريض
               </Text>
-              <ArrowLeft size={24} color="#05997F" strokeWidth={3} />
-            </TouchableOpacity>
+              <Text className="text-xs text-emerald-100 text-center mb-6 opacity-90">
+                تم إنشاء جلسة ربط آمنة ومؤقتة
+              </Text>
+
+              <View className="w-full bg-white/20 rounded-[2rem] p-6 border border-white/20 mb-8 shadow-2xl">
+                <View className="flex-row items-center justify-end mb-5">
+                  <View className="items-end mr-4">
+                    <Text className="text-xl font-extrabold text-white mb-0.5">
+                      {patientData?.patient?.full_name || "مريض"}
+                    </Text>
+                    <Text className="text-white/70 text-[10px] font-bold">
+                      جلسة نشطة • SES-{sessionId}
+                    </Text>
+                  </View>
+                  <View className="w-14 h-14 rounded-2xl border border-white/20 bg-white/10 items-center justify-center overflow-hidden">
+                    <Text className="text-3xl">👨</Text>
+                  </View>
+                </View>
+
+                <View className="h-px bg-white/20 w-full mb-5" />
+
+                <View className="gap-3">
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white">
+                      {patientData?.patient?.date_of_birth || patientData?.patient?.birth_date || "---"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">تاريخ الميلاد</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white">
+                      {calculateAge(patientData?.patient?.date_of_birth || patientData?.patient?.birth_date)}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">العمر</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white">
+                      {REVERSE_BLOOD_TYPE_MAP[patientData?.medical_info?.blood_type] || patientData?.medical_info?.blood_type || "---"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">فصيلة الدم</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                      {patientData?.medical_info?.allergies || "لا يوجد"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">الحساسية</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                      {patientData?.medical_info?.chronic_conditions || "لا يوجد"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">الأمراض المزمنة</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center border-b border-white/5 pb-2">
+                    <Text className="text-base font-extrabold text-white" numberOfLines={1}>
+                      {patientData?.medical_info?.regular_medications || "لا يوجد"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">الأدوية الدورية</Text>
+                  </View>
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-base font-extrabold text-white">
+                      {patientData?.medical_info?.is_pregnant ? "حامل" : patientData?.medical_info?.is_breastfeeding ? "مرضع" : "لا يوجد"}
+                    </Text>
+                    <Text className="text-[10px] font-bold text-emerald-100/60">الحمل / الإرضاع</Text>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                className="w-full h-15 bg-white rounded-2xl flex-row items-center justify-center gap-3 shadow-2xl shadow-black/20"
+                activeOpacity={0.9}
+                onPress={handleStartSession}
+              >
+                <Text className="text-xl font-extrabold text-pharmacist">
+                  متابعة وصرف الوصفة
+                </Text>
+                <ArrowLeft size={24} color="#05997F" strokeWidth={3} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </MobileShell>

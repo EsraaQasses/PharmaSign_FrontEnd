@@ -12,6 +12,7 @@ import {
   Trash2,
   Upload,
   X,
+  AlertCircle
 } from "lucide-react-native";
 import React, { useEffect, useRef, useState } from "react";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
@@ -41,17 +42,6 @@ const prescriptionDraft = {
   medications: [],
 };
 
-const DOCTOR_SPECIALTIES = [
-  "طبيب عام",
-  "قلبية",
-  "عصبية",
-  "أطفال",
-  "نسائية",
-  "عظمية",
-  "باطنية",
-  "أسنان",
-  "أخرى",
-];
 
 export default function NewPrescription() {
   const router = useRouter();
@@ -70,21 +60,27 @@ export default function NewPrescription() {
     medDosage,
     medDuration,
     medFrequency,
-    medPrice
+    medImage,
+    medPrice,
+    medQuantity
   } = params;
 
   const [currentPrescriptionId, setCurrentPrescriptionId] = useState(prescription_id || null);
   const [currentItemId, setCurrentItemId] = useState(item_id || null);
 
   const processedAddedMedRef = useRef(false);
+  // Prevents double-tap / in-flight duplicate item creation.
+  // useRef is synchronous unlike setState, so it blocks the second press immediately.
+  const isCreatingItemRef = useRef(false);
 
-  const [price, setPrice] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [doctorSpecialty, setDoctorSpecialty] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [medicineImageUri, setMedicineImageUri] = useState(null);
   const [medicineName, setMedicineName] = useState("");
+  const [medicinePrice, setMedicinePrice] = useState("");
+  const [medicineQuantity, setMedicineQuantity] = useState("1");
   const [showSpecialtyModal, setShowSpecialtyModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
@@ -94,6 +90,10 @@ export default function NewPrescription() {
   const [isAddingAnother, setIsAddingAnother] = useState(
     prescriptionDraft.medications.length === 0
   );
+
+  const [specialties, setSpecialties] = useState([]);
+  const [isSpecialtiesLoading, setIsSpecialtiesLoading] = useState(true);
+  const [specialtiesError, setSpecialtiesError] = useState("");
 
   /*
     First normal open:
@@ -112,7 +112,6 @@ export default function NewPrescription() {
       setMedications([]);
       setMedicineImageUri(null);
       setMedicineName("");
-      setPrice("");
       setValidationErrors({});
       setCurrentPrescriptionId(null);
       setCurrentItemId(null);
@@ -121,19 +120,51 @@ export default function NewPrescription() {
       if (prescriptionDraft.doctorName) setDoctorName(prescriptionDraft.doctorName);
       if (prescriptionDraft.doctorSpecialty) {
         setDoctorSpecialty(prescriptionDraft.doctorSpecialty);
-        if (DOCTOR_SPECIALTIES.includes(prescriptionDraft.doctorSpecialty)) {
-          setSelectedSpecialty(prescriptionDraft.doctorSpecialty);
-        } else {
-          setSelectedSpecialty("أخرى");
-          setCustomSpecialty(prescriptionDraft.doctorSpecialty);
-        }
+        // We will refine setSelectedSpecialty once specialties are loaded in the useEffect below
+        setSelectedSpecialty(prescriptionDraft.doctorSpecialty);
       }
       if (prescription_id) setCurrentPrescriptionId(prescription_id);
       if (item_id) setCurrentItemId(item_id);
       if (medName) setMedicineName(medName);
-      if (medPrice) setPrice(medPrice);
+      if (medImage) setMedicineImageUri(medImage);
+      if (medPrice) setMedicinePrice(medPrice);
+      if (medQuantity) setMedicineQuantity(medQuantity);
     }
-  }, [keepDraft, prescription_id, item_id, medName, medPrice]);
+  }, [keepDraft, prescription_id, item_id, medName, medImage, medPrice, medQuantity]);
+
+  // Refine specialty restoration once backend list is loaded
+  useEffect(() => {
+    if (specialties.length > 0 && prescriptionDraft.doctorSpecialty) {
+      const standardMatch = specialties.find(s => s.label === prescriptionDraft.doctorSpecialty);
+      if (standardMatch) {
+        setSelectedSpecialty(standardMatch.label);
+      } else {
+        setSelectedSpecialty("أخرى");
+        setCustomSpecialty(prescriptionDraft.doctorSpecialty);
+      }
+    }
+  }, [specialties]);
+
+  const fetchSpecialties = async () => {
+    setIsSpecialtiesLoading(true);
+    setSpecialtiesError("");
+    try {
+      const res = await prescriptionApi.getDoctorSpecialties();
+      if (res.success) {
+        setSpecialties(res.data?.results || []);
+      } else {
+        setSpecialtiesError(res.message || "تعذر تحميل الاختصاصات");
+      }
+    } catch (err) {
+      setSpecialtiesError("فشل الاتصال بالخادم");
+    } finally {
+      setIsSpecialtiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSpecialties();
+  }, []);
 
   // Eager creation of draft prescription on mount
   useEffect(() => {
@@ -191,6 +222,8 @@ export default function NewPrescription() {
         dosage: medDosage || "",
         duration: medDuration || "",
         instructions: verifiedText,
+        price: medPrice || medicinePrice,
+        quantity: medQuantity || medicineQuantity
       };
 
       prescriptionDraft.medications = [
@@ -210,21 +243,34 @@ export default function NewPrescription() {
           keepDraft: "true",
           session_id,
           patient_id,
-          prescription_id: currentPrescriptionId
-        }
-      });
-    }
-  }, [verifiedText]);
+          patient_name,
+          prescription_id: currentPrescriptionId,
+          medPrice: medPrice || medicinePrice,
+          medQuantity: medQuantity || medicineQuantity
+         }
+       });
+     }
+   }, [verifiedText]);
 
   const hasCompletedMedicines = medications.length > 0;
 
   const resetCurrentMedicineForm = () => {
-    setPrice("");
     setMedicineImageUri(null);
     setMedicineName("");
+    setMedicinePrice("");
+    setMedicineQuantity("1");
     setValidationErrors({});
     setIsAddingAnother(true);
   };
+  
+  const toEnNumerals = (str) => {
+    if (!str) return "";
+    return String(str)
+      .replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
+      .replace(/[۰-۹]/g, (d) => "۰۱۲۳٤۵٦۷۸۹".indexOf(d));
+  };
+
+
 
   const handleTakePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -275,6 +321,18 @@ export default function NewPrescription() {
     if (!selectedSpecialty || selectedSpecialty === "") errors.specialty = "يرجى إدخال اختصاص الطبيب";
     if (!medicineImageUri) errors.image = "يرجى التقاط أو اختيار صورة للدواء";
 
+    // Price Validation
+    const cleanPrice = toEnNumerals(medicinePrice).trim();
+    if (!cleanPrice || isNaN(parseFloat(cleanPrice)) || parseFloat(cleanPrice) < 0) {
+      errors.medicinePrice = "يرجى إدخال سعر صحيح للدواء";
+    }
+
+    // Quantity Validation
+    const cleanQty = toEnNumerals(medicineQuantity).trim();
+    if (!cleanQty || isNaN(parseInt(cleanQty)) || parseInt(cleanQty) <= 0) {
+      errors.medicineQuantity = "يرجى إدخال كمية صحيحة";
+    }
+
     setValidationErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -287,6 +345,12 @@ export default function NewPrescription() {
       return;
     }
 
+    // Synchronous ref guard — blocks duplicate requests even before setState resolves.
+    if (isCreatingItemRef.current) {
+      console.log("Blocked duplicate item creation attempt (double-tap guard)");
+      return;
+    }
+    isCreatingItemRef.current = true;
     setIsSending(true);
 
     try {
@@ -305,14 +369,37 @@ export default function NewPrescription() {
         dosage: "", // To be populated by audio
         frequency: "",
         duration: "غير محدد",
-        instructions_text: "" 
+        instructions_text: "",
+        price: toEnNumerals(medicinePrice).trim(),
+        quantity: parseInt(toEnNumerals(medicineQuantity).trim()) || 1
       };
 
       let itemId = currentItemId;
 
       if (!itemId) {
         console.log("Creating medication item for prescription:", currentPrescriptionId);
-        const itemRes = await prescriptionApi.addItemToPrescription(currentPrescriptionId, itemPayload);
+        
+        let finalPayload;
+        if (medicineImageUri) {
+          finalPayload = new FormData();
+          Object.keys(itemPayload).forEach(key => {
+            finalPayload.append(key, itemPayload[key]);
+          });
+          
+          const filename = medicineImageUri.split('/').pop();
+          const match = /\.(\w+)$/.exec(filename);
+          const type = match ? `image/${match[1]}` : `image`;
+          
+          finalPayload.append("medication_image", {
+            uri: medicineImageUri,
+            name: filename,
+            type
+          });
+        } else {
+          finalPayload = itemPayload;
+        }
+
+        const itemRes = await prescriptionApi.addItemToPrescription(currentPrescriptionId, finalPayload);
         
         if (!itemRes.success) {
           throw new Error(itemRes.message || "فشل إضافة الدواء في هذه الخطوة");
@@ -339,14 +426,18 @@ export default function NewPrescription() {
           doctor_name: prescriptionDraft.doctorName,
           doctor_specialty: prescriptionDraft.doctorSpecialty,
           medName: medicineName,
-          medPrice: price,
+          medImage: medicineImageUri,
           medDosage: medDosage || "", 
           medDuration: medDuration || "غير محدد",
-          medFrequency: medFrequency || ""
+          medFrequency: medFrequency || "",
+          medPrice: toEnNumerals(medicinePrice).trim(),
+          medQuantity: toEnNumerals(medicineQuantity).trim()
         }
       });
     } catch (err) {
       Alert.alert("خطأ", err.message || "فشل الاتصال بالخادم");
+      // Release the guard on failure so the user can retry.
+      isCreatingItemRef.current = false;
     } finally {
       setIsSending(false);
     }
@@ -374,7 +465,13 @@ export default function NewPrescription() {
       // No alert here, we redirect to success screen
       
       const finalPrescriptionId = currentPrescriptionId;
-      const finalPatientName = patient_name || "مريض";
+      // Read name from route params. ScanPatient passes patientData?.patient?.full_name.
+      // Guard against empty/placeholder strings so success screen shows real name or clear fallback.
+      const rawPatientName = String(patient_name || "").trim();
+      const PLACEHOLDER_NAMES = ["مريض", "غير محدد", "null", "undefined", "-", "."];
+      const finalPatientName = rawPatientName && !PLACEHOLDER_NAMES.includes(rawPatientName)
+        ? rawPatientName
+        : "مريض غير محدد";
       const finalMedicationCount = medications.length;
 
       // Clear local state
@@ -391,7 +488,8 @@ export default function NewPrescription() {
           prescription_id: finalPrescriptionId,
           patient_name: finalPatientName,
           medication_count: finalMedicationCount,
-          doctor_name: doctorName
+          doctor_name: doctorName,
+          total_price: medications.reduce((sum, m) => sum + (parseFloat(m.price || 0) * parseInt(m.quantity || 1)), 0)
         }
       });
 
@@ -646,7 +744,9 @@ export default function NewPrescription() {
                 <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">
                   اسم الدواء (مطلوب)
                 </Text>
-                <View className="flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16">
+                <View className={`flex-row items-center border bg-gray-50 rounded-2xl px-4 h-16 ${
+                  validationErrors.medicineName ? "border-red-500 bg-red-50/10" : "border-gray-100"
+                }`}>
                   <TextInput
                     className="flex-1 text-base text-gray-900 h-full font-bold"
                     placeholder="اكتب اسم الدواء..."
@@ -655,6 +755,68 @@ export default function NewPrescription() {
                     value={medicineName}
                     onChangeText={setMedicineName}
                   />
+                </View>
+                {validationErrors.medicineName && (
+                  <Text className="text-red-500 text-[10px] font-bold text-right mt-1">
+                    {validationErrors.medicineName}
+                  </Text>
+                )}
+              </View>
+
+              {/* Price and Quantity Fields */}
+              <View className="flex-row gap-4 mt-5">
+                <View className="flex-1">
+                  <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">
+                    الكمية
+                  </Text>
+                  <View className={`flex-row items-center border bg-gray-50 rounded-2xl px-4 h-16 ${
+                    validationErrors.medicineQuantity ? "border-red-500 bg-red-50/10" : "border-gray-100"
+                  }`}>
+                    <TextInput
+                      className="flex-1 text-base text-gray-900 h-full font-bold"
+                      placeholder="1"
+                      placeholderTextColor="#9CA3AF"
+                      textAlign="right"
+                      keyboardType="number-pad"
+                      value={medicineQuantity}
+                      onChangeText={(val) => setMedicineQuantity(toEnNumerals(val).replace(/[^0-9]/g, ""))}
+                    />
+                  </View>
+                  {validationErrors.medicineQuantity && (
+                    <Text className="text-red-500 text-[10px] font-bold text-right mt-1">
+                      {validationErrors.medicineQuantity}
+                    </Text>
+                  )}
+                </View>
+
+                <View className="flex-[1.5]">
+                  <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">
+                    السعر (ل.س)
+                  </Text>
+                  <View className={`flex-row items-center border bg-gray-50 rounded-2xl px-4 h-16 ${
+                    validationErrors.medicinePrice ? "border-red-500 bg-red-50/10" : "border-gray-100"
+                  }`}>
+                    <TextInput
+                      className="flex-1 text-base text-gray-900 h-full font-bold"
+                      placeholder="مثال: 15000"
+                      placeholderTextColor="#9CA3AF"
+                      textAlign="right"
+                      keyboardType="decimal-pad"
+                      value={medicinePrice}
+                      onChangeText={(val) => {
+                        const enVal = toEnNumerals(val);
+                        // Allow only one decimal point
+                        if (enVal === "" || /^\d*\.?\d*$/.test(enVal)) {
+                          setMedicinePrice(enVal);
+                        }
+                      }}
+                    />
+                  </View>
+                  {validationErrors.medicinePrice && (
+                    <Text className="text-red-500 text-[10px] font-bold text-right mt-1">
+                      {validationErrors.medicinePrice}
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -721,27 +883,6 @@ export default function NewPrescription() {
                   </View>
                 </View>
               )}
-
-              <View className="h-px bg-gray-100 w-full mb-6" />
-
-              {/* Price */}
-              <View className="mb-6">
-                <Text className="text-sm font-extrabold text-gray-700 mb-3 text-right">
-                  السعر (اختياري)
-                </Text>
-
-                <View className="flex-row items-center border border-gray-100 bg-gray-50 rounded-2xl px-4 h-16">
-                  <TextInput
-                    className="flex-1 text-base text-gray-900 h-full pl-2 font-bold"
-                    placeholder="مثال: 20"
-                    placeholderTextColor="#9CA3AF"
-                    keyboardType="numeric"
-                    textAlign="right"
-                    value={price}
-                    onChangeText={setPrice}
-                  />
-                </View>
-              </View>
             </View>
           </ScrollView>
 
@@ -840,29 +981,47 @@ export default function NewPrescription() {
               showsVerticalScrollIndicator={false}
             >
               <View className="gap-3">
-                {DOCTOR_SPECIALTIES.map((spec) => (
-                  <TouchableOpacity
-                    key={spec}
-                    onPress={() => onSpecialtySelect(spec)}
-                    className={`flex-row items-center justify-between p-5 rounded-2xl ${
-                      selectedSpecialty === spec ? "bg-pharmacist/10 border border-pharmacist/20" : "bg-gray-50 border border-gray-100"
-                    }`}
-                    activeOpacity={0.7}
-                  >
-                    {selectedSpecialty === spec ? (
-                      <CheckCircle size={22} color="#05997F" strokeWidth={2.5} />
-                    ) : (
-                      <View className="w-6" />
-                    )}
-                    <Text
-                      className={`text-base font-extrabold ${
-                        selectedSpecialty === spec ? "text-pharmacist" : "text-gray-700"
+                {isSpecialtiesLoading ? (
+                  <View className="items-center justify-center py-20">
+                    <Text className="text-gray-500 font-bold">جاري تحميل الاختصاصات...</Text>
+                  </View>
+                ) : specialtiesError ? (
+                  <View className="items-center justify-center py-20 bg-red-50 rounded-3xl border border-red-100 px-6">
+                    <AlertCircle size={40} color="#EF4444" />
+                    <Text className="text-red-500 font-bold mt-2 text-center">{specialtiesError}</Text>
+                    <TouchableOpacity onPress={fetchSpecialties} className="mt-4 bg-red-500 px-6 py-2 rounded-xl">
+                      <Text className="text-white font-bold">إعادة المحاولة</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : specialties.length === 0 ? (
+                  <View className="items-center justify-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                    <Text className="text-gray-500 font-bold">لا توجد اختصاصات متاحة حالياً</Text>
+                  </View>
+                ) : (
+                  specialties.map((specObj) => (
+                    <TouchableOpacity
+                      key={specObj.value}
+                      onPress={() => onSpecialtySelect(specObj.label)}
+                      className={`flex-row items-center justify-between p-5 rounded-2xl ${
+                        selectedSpecialty === specObj.label ? "bg-pharmacist/10 border border-pharmacist/20" : "bg-gray-50 border border-gray-100"
                       }`}
+                      activeOpacity={0.7}
                     >
-                      {spec}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      {selectedSpecialty === specObj.label ? (
+                        <CheckCircle size={22} color="#05997F" strokeWidth={2.5} />
+                      ) : (
+                        <View className="w-6" />
+                      )}
+                      <Text
+                        className={`text-base font-extrabold ${
+                          selectedSpecialty === specObj.label ? "text-pharmacist" : "text-gray-700"
+                        }`}
+                      >
+                        {specObj.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
               </View>
             </ScrollView>
           </View>

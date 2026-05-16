@@ -189,7 +189,6 @@ export default function RecordAudio() {
                     ...params, 
                     keepDraft: "true",
                     medName: params.medName,
-                    medPrice: params.medPrice,
                     medDosage: params.medDosage,
                     medDuration: params.medDuration,
                     medFrequency: params.medFrequency
@@ -320,7 +319,6 @@ export default function RecordAudio() {
                 ...params, 
                 keepDraft: "true",
                 medName: params.medName,
-                medPrice: params.medPrice,
                 medDosage: params.medDosage,
                 medDuration: params.medDuration,
                 medFrequency: params.medFrequency

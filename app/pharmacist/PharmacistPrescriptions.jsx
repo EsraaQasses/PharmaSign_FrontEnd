@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { Search, SlidersHorizontal, FileText, UserCheck, Calendar, Pill, ChevronLeft, AlertCircle } from "lucide-react-native";
+import { Search, SlidersHorizontal, FileText, UserCheck, Calendar, Pill, ChevronLeft, AlertCircle, MapPin } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
 import { prescriptionApi } from "@/api/prescriptionApi";
@@ -28,7 +28,9 @@ export default function PharmacistPrescriptions() {
     try {
       const res = await prescriptionApi.getPrescriptions();
       if (res.success) {
-        setPrescriptions(res.data);
+        // Defensive handling of response shapes: res.data, res.data.results, etc.
+        const data = res.data?.results || res.data?.prescriptions || res.data || [];
+        setPrescriptions(Array.isArray(data) ? data : []);
       } else {
         setError(res.message || "تعذر تحميل الوصفات");
       }
@@ -39,12 +41,70 @@ export default function PharmacistPrescriptions() {
     }
   };
 
-  const filteredPrescriptions = (prescriptions || []).filter((rx) => {
-    const pName = rx.patient?.full_name || rx.patient_name || "";
+  const getPharmacyName = (rx) => {
+    const nestedName = rx?.pharmacy?.name;
+    const flatName = rx?.pharmacy_name;
+    const name = nestedName || flatName;
+    if (!name) return "";
+    const clean = String(name).trim();
+    if (!clean || ["صيدلية غير محددة", "none", "null", "undefined"].includes(clean)) return "";
+    return clean;
+  };
+
+  const getPatientDisplayName = (rx) => {
+    const value =
+      rx?.patient_name ||
+      rx?.patient?.full_name ||
+      rx?.patient?.name ||
+      rx?.patient?.user?.full_name ||
+      rx?.patient?.user?.name ||
+      rx?.session?.patient?.full_name ||
+      rx?.session?.patient?.name ||
+      rx?.patient?.phone_number ||
+      rx?.patient?.user?.phone_number;
+
+    const clean = String(value || "").trim();
+
+    if (
+      !clean ||
+      clean === "مريض" ||
+      clean === "غير محدد" ||
+      clean === "null" ||
+      clean === "undefined" ||
+      clean === "." ||
+      clean === "-"
+    ) {
+      return "مريض غير محدد";
+    }
+
+    return clean;
+  };
+
+  const getItemPrice = (item) => parseFloat(item.price || 0);
+  const getItemQuantity = (item) => parseInt(item.quantity || 1);
+  const getItemSubtotal = (item) => getItemPrice(item) * getItemQuantity(item);
+  const getPrescriptionTotal = (rx) => {
     const items = rx.items || rx.medications || [];
+    return items.reduce((sum, item) => sum + getItemSubtotal(item), 0);
+  };
+  const formatPrice = (val) => new Intl.NumberFormat('en-US').format(val);
+
+  const filteredPrescriptions = (prescriptions || []).filter((rx) => {
+    // 1. Filter out draft-like prescriptions
+    const status = String(rx.status || "").toLowerCase();
+    const isDraft = ["draft", "pending_draft", "مسودة"].includes(status);
+    if (isDraft) return false;
+
+    // 2. Apply search query
+    const pName = getPatientDisplayName(rx);
+    const doctorName = rx.doctor_name || "";
+    const items = rx.items || rx.medications || [];
+    const query = searchQuery.toLowerCase();
+    
     return (
-      pName.includes(searchQuery) ||
-      items.some((m) => (m.medicine_name || m.name || "").includes(searchQuery))
+      pName.toLowerCase().includes(query) ||
+      doctorName.toLowerCase().includes(query) ||
+      items.some((m) => (m.medicine_name || m.name || "").toLowerCase().includes(query))
     );
   });
 
@@ -90,10 +150,10 @@ export default function PharmacistPrescriptions() {
                  <Text className="text-gray-500 font-bold mt-4">جاري تحميل الوصفات...</Text>
               </View>
             ) : error ? (
-              <View className="items-center justify-center py-20 bg-red-50 rounded-3xl border border-red-100">
+              <View className="items-center justify-center py-20 bg-red-50 rounded-3xl border border-red-100 px-6">
                 <AlertCircle size={40} color="#EF4444" />
-                <Text className="text-red-500 font-bold mt-2">{error}</Text>
-                <TouchableOpacity onPress={fetchPrescriptions} className="mt-4 bg-red-500 px-4 py-2 rounded-xl">
+                <Text className="text-red-500 font-bold mt-2 text-center">{error}</Text>
+                <TouchableOpacity onPress={fetchPrescriptions} className="mt-4 bg-red-500 px-6 py-2 rounded-xl">
                   <Text className="text-white font-bold">إعادة المحاولة</Text>
                 </TouchableOpacity>
               </View>
@@ -124,16 +184,22 @@ export default function PharmacistPrescriptions() {
                         <FileText size={24} color="#05997F" strokeWidth={2.5} />
                       </View>
                       <View>
-                        <Text className="text-base font-extrabold text-gray-900">{rx.patient?.full_name || rx.patient_name || "مريض"}</Text>
+                        <Text className="text-base font-extrabold text-gray-900">{getPatientDisplayName(rx)}</Text>
                         <View className="flex-row items-center gap-1.5 mt-0.5">
                           <Calendar size={12} color="#9CA3AF" />
-                          <Text className="text-[11px] font-bold text-gray-400">{rx.created_at?.split('T')[0] || rx.date || "---"}</Text>
+                          <Text className="text-[11px] font-bold text-gray-400">{(rx.prescribed_at || rx.created_at || rx.date || "").split('T')[0] || "---"}</Text>
                           <Text className="text-[11px] font-bold text-gray-400 mx-1">•</Text>
-                          <Text className="text-[11px] font-bold text-pharmacist">{rx.doctor_name}{rx.doctor_specialty ? ` (${rx.doctor_specialty})` : ""}</Text>
+                          <Text className="text-[11px] font-bold text-pharmacist">{rx.doctor_name || "طبيب"}{rx.doctor_specialty ? ` (${rx.doctor_specialty})` : ""}</Text>
                         </View>
                       </View>
                     </View>
 
+                    {getPrescriptionTotal(rx) > 0 && (
+                      <View className="flex-row items-center gap-1 bg-pharmacist/5 px-3 py-1.5 rounded-xl border border-pharmacist/10">
+                        <Text className="text-xs font-extrabold text-pharmacist">{formatPrice(getPrescriptionTotal(rx))}</Text>
+                        <Text className="text-[9px] font-bold text-pharmacist mt-0.5">ل.س</Text>
+                      </View>
+                    )}
                   </View>
 
                   {/* Meds snippet */}
@@ -143,9 +209,16 @@ export default function PharmacistPrescriptions() {
                         <Pill size={14} color="#05997F" />
                       </View>
                       <Text className="flex-1 text-sm font-bold text-gray-600 leading-relaxed text-right">
-                        {(rx.items || rx.medications || []).map((m) => m.medicine_name || m.name || "دواء").join("، ")}
+                        {(rx.items || rx.medications || []).map((m) => m.medication_name || m.medicine_name || m.name || "دواء").join("، ")}
                       </Text>
                     </View>
+                    
+                    {getPharmacyName(rx) ? (
+                      <View className="flex-row items-center justify-end gap-1.5 mt-2">
+                         <Text className="text-[11px] font-bold text-gray-400">{getPharmacyName(rx)}</Text>
+                         <MapPin size={10} color="#9CA3AF" />
+                      </View>
+                    ) : null}
                   </View>
 
                   <View className="flex-row items-center justify-between pt-3 border-t border-gray-50">
@@ -153,7 +226,9 @@ export default function PharmacistPrescriptions() {
                       <Text className="text-xs font-extrabold text-pharmacist">عرض التفاصيل</Text>
                       <ChevronLeft size={16} color="#05997F" strokeWidth={2.5} />
                     </View>
-                    <Text className="text-[10px] font-extrabold text-gray-300 uppercase letter-spacing-1">ID: {String(rx.id).toUpperCase()}</Text>
+                    <View className="flex-row items-center gap-2">
+                       <Text className="text-[10px] font-extrabold text-gray-300 uppercase tracking-tighter">ID: {String(rx.id).toUpperCase()}</Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
               ))

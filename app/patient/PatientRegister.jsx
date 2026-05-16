@@ -4,7 +4,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Phone, Lock, ShieldCheck, MessageSquare, Calendar } from "lucide-react-native";
-import BrandLogo from "@/components/mobile/BrandLogo";
+import LogoCard from "@/components/mobile/LogoCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MobileShell from "@/components/mobile/MobileShell";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
@@ -158,9 +158,7 @@ export default function PatientRegister() {
             </View>
 
             <View className="items-center">
-              <View className="w-20 h-20 bg-white shadow-sm p-4 rounded-[24px] items-center justify-center mb-4">
-                <BrandLogo width={50} height={50} />
-              </View>
+              <LogoCard size={80} borderRadius={24} padding={16} style={{ marginBottom: 16 }} />
               <Text className="text-white text-2xl font-extrabold text-center">
                 {step === 0 ? "إنشاء حساب جديد" : "التحقق من الرقم"}
               </Text>

@@ -15,7 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
-import BrandLogo from "@/components/mobile/BrandLogo";
+import LogoCard from "@/components/mobile/LogoCard";
 
 const slides = [
   {
@@ -113,16 +113,16 @@ export default function Onboarding() {
           }}
         >
           {/* Icon */}
-          <View
-            style={{ backgroundColor: slide.bgColor }}
-            className={`w-32 h-32 rounded-3xl items-center justify-center mb-8 ${slide.isLogo ? 'shadow-sm border border-gray-100' : ''}`}
-          >
             {slide.isLogo ? (
-              <BrandLogo width={90} height={90} />
+              <LogoCard size={90} borderRadius={24} padding={12} shadowRadius={8} elevation={3} style={{ marginBottom: 32 }} />
             ) : (
-              <slide.Icon size={64} color="#FFFFFF" />
+              <View
+                style={{ backgroundColor: slide.bgColor, marginBottom: 32 }}
+                className="w-32 h-32 rounded-3xl items-center justify-center"
+              >
+                <slide.Icon size={64} color="#FFFFFF" />
+              </View>
             )}
-          </View>
 
           {/* Title */}
           <Text className="text-2xl font-extrabold text-gray-800 mb-3 text-center leading-9">

@@ -9,26 +9,24 @@ import { useAuth } from "@/lib/AuthContext";
  */
 export default function Index() {
   const router = useRouter();
-  const { isAuthenticated, userRole } = useAuth();
+  const { isAuthenticated, userRole, authChecked } = useAuth();
 
   useEffect(() => {
-    // Small delay to allow layout to mount
-    const timer = setTimeout(() => {
-      if (isAuthenticated && userRole) {
-        // Navigate to role-specific home
-        if (userRole === "patient") {
-          router.replace("/patient/PatientHome");
-        } else if (userRole === "pharmacist") {
-          router.replace("/pharmacist/PharmacistHome");
-        }
-      } else {
-        // Not authenticated — go to splash/onboarding
-        router.replace("/Splash");
-      }
-    }, 100);
+    // Wait until the authentication check is complete before deciding where to go.
+    if (!authChecked) return;
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, userRole]);
+    if (isAuthenticated && userRole) {
+      // Navigate to role-specific home
+      if (userRole === "patient") {
+        router.replace("/patient/PatientHome");
+      } else if (userRole === "pharmacist") {
+        router.replace("/pharmacist/PharmacistHome");
+      }
+    } else if (isAuthenticated === false || (isAuthenticated && !userRole)) {
+      // Not authenticated or role unknown — go to splash/onboarding
+      router.replace("/Splash");
+    }
+  }, [authChecked, isAuthenticated, userRole]);
 
   return (
     <View className="flex-1 items-center justify-center bg-background">

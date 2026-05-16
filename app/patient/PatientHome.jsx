@@ -42,6 +42,18 @@ function QuickAction({ icon: Icon, label, path, color }) {
 
 import MobileShell from "@/components/mobile/MobileShell";
 
+const getPharmacyName = (prescription) => {
+  const nestedName = prescription?.pharmacy?.name;
+  const flatName = prescription?.pharmacy_name;
+  const name = nestedName || flatName;
+  if (!name) return "";
+  const clean = String(name).trim();
+  if (!clean || clean === "صيدلية غير محددة" || clean === "غير محدد" || clean === "null" || clean === "undefined") {
+    return "";
+  }
+  return clean;
+};
+
 export default function PatientHome() {
   const { user, setUser } = useAuth();
   const router = useRouter();
@@ -114,21 +126,7 @@ export default function PatientHome() {
                 </Text>
               </View>
             </View>
-            <TouchableOpacity
-              onPress={() => router.push("/patient/PatientNotifications")}
-              className="relative"
-            >
-              <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
-                <Bell size={20} color="#FFFFFF" />
-              </View>
-              {unreadNotifs > 0 && (
-                <View className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 rounded-full items-center justify-center border border-patient">
-                  <Text className="text-[10px] text-white font-bold">
-                    {unreadNotifs}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
+            <View className="w-10" />
           </View>
 
           {/* QR Session Card */}
@@ -259,15 +257,14 @@ export default function PatientHome() {
                           {rx.doctor_specialty || "تخصص غير محدد"}
                         </Text>
                         
-                        {rx.pharmacy_name && 
-                         !["صيدلية غير محددة", "none", "null"].includes(rx.pharmacy_name.trim()) && (
+                        {getPharmacyName(rx) ? (
                           <View className="flex-row items-center justify-end gap-2 mt-1">
                             <Text className="text-xs text-gray-500 font-medium">
-                              {rx.pharmacy_name}
+                              {getPharmacyName(rx)}
                             </Text>
                             <MapPin size={14} color="#9CA3AF" />
                           </View>
-                        )}
+                        ) : null}
                       </View>
 
                       {/* Medications Summary */}

@@ -2,17 +2,84 @@ import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Star, MapPin, Clock, Navigation, Phone, Hand, Info } from "lucide-react-native";
+import { pharmacyApi } from "@/api/pharmacyApi";
 import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MOCK_PHARMACIES } from "@/lib/mockData";
+import { Linking, ActivityIndicator } from "react-native";
 
 export default function PharmacyDetail() {
-  const { id } = useLocalSearchParams();
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const [pharmacy, setPharmacy] = React.useState(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  const pharmacy = MOCK_PHARMACIES.find((p) => p.id === id) || MOCK_PHARMACIES[0];
+  React.useEffect(() => {
+    const fetchPharmacy = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await pharmacyApi.getPatientPharmacies();
+        if (res.success) {
+          const found = (res.data || []).find(p => String(p.id) === String(id));
+          if (found) {
+            setPharmacy(found);
+          } else {
+            setError("الصيدلية غير موجودة");
+          }
+        } else {
+          setError(res.message || "تعذر تحميل بيانات الصيدلية");
+        }
+      } catch (err) {
+        setError("حدث خطأ أثناء الاتصال بالخادم");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchPharmacy();
+    }
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+        <PageHeader title="تفاصيل الصيدلية" showBackButton role="patient" backTo="/patient/PatientPharmacies" />
+        <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 items-center justify-center">
+          <ActivityIndicator size="large" color="#022451" />
+          <Text className="text-gray-400 font-bold mt-4">جاري تحميل البيانات...</Text>
+        </View>
+      </MobileShell>
+    );
+  }
+
+  if (error || !pharmacy) {
+    return (
+      <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
+        <PageHeader title="تفاصيل الصيدلية" showBackButton role="patient" backTo="/patient/PatientPharmacies" />
+        <View className="flex-1 bg-background rounded-t-[2.5rem] -mt-4 items-center justify-center px-10">
+          <Text className="text-red-500 font-bold text-center mb-6">{error || "حدث خطأ غير متوقع"}</Text>
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            className="bg-patient px-8 py-3 rounded-2xl"
+          >
+            <Text className="text-white font-bold">العودة</Text>
+          </TouchableOpacity>
+        </View>
+      </MobileShell>
+    );
+  }
+
+  const openInGoogleMaps = () => {
+    if (!pharmacy.latitude || !pharmacy.longitude) return;
+    const url = `https://www.google.com/maps/search/?api=1&query=${pharmacy.latitude},${pharmacy.longitude}`;
+    Linking.openURL(url);
+  };
+
+  const callPharmacy = () => {
+    if (!pharmacy.phone_number) return;
+    Linking.openURL(`tel:${pharmacy.phone_number}`);
+  };
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
@@ -37,13 +104,15 @@ export default function PharmacyDetail() {
               <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-row items-center gap-1.5 bg-amber-50 px-3 py-1 rounded-xl">
                   <Star size={14} color="#D97706" fill="#D97706" strokeWidth={2.5} />
-                  <Text className="text-xs font-extrabold text-amber-700">{pharmacy.rating}</Text>
+                  <Text className="text-xs font-extrabold text-amber-700">5.0</Text>
                 </View>
                 <Text className="text-2xl font-extrabold text-gray-900 flex-1 text-right">{pharmacy.name}</Text>
               </View>
 
               <View className="flex-row items-center gap-2 mb-6 justify-end">
-                <Text className="text-sm font-bold text-gray-400">{pharmacy.address}</Text>
+                <Text className="text-sm font-bold text-gray-400">
+                  {[pharmacy.city, pharmacy.region, pharmacy.address].filter(v => v && !["غير محدد", "غير محددة", "none", "null", "undefined", ".", "-"].includes(String(v).toLowerCase())).join(" — ")}
+                </Text>
                 <MapPin size={16} color="#9CA3AF" />
               </View>
 
@@ -55,26 +124,26 @@ export default function PharmacyDetail() {
                     <Clock size={20} color="#022451" strokeWidth={2.5} />
                   </View>
                   <Text className="text-[9px] font-extrabold text-gray-300 uppercase">ساعات العمل</Text>
-                  <Text className="text-xs font-extrabold text-gray-900">{pharmacy.openHours}</Text>
+                  <Text className="text-xs font-extrabold text-gray-900">24 ساعة</Text>
                 </View>
                 <View className="items-center gap-1.5">
                   <View className="bg-blue-50 w-10 h-10 rounded-xl items-center justify-center">
                     <Navigation size={20} color="#3B82F6" strokeWidth={2.5} />
                   </View>
-                  <Text className="text-[9px] font-extrabold text-gray-300 uppercase">المسافة</Text>
-                  <Text className="text-xs font-extrabold text-gray-900">{pharmacy.distance}</Text>
+                  <Text className="text-[9px] font-extrabold text-gray-300 uppercase">الموقع</Text>
+                  <Text className="text-xs font-extrabold text-gray-900">{pharmacy.city || "دمشق"}</Text>
                 </View>
                 <View className="items-center gap-1.5">
                   <View className="bg-emerald-50 w-10 h-10 rounded-xl items-center justify-center">
                     <Phone size={20} color="#10B981" strokeWidth={2.5} />
                   </View>
                   <Text className="text-[9px] font-extrabold text-gray-300 uppercase">التواصل</Text>
-                  <Text className="text-xs font-extrabold text-gray-900">{pharmacy.phone}</Text>
+                  <Text className="text-xs font-extrabold text-gray-900">{pharmacy.phone_number || "---"}</Text>
                 </View>
               </View>
             </View>
 
-            {pharmacy.hasSignService && (
+            {pharmacy.is_contracted_with_organization && (
               <View className="bg-emerald-50 rounded-[2rem] p-6 mt-6 border border-emerald-100 flex-row items-start gap-5 shadow-sm shadow-emerald-900/5">
                 <View className="w-14 h-14 bg-white rounded-2xl items-center justify-center shadow-sm">
                   <Hand size={30} color="#059669" strokeWidth={2.5} />
@@ -104,10 +173,17 @@ export default function PharmacyDetail() {
         className="absolute bottom-0 left-0 right-0 px-6 pt-4 bg-white/80 backdrop-blur-md border-t border-gray-100 flex-row gap-4"
         style={{ paddingBottom: Math.max(insets.bottom, 20) }}
       >
-        <TouchableOpacity className="w-16 h-16 border border-gray-100 rounded-2xl items-center justify-center bg-gray-50">
+        <TouchableOpacity 
+          onPress={callPharmacy}
+          disabled={!pharmacy.phone_number}
+          className={`w-16 h-16 border border-gray-100 rounded-2xl items-center justify-center bg-gray-50 ${!pharmacy.phone_number ? 'opacity-30' : ''}`}
+        >
           <Phone size={24} color="#6B7280" strokeWidth={2.5} />
         </TouchableOpacity>
-        <TouchableOpacity className="flex-1 bg-patient h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl shadow-patient/30">
+        <TouchableOpacity 
+          onPress={openInGoogleMaps}
+          className="flex-1 bg-patient h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl shadow-patient/30"
+        >
           <Navigation size={22} color="#FFFFFF" strokeWidth={2.5} />
           <Text className="text-white font-extrabold text-lg">بدء التوجيه</Text>
         </TouchableOpacity>

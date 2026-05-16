@@ -3,7 +3,7 @@ import { View, Text, Animated } from "react-native";
 import { useRouter } from "expo-router";
 import { Hand } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
-import BrandLogo from "@/components/mobile/BrandLogo";
+import LogoCard from "@/components/mobile/LogoCard";
 
 export default function Splash() {
   const router = useRouter();
@@ -66,9 +66,7 @@ export default function Splash() {
           style={{ transform: [{ scale: scaleAnim }], opacity: titleOpacity }}
           className="items-center justify-center mb-2"
         >
-          <View className="bg-white p-4 rounded-[40px] shadow-sm">
-            <BrandLogo width={160} height={160} />
-          </View>
+          <LogoCard size={170} borderRadius={40} padding={20} />
         </Animated.View>
 
         {/* Tagline */}

@@ -13,10 +13,22 @@ import {
   Thermometer,
 } from "lucide-react-native";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { prescriptionApi } from "@/api/prescriptionApi";
+
+const getPharmacyName = (prescription) => {
+  const nestedName = prescription?.pharmacy?.name;
+  const flatName = prescription?.pharmacy_name;
+  const name = nestedName || flatName;
+  if (!name) return "";
+  const clean = String(name).trim();
+  if (!clean || clean === "صيدلية غير محددة" || clean === "غير محدد" || clean === "null" || clean === "undefined") {
+    return "";
+  }
+  return clean;
+};
 
 export default function PrescriptionDetail() {
   const { id } = useLocalSearchParams();
@@ -59,6 +71,12 @@ export default function PrescriptionDetail() {
       return dateStr;
     }
   };
+
+  const getItemPrice = (item) => parseFloat(item.price || 0);
+  const getItemQuantity = (item) => parseInt(item.quantity || 1);
+  const getItemSubtotal = (item) => getItemPrice(item) * getItemQuantity(item);
+  const getPrescriptionTotal = (items) => (items || []).reduce((sum, item) => sum + getItemSubtotal(item), 0);
+  const formatPrice = (val) => new Intl.NumberFormat('en-US').format(val);
 
   if (isLoading) {
     return (
@@ -141,13 +159,13 @@ export default function PrescriptionDetail() {
               </View>
             )}
 
-            {Boolean(rx.pharmacy_name && rx.pharmacy_name !== "صيدلية غير محددة") ? (
+            {getPharmacyName(rx) ? (
               <>
                 <View className="h-px bg-gray-50 w-full mb-5" />
                 <View className="flex-row items-center justify-end gap-3">
                   <View className="items-end">
                     <Text className="text-base font-extrabold text-gray-800">
-                      {rx.pharmacy_name}
+                      {getPharmacyName(rx)}
                     </Text>
                     <Text className="text-[10px] text-gray-400 mt-1">
                       تم صرف الدواء من هذه الصيدلية
@@ -159,6 +177,17 @@ export default function PrescriptionDetail() {
                 </View>
               </>
             ) : null}
+
+             {/* Prescription Total (Subtle for patient) */}
+             {rx.items && rx.items.length > 0 && getPrescriptionTotal(rx.items) > 0 && (
+               <View className="mt-4 pt-4 border-t border-gray-50 flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-1">
+                     <Text className="text-lg font-extrabold text-gray-800">{formatPrice(getPrescriptionTotal(rx.items))}</Text>
+                     <Text className="text-[10px] font-bold text-gray-400 mt-1">ل.س</Text>
+                  </View>
+                  <Text className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">إجمالي الوصفة</Text>
+               </View>
+             )}
           </View>
 
           <View className="mt-8 mb-4">
@@ -183,6 +212,7 @@ export default function PrescriptionDetail() {
                       params: { 
                         id: rx.id, 
                         medIndex: index,
+                        itemId: med.id,
                         medication_name: med.medication_name,
                         approved_instruction_text: med.approved_instruction_text,
                         instructions: med.instructions,
@@ -196,27 +226,49 @@ export default function PrescriptionDetail() {
                     className="bg-white rounded-3xl p-5 border border-gray-50 shadow-sm flex-row items-center gap-4"
                   >
                     {hasSignVideo ? (
-                      <View className="w-12 h-12 bg-patient rounded-2xl items-center justify-center shadow-lg shadow-patient/20">
-                        <Hand size={22} color="#FFFFFF" strokeWidth={2.5} />
+                      <View className="w-12 h-12 bg-patient rounded-2xl items-center justify-center shadow-lg shadow-patient/20 overflow-hidden">
+                        {med.image_url || med.medicine_image ? (
+                          <Image 
+                            source={{ uri: med.image_url || med.medicine_image }} 
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Hand size={22} color="#FFFFFF" strokeWidth={2.5} />
+                        )}
                       </View>
                     ) : (
-                      <View className="w-12 h-12 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100">
-                        <Pill size={24} color="#D1D5DB" />
+                      <View className="w-12 h-12 bg-gray-50 rounded-2xl items-center justify-center border border-gray-100 overflow-hidden">
+                        {med.image_url || med.medicine_image ? (
+                          <Image 
+                            source={{ uri: med.image_url || med.medicine_image }} 
+                            style={{ width: '100%', height: '100%' }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Pill size={24} color="#D1D5DB" />
+                        )}
                       </View>
                     )}
 
                     <View className="flex-1">
                       <Text className="text-base font-extrabold text-gray-800 mb-1 text-right">
-                        {med.medication_name}
+                        {med.medication_name || med.medicine_name || med.name || "دواء"}
                       </Text>
-                      {shouldShowDosage ? (
-                        <View className="flex-row items-center justify-end gap-3 mt-1">
-                          <Text className="text-xs text-gray-500 font-bold">
-                            {dosageText}
-                          </Text>
-                          <Clock size={12} color="#9CA3AF" />
+                      <View className="flex-row items-center justify-end gap-3 mt-0.5">
+                        <View className="flex-row items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
+                           <Text className="text-[10px] font-bold text-gray-600">{formatPrice(getItemSubtotal(med))}</Text>
+                           <Text className="text-[8px] text-gray-400">ل.س</Text>
                         </View>
-                      ) : null}
+                        {shouldShowDosage ? (
+                          <View className="flex-row items-center justify-end gap-1.5">
+                            <Text className="text-[10px] text-gray-500 font-bold">
+                              {dosageText}
+                            </Text>
+                            <Clock size={10} color="#9CA3AF" />
+                          </View>
+                        ) : null}
+                      </View>
                       <Text className="text-xs text-gray-400 mt-2 leading-relaxed text-right" numberOfLines={2}>
                         {instructions}
                       </Text>

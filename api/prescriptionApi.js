@@ -45,7 +45,7 @@ export const prescriptionApi = {
   addItemToPrescription: async (prescriptionId, itemData) => {
     return await fetchClient(`/pharmacist/prescriptions/${prescriptionId}/items/`, {
       method: "POST",
-      body: JSON.stringify(itemData),
+      body: itemData instanceof FormData ? itemData : JSON.stringify(itemData),
       requiresAuth: true,
     });
   },
@@ -93,5 +93,28 @@ export const prescriptionApi = {
       method: "GET",
       requiresAuth: true,
     });
-  }
+  },
+
+  /**
+   * Report an issue with a sign language video.
+   * @param {string|number} itemId - The prescription item ID.
+   * @param {string} reportType - The type of issue (e.g., 'sign_unclear').
+   */
+  reportSignIssue: async (itemId, reportType = "sign_unclear") => {
+    return await fetchClient(`/patients/me/prescriptions/items/${itemId}/report-sign-issue/`, {
+      method: "POST",
+      body: JSON.stringify({ report_type: reportType }),
+      requiresAuth: true,
+    });
+  },
+
+  /**
+   * Get the list of doctor specialty options.
+   */
+  getDoctorSpecialties: async () => {
+    return await fetchClient("/pharmacist/prescriptions/doctor-specialties/", {
+      method: "GET",
+      requiresAuth: true,
+    });
+  },
 };

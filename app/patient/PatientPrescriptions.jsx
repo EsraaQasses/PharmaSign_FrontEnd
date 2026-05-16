@@ -31,6 +31,18 @@ const FILTERS = ["الكل", "q", "draft", "viewed", "sent", "cancelled"];
 
 import { prescriptionApi } from "@/api/prescriptionApi";
 
+const getPharmacyName = (prescription) => {
+  const nestedName = prescription?.pharmacy?.name;
+  const flatName = prescription?.pharmacy_name;
+  const name = nestedName || flatName;
+  if (!name) return "";
+  const clean = String(name).trim();
+  if (!clean || clean === "صيدلية غير محددة" || clean === "غير محدد" || clean === "null" || clean === "undefined") {
+    return "";
+  }
+  return clean;
+};
+
 export default function PatientPrescriptions() {
   const router = useRouter();
   const { user } = useAuth();
@@ -68,7 +80,7 @@ export default function PatientPrescriptions() {
     const matchSearch =
       searchQuery === "" ||
       (p.doctor_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.pharmacy_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getPharmacyName(p).toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.items || []).some((m) => (m.medication_name || "").toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchSearch;
@@ -169,14 +181,14 @@ export default function PatientPrescriptions() {
                         {p.doctor_specialty || "تخصص غير محدد"}
                       </Text>
                       
-                      {p.pharmacy_name && !["صيدلية غير محددة", "none", "null"].includes(p.pharmacy_name.trim()) && (
+                      {getPharmacyName(p) ? (
                         <View className="flex-row items-center justify-end gap-2 mt-1">
                           <Text className="text-xs text-gray-500 font-medium">
-                            {p.pharmacy_name}
+                            {getPharmacyName(p)}
                           </Text>
                           <MapPin size={14} color="#9CA3AF" />
                         </View>
-                      )}
+                      ) : null}
                     </View>
 
                     {/* Medications Summary */}

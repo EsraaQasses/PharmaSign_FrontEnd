@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking, Platform 
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowRight, Search, MapPin, Hand, SlidersHorizontal, LocateFixed, Star, Navigation, Phone, Globe } from "lucide-react-native";
-import { MOCK_PHARMACIES } from "@/lib/mockData";
+import { pharmacyApi } from "@/api/pharmacyApi";
 import MobileShell from "@/components/mobile/MobileShell";
 import PatientMap from "@/components/mobile/PatientMap";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
@@ -14,20 +14,38 @@ export default function PatientPharmacies() {
   const scrollRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [pharmacies, setPharmacies] = useState([]);
+  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
+  const fetchPharmacies = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await pharmacyApi.getPatientPharmacies();
+      if (res.success) {
+        setPharmacies(res.data || []);
+      } else {
+        setError(res.message || "تعذر تحميل الصيدليات");
+      }
+    } catch (err) {
+      setError("حدث خطأ أثناء الاتصال بالخادم");
+    } finally {
       setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchPharmacies();
   }, []);
 
-  const filteredPharmacies = MOCK_PHARMACIES.filter(
+  const filteredPharmacies = pharmacies.filter(
     (p) =>
       searchQuery === "" ||
-      p.name.includes(searchQuery) ||
-      p.address.includes(searchQuery)
+      (p.name && p.name.includes(searchQuery)) ||
+      (p.address && p.address.includes(searchQuery)) ||
+      (p.city && p.city.includes(searchQuery)) ||
+      (p.region && p.region.includes(searchQuery))
   );
 
   const damascusRegion = {
@@ -38,6 +56,7 @@ export default function PatientPharmacies() {
   };
 
   const openInGoogleMaps = (lat, lng) => {
+    if (!lat || !lng) return;
     const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
     Linking.openURL(url);
   };
@@ -93,7 +112,12 @@ export default function PatientPharmacies() {
       <View className="absolute inset-0 z-0 bg-gray-200">
         <PatientMap 
           region={damascusRegion}
-          pharmacies={filteredPharmacies}
+          pharmacies={filteredPharmacies.map(p => ({
+            ...p,
+            lat: p.latitude,
+            lng: p.longitude,
+            hasSignService: p.is_contracted_with_organization
+          }))}
           selectedId={selectedId}
           onMarkerPress={handleMarkerPress}
         />
@@ -134,7 +158,17 @@ export default function PatientPharmacies() {
           {isLoading ? (
             <View className="items-center justify-center py-10">
                <Text className="text-patient text-2xl font-bold mb-2">...</Text>
-               <Text className="text-gray-500 font-bold">جاري البحث عن الصيدليات...</Text>
+               <Text className="text-gray-500 font-bold">جاري تحميل الصيدليات...</Text>
+            </View>
+          ) : error ? (
+            <View className="items-center justify-center py-10 px-6">
+              <Text className="text-red-500 font-bold mb-4">{error}</Text>
+              <TouchableOpacity 
+                onPress={fetchPharmacies}
+                className="bg-patient px-6 py-2 rounded-xl"
+              >
+                <Text className="text-white font-bold">إعادة المحاولة</Text>
+              </TouchableOpacity>
             </View>
           ) : filteredPharmacies.length === 0 ? (
             <View className="items-center justify-center py-10 px-6">
@@ -142,71 +176,70 @@ export default function PatientPharmacies() {
                 <MapPin size={40} color="#D1D5DB" />
               </View>
               <Text className="text-lg font-extrabold text-gray-900 mb-2 text-center">
-                {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد صيدليات متاحة حالياً"}
+                {searchQuery ? "لا توجد نتائج مطابقة للبحث" : "لا توجد صيدليات متعاقدة حالياً"}
               </Text>
               <Text className="text-sm text-gray-400 text-center font-bold">
-                {searchQuery ? "جرب البحث باسم حي آخر أو تأكد من إملاء اسم الصيدلية." : "لم نتمكن من العثور على صيدليات قريبة منك في الوقت الحالي."}
+                {searchQuery ? "جرب البحث باسم حي آخر أو تأكد من إملاء اسم الصيدلية." : "لم نتمكن من العثور على صيدليات متعاقدة في الوقت الحالي."}
               </Text>
             </View>
           ) : (
             filteredPharmacies.map((pharmacy) => (
-              <View
+              <TouchableOpacity
                 key={pharmacy.id}
+                onPress={() => router.push(`/patient/PharmacyDetail?id=${pharmacy.id}`)}
+                activeOpacity={0.7}
                 className={`p-5 rounded-3xl border shadow-sm mb-4 ${selectedId === pharmacy.id ? 'bg-blue-50/50 border-patient/20' : 'bg-white border-gray-100'}`}
               >
-              <View className="flex-row justify-between items-start mb-5">
-                <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md self-start">
-                  <Star size={10} color="#D97706" fill="#D97706" />
-                  <Text className="text-[9px] font-extrabold text-amber-700">
-                    {pharmacy.rating}
-                  </Text>
-                </View>
+                <View className="flex-row justify-between items-start mb-5">
+                  <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md self-start">
+                    <Star size={10} color="#D97706" fill="#D97706" />
+                    <Text className="text-[9px] font-extrabold text-amber-700">
+                      5.0
+                    </Text>
+                  </View>
 
-                <View className="flex-1 items-end pr-4">
-                  <Text className="text-base font-extrabold text-gray-900 mb-1">
-                    {pharmacy.name}
-                  </Text>
-                  <Text className="text-[10px] text-gray-400 mb-2 font-medium">{pharmacy.address}</Text>
-                  <View className="flex-row items-center gap-2">
-                    {pharmacy.hasSignService && (
-                      <View className="bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 flex-row items-center gap-1">
-                        <Hand size={10} color="#059669" />
-                        <Text className="text-[8px] font-extrabold text-emerald-700">
-                           خدمة لغة الإشارة
-                        </Text>
-                      </View>
-                    )}
-                    <View className="flex-row items-center gap-1 px-2 py-1 bg-gray-50 rounded-md">
-                      <Text className="text-[9px] font-extrabold text-gray-500">
-                        {pharmacy.distance}
-                      </Text>
-                      <Navigation size={10} color="#9CA3AF" />
+                  <View className="flex-1 items-end pr-4">
+                    <Text className="text-base font-extrabold text-gray-900 mb-1">
+                      {pharmacy.name}
+                    </Text>
+                    <Text className="text-[10px] text-gray-400 mb-2 font-medium">
+                      {[pharmacy.city, pharmacy.region, pharmacy.address].filter(v => v && !["غير محدد", "غير محددة", "none", "null", "undefined", ".", "-"].includes(String(v).toLowerCase())).join(" — ")}
+                    </Text>
+                    <View className="flex-row items-center gap-2">
+                      {pharmacy.is_contracted_with_organization && (
+                        <View className="bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100 flex-row items-center gap-1">
+                          <Hand size={10} color="#059669" />
+                          <Text className="text-[8px] font-extrabold text-emerald-700">
+                             خدمة لغة الإشارة
+                          </Text>
+                        </View>
+                      )}
                     </View>
+                  </View>
+
+                  <View className={`w-12 h-12 rounded-xl items-center justify-center ${pharmacy.is_contracted_with_organization ? 'bg-emerald-50' : 'bg-patient/5'}`}>
+                     <MapPin size={24} color={pharmacy.is_contracted_with_organization ? "#059669" : "#022451"} />
                   </View>
                 </View>
 
-                <View className={`w-12 h-12 rounded-xl items-center justify-center ${pharmacy.hasSignService ? 'bg-emerald-50' : 'bg-patient/5'}`}>
-                   <MapPin size={24} color={pharmacy.hasSignService ? "#059669" : "#022451"} />
+                <View className="flex-row gap-3">
+                  <TouchableOpacity 
+                     onPress={() => openInGoogleMaps(pharmacy.latitude, pharmacy.longitude)}
+                     className="flex-1 bg-patient h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-lg shadow-patient/20"
+                  >
+                    <Text className="text-sm font-extrabold text-white">توجيه الخريطة</Text>
+                    <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} stroke={2.5} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={() => callPharmacy(pharmacy.phone_number)}
+                    disabled={!pharmacy.phone_number}
+                    className={`w-12 h-12 bg-white rounded-xl items-center justify-center border border-gray-100 ${!pharmacy.phone_number ? 'opacity-30' : ''}`}
+                  >
+                    <Phone size={20} color="#022451" strokeWidth={2.5} />
+                  </TouchableOpacity>
                 </View>
-              </View>
-
-              <View className="flex-row gap-3">
-                <TouchableOpacity 
-                   onPress={() => openInGoogleMaps(pharmacy.lat, pharmacy.lng)}
-                   className="flex-1 bg-patient h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-lg shadow-patient/20"
-                >
-                  <Text className="text-sm font-extrabold text-white">توجيه الخريطة</Text>
-                  <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} />
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  onPress={() => callPharmacy(pharmacy.phone)}
-                  className="w-12 h-12 bg-white rounded-xl items-center justify-center border border-gray-100"
-                >
-                  <Phone size={20} color="#022451" strokeWidth={2.5} />
-                </TouchableOpacity>
-              </View>
-            </View>
+              </TouchableOpacity>
           )))}
         </ScrollView>
       </View>

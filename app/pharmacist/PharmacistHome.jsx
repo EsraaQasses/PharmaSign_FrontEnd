@@ -8,8 +8,9 @@ import {
   TrendingUp
 } from "lucide-react-native";
 import { profileApi } from "@/api/profileApi";
+import { prescriptionApi } from "@/api/prescriptionApi";
 import React, { useEffect, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
 
 import MobileShell from "@/components/mobile/MobileShell";
 import { useAuth } from "@/lib/AuthContext";
@@ -18,25 +19,72 @@ export default function PharmacistHome() {
   const router = useRouter();
   const { user, setUser } = useAuth();
   const [profile, setProfile] = useState(null);
+  const [recentPrescriptions, setRecentPrescriptions] = useState([]);
+  const [isLoadingRx, setIsLoadingRx] = useState(true);
 
   useEffect(() => {
     fetchProfile();
+    fetchRecentPrescriptions();
   }, []);
 
   const fetchProfile = async () => {
     const res = await profileApi.getPharmacistProfile();
     if (res.success) {
       setProfile(res.data);
-      // Sync back to AuthContext to ensure other screens get it
       if (setUser && user) {
         setUser({ ...user, name: res.data.full_name });
       }
     }
   };
 
-  // Prioritize real profile name, then AuthContext, then mock for dev
+  const fetchRecentPrescriptions = async () => {
+    setIsLoadingRx(true);
+    try {
+      const res = await prescriptionApi.getPrescriptions();
+      if (res.success) {
+        const data = res.data?.results || res.data?.prescriptions || res.data || [];
+        const nonDrafts = Array.isArray(data) 
+          ? data.filter(rx => !["draft", "pending_draft", "مسودة"].includes(String(rx.status || "").toLowerCase()))
+          : [];
+        setRecentPrescriptions(nonDrafts.slice(0, 3));
+      }
+    } catch (err) {
+      console.error("Failed to fetch recent prescriptions", err);
+    } finally {
+      setIsLoadingRx(false);
+    }
+  };
+
+  const getPatientDisplayName = (prescription) => {
+    const value =
+      prescription?.patient_name ||
+      prescription?.patient?.full_name ||
+      prescription?.patient?.name ||
+      prescription?.patient?.user?.full_name ||
+      prescription?.patient?.user?.name ||
+      prescription?.session?.patient?.full_name ||
+      prescription?.session?.patient?.name ||
+      prescription?.patient?.phone_number ||
+      prescription?.patient?.user?.phone_number;
+
+    const clean = String(value || "").trim();
+
+    if (
+      !clean ||
+      clean === "مريض" ||
+      clean === "غير محدد" ||
+      clean === "null" ||
+      clean === "undefined" ||
+      clean === "." ||
+      clean === "-"
+    ) {
+      return "مريض غير محدد";
+    }
+
+    return clean;
+  };
+
   const pharmacistName = profile?.full_name || user?.name || "";
-  const recentPrescriptions = MOCK_PRESCRIPTIONS.slice(0, 3);
 
   return (
     <MobileShell className="bg-pharmacist" edges={["top", "left", "right"]}>
@@ -88,11 +136,11 @@ export default function PharmacistHome() {
 
           <View className="mt-6">
             <View className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-              <Text className="text-sm text-gray-400 font-bold mb-1 text-right">الوصفات اليوم</Text>
-              <Text className="text-3xl font-extrabold text-pharmacist text-right">48</Text>
+              <Text className="text-sm text-gray-400 font-bold mb-1 text-right">إجمالي الوصفات</Text>
+              <Text className="text-3xl font-extrabold text-pharmacist text-right">{recentPrescriptions.length > 0 ? recentPrescriptions.length : "0"}</Text>
               <View className="flex-row items-center gap-1 mt-2">
                 <TrendingUp size={14} color="#059669" />
-                <Text className="text-[10px] text-emerald-600 font-bold">+12% منذ الأمس</Text>
+                <Text className="text-[10px] text-emerald-600 font-bold">إحصائيات الوصفات</Text>
               </View>
               <View className="absolute -bottom-4 -left-4 opacity-5">
                 <FileText size={80} color="#000000" />
@@ -110,29 +158,37 @@ export default function PharmacistHome() {
             </View>
 
             <View className="gap-3">
-              {recentPrescriptions.map((rx) => (
-                <TouchableOpacity
-                  key={rx.id}
-                  onPress={() => router.push(`/pharmacist/PharmacistPrescriptionDetail?id=${rx.id}`)}
-                  className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm flex-row-reverse items-center gap-3"
-                  activeOpacity={0.7}
-                >
-                  <View
-                    className="w-16 h-16 min-w-[64px] rounded-2xl items-center justify-center flex-shrink-0 bg-primary/10"
-                    style={{ overflow: 'hidden' }}
+              {isLoadingRx ? (
+                 <ActivityIndicator color="#05997F" className="py-8" />
+              ) : recentPrescriptions.length === 0 ? (
+                 <View className="bg-gray-50 rounded-3xl p-8 border border-dashed border-gray-200 items-center">
+                    <Text className="text-gray-400 font-bold">لا توجد وصفات حديثة</Text>
+                 </View>
+              ) : (
+                recentPrescriptions.map((rx) => (
+                  <TouchableOpacity
+                    key={rx.id}
+                    onPress={() => router.push(`/pharmacist/PharmacistPrescriptionDetail?id=${rx.id}`)}
+                    className="bg-white rounded-[2rem] p-4 border border-gray-100 shadow-sm flex-row-reverse items-center gap-3"
+                    activeOpacity={0.7}
                   >
-                    <FileText size={32} color="#0C6B58" strokeWidth={2.5} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-base font-extrabold text-gray-900 mb-1 text-right">
-                      {rx.patientName}
-                    </Text>
-                    <Text className="text-xs text-gray-400 font-bold text-right">
-                      {rx.medications.length} أدوية • {rx.date}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                    <View
+                      className="w-16 h-16 min-w-[64px] rounded-2xl items-center justify-center flex-shrink-0 bg-primary/10"
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <FileText size={32} color="#0C6B58" strokeWidth={2.5} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-base font-extrabold text-gray-900 mb-1 text-right">
+                        {getPatientDisplayName(rx)}
+                      </Text>
+                      <Text className="text-xs text-gray-400 font-bold text-right">
+                        {(rx.items || rx.medications || []).length} أدوية • {(rx.prescribed_at || rx.created_at || "").split('T')[0]}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           </View>
         </View>
