@@ -7,9 +7,6 @@ import {
   FileText,
   MapPin,
   User,
-  Pill,
-  Users,
-  Bell,
   Settings,
 } from "lucide-react-native";
 
@@ -23,7 +20,6 @@ const patientTabs = [
 const pharmacistTabs = [
   { icon: Home, label: "الرئيسية", path: "/pharmacist/PharmacistHome" },
   { icon: FileText, label: "الوصفات", path: "/pharmacist/PharmacistPrescriptions" },
-  { icon: Users, label: "المرضى", path: "/pharmacist/PharmacistPatients" },
   { icon: Settings, label: "الإعدادات", path: "/pharmacist/PharmacistSettings" },
 ];
 

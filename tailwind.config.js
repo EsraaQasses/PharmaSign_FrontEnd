@@ -59,17 +59,13 @@ module.exports = {
         info: "#3B82F6",
       },
       fontFamily: {
-        sans: ["Cairo_400Regular", "Cairo_500Medium", "sans-serif"],
-        // You can map Tailwind weights to specific Expo font variants, but NativeWind automatically handles it 
-        // if you use font-bold, it will look for the bolder font-family if set correctly. However, a simpler
-        // approach for RN is to use the specific font family for each weight, or rely on Android's font mapping.
-        // For NativeWind + Expo fonts, using the base family often works nicely if set globally, but explicitly:
-        light: ["Cairo_300Light"],
-        normal: ["Cairo_400Regular"],
-        medium: ["Cairo_500Medium"],
-        semibold: ["Cairo_600SemiBold"],
-        bold: ["Cairo_700Bold"],
-        extrabold: ["Cairo_800ExtraBold"],
+        sans: "Cairo_400Regular",
+        light: "Cairo_300Light",
+        normal: "Cairo_400Regular",
+        medium: "Cairo_500Medium",
+        semibold: "Cairo_600SemiBold",
+        bold: "Cairo_700Bold",
+        extrabold: "Cairo_800ExtraBold",
       },
       borderRadius: {
         xl: "16px",

@@ -71,7 +71,7 @@ export default function Splash() {
 
         {/* Tagline */}
         <Animated.View style={{ opacity: taglineOpacity }}>
-          <Text className="text-white/50 text-xs mt-8 text-center">
+          <Text className="text-white/50 text-xs mt-8 text-center font-bold">
             الدواء بلغة الإشارة
           </Text>
         </Animated.View>

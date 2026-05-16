@@ -88,7 +88,7 @@ export default function PatientLogin() {
               <Text className="text-white text-2xl font-extrabold">
                 تسجيل الدخول
               </Text>
-              <Text className="text-white/70 text-sm mt-1">
+              <Text className="text-white/70 text-sm mt-1 font-bold">
                 الدخول كـ مريض للمتابعة
               </Text>
             </View>
@@ -199,7 +199,7 @@ export default function PatientLogin() {
 
             {/* Register */}
             <View className="flex-row items-center justify-center gap-1 mt-4">
-              <Text className="text-gray-500 text-sm">ليس لديك حساب؟</Text>
+              <Text className="text-gray-500 text-sm font-medium">ليس لديك حساب؟</Text>
               <TouchableOpacity
                 onPress={() => router.push("/patient/PatientRegister")}
                 activeOpacity={0.7}

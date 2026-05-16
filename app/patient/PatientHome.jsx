@@ -27,15 +27,16 @@ function QuickAction({ icon: Icon, label, path, color }) {
   return (
     <TouchableOpacity
       onPress={() => router.push(path)}
-      className="items-center gap-1.5"
+      className="items-center gap-2"
       activeOpacity={0.7}
     >
       <View
-        className={`w-14 h-14 rounded-2xl ${color} items-center justify-center shadow-sm`}
+        style={{ backgroundColor: color }}
+        className="w-14 h-14 rounded-2xl items-center justify-center shadow-sm"
       >
-        <Icon size={24} color="#FFFFFF" />
+        <Icon size={24} color="#FFFFFF" strokeWidth={2.5} />
       </View>
-      <Text className="text-[11px] font-semibold text-gray-800">{label}</Text>
+      <Text className="text-[11px] font-bold text-[#022451]">{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -120,7 +121,7 @@ export default function PatientHome() {
                 <BrandLogo width={32} height={32} />
               </View>
               <View>
-                <Text className="text-white/70 text-sm">مرحباً 👋</Text>
+                <Text className="text-white/70 text-sm font-bold">مرحباً 👋</Text>
                 <Text className="text-white text-xl font-extrabold">
                   {patientName}
                 </Text>
@@ -139,7 +140,7 @@ export default function PatientHome() {
               <QrCode size={40} color="#022451" />
             </View>
             <View className="flex-1">
-              <Text className="text-white/80 text-xs text-right">
+              <Text className="text-white/80 text-xs text-right font-bold">
                 ربط الوصفة الطبية
               </Text>
               <Text className="text-white font-bold text-sm my-0.5 text-right">
@@ -169,25 +170,25 @@ export default function PatientHome() {
                 icon={FileText}
                 label="الوصفات"
                 path="/patient/PatientPrescriptions"
-                color="bg-patient"
+                color="#022451"
               />
               <QuickAction
                 icon={Hand}
                 label="لغة الإشارة"
                 path="/patient/AppGuide"
-                color="bg-amber-500"
+                color="#0FAE9B"
               />
               <QuickAction
                 icon={MapPin}
                 label="صيدليات"
                 path="/patient/PatientPharmacies"
-                color="bg-blue-500"
+                color="#4C8FB5"
               />
               <QuickAction
                 icon={Shield}
                 label="حسابي"
                 path="/patient/PatientProfile"
-                color="bg-violet-500"
+                color="#6E7FA3"
               />
             </View>
           </View>

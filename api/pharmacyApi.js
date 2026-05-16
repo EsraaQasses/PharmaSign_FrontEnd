@@ -16,6 +16,6 @@ export const pharmacyApi = {
    * Auth: Patient JWT required
    */
   getPatientPharmacies: async () => {
-    return fetchClient('/patients/pharmacies/');
+    return fetchClient('/patients/pharmacies/', { requiresAuth: true });
   },
 };

@@ -59,6 +59,50 @@ const REVERSE_BLOOD_TYPE_MAP = Object.fromEntries(
   Object.entries(BLOOD_TYPE_MAP).map(([k, v]) => [v, k])
 );
 
+/**
+ * Normalizes user date input (DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, etc.)
+ * to the backend-required YYYY-MM-DD format.
+ */
+const normalizeDate = (input) => {
+  if (!input || !input.trim()) return null;
+  const trimmed = input.trim();
+  
+  // Try DD-MM-YYYY or DD/MM/YYYY
+  const dmyMatch = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (dmyMatch) {
+    return formatValidDate(dmyMatch[3], dmyMatch[2], dmyMatch[1]);
+  }
+  
+  // Try YYYY-MM-DD or YYYY/MM/DD
+  const ymdMatch = trimmed.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})$/);
+  if (ymdMatch) {
+    return formatValidDate(ymdMatch[1], ymdMatch[2], ymdMatch[3]);
+  }
+  
+  return null;
+};
+
+const formatValidDate = (year, month, day) => {
+  const y = parseInt(year, 10);
+  const m = parseInt(month, 10);
+  const d = parseInt(day, 10);
+  
+  if (y < 1900 || y > 2100) return null;
+  if (m < 1 || m > 12) return null;
+  
+  const dateObj = new Date(y, m - 1, d);
+  if (
+    dateObj.getFullYear() === y &&
+    dateObj.getMonth() === m - 1 &&
+    dateObj.getDate() === d
+  ) {
+    const mm = String(m).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  }
+  return null;
+};
+
 // Sub-components moved outside to avoid re-creation on every render (fixes input lag)
 const ModalHeader = ({ title, onClose }) => (
   <View className="flex-row items-center justify-between mb-6 pb-4 border-b border-gray-50">
@@ -119,19 +163,22 @@ const SettingRow = ({ icon: Icon, title, description, value, onValueChange, show
 const MenuLink = ({ icon: Icon, title, subtitle, onPress, color }) => (
   <TouchableOpacity
     onPress={onPress}
-    className="flex-row items-center p-4 bg-white border-b border-gray-50"
+    className="flex-row items-center p-5 bg-white border-b border-gray-50"
     activeOpacity={0.7}
   >
-    <View className={`w-10 h-10 rounded-full items-center justify-center ${color}`}>
-      <Icon size={20} color="#FFFFFF" />
+    <View 
+      style={{ backgroundColor: color }}
+      className="w-10 h-10 rounded-full items-center justify-center shadow-sm"
+    >
+      <Icon size={18} color="#FFFFFF" strokeWidth={2.5} />
     </View>
     <View className="flex-1 px-4">
-      <Text className="text-sm font-bold text-gray-900 text-right">{title}</Text>
+      <Text className="text-sm font-extrabold text-gray-900 text-right">{title}</Text>
       {subtitle && (
-        <Text className="text-xs text-gray-500 mt-0.5 text-right">{subtitle}</Text>
+        <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right">{subtitle}</Text>
       )}
     </View>
-    <ChevronLeft size={20} color="#9CA3AF" />
+    <ChevronLeft size={18} color="#D1D5DB" />
   </TouchableOpacity>
 );
 
@@ -160,8 +207,6 @@ export default function PatientProfile() {
   const [settings, setSettings] = useState({
     notifications: true,
     prescriptionReminders: true,
-    darkMode: false,
-    useBiometrics: true,
   });
 
   // Security state
@@ -170,6 +215,8 @@ export default function PatientProfile() {
     new: "",
     confirm: "",
   });
+
+  const [expandedFaq, setExpandedFaq] = useState(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -258,11 +305,15 @@ export default function PatientProfile() {
       return;
     }
     
-    // Simple YYYY-MM-DD validation if not empty
-    const bDate = profileData.birthDate.trim();
-    if (bDate && !/^\d{4}-\d{2}-\d{2}$/.test(bDate)) {
-      setProfileError("أدخل تاريخ الميلاد بصيغة YYYY-MM-DD");
-      return;
+    // Normalize and validate date
+    const bDateInput = profileData.birthDate.trim();
+    let normalizedBDate = null;
+    if (bDateInput) {
+      normalizedBDate = normalizeDate(bDateInput);
+      if (!normalizedBDate) {
+        setProfileError("أدخل تاريخ الميلاد بصيغة صحيحة (مثال: 2002-09-15 أو 15-09-2002)");
+        return;
+      }
     }
 
     setProfileError("");
@@ -272,7 +323,7 @@ export default function PatientProfile() {
     const payload = {
       full_name: profileData.name.trim(),
       phone: profileData.phone.trim(),
-      date_of_birth: bDate || null,
+      date_of_birth: normalizedBDate,
       blood_type: BLOOD_TYPE_MAP[profileData.bloodType.trim()] || profileData.bloodType.trim(),
       allergies: profileData.allergies.trim(),
       chronic_conditions: profileData.chronic.trim(),
@@ -384,35 +435,35 @@ export default function PatientProfile() {
               title="تعديل الملف الشخصي"
               subtitle="تحديث بياناتك الشخصية والصحية"
               onPress={() => setActiveModal("editProfile")}
-              color="bg-blue-500"
+              color="#022451"
             />
             <MenuLink
               icon={Settings}
               title="الإعدادات"
-              subtitle="اللغة والمظهر"
+              subtitle="خيارات التنبيهات والتطبيق"
               onPress={() => setActiveModal("settings")}
-              color="bg-patient"
+              color="#0FAE9B"
             />
             <MenuLink
               icon={Shield}
               title="الأمان والخصوصية"
               subtitle="كلمة المرور والأجهزة المتصلة"
               onPress={() => setActiveModal("security")}
-              color="bg-emerald-500"
+              color="#4C8FB5"
             />
             <MenuLink
               icon={FileText}
               title="الشروط والأحكام"
               subtitle="سياسة الخصوصية واستخدام التطبيق"
               onPress={() => setActiveModal("privacy")}
-              color="bg-amber-500"
+              color="#6E7FA3"
             />
             <MenuLink
               icon={HelpCircle}
               title="المساعدة والدعم"
-              subtitle="الأسئلة الشائعة والتواصل معنا"
+              subtitle="الأسئلة الشائعة وإرشادات الاستخدام"
               onPress={() => setActiveModal("help")}
-              color="bg-violet-500"
+              color="#94A3B8"
             />
           </View>
 
@@ -467,7 +518,7 @@ export default function PatientProfile() {
                     label="تاريخ الميلاد"
                     value={profileData.birthDate}
                     onChangeText={(t) => setProfileData({ ...profileData, birthDate: t })}
-                    placeholder="YYYY-MM-DD"
+                    placeholder="مثال: 2002-09-15 أو 15-09-2002"
                     icon={Calendar}
                   />
 
@@ -520,58 +571,7 @@ export default function PatientProfile() {
                   <ModalHeader title="الإعدادات" onClose={() => setActiveModal(null)} />
                   
                   <View className="mb-6">
-                    <View className="flex-row items-center justify-end mb-4 gap-2">
-                       <Text className="text-lg font-extrabold text-gray-900">التنبيهات</Text>
-                       <View className="w-1 h-6 bg-patient rounded-full" />
-                    </View>
-
-                  </View>
-
-                  <View className="mb-6">
-                    <View className="flex-row items-center justify-end mb-4 gap-2">
-                       <Text className="text-lg font-extrabold text-gray-900">المظهر واللغة</Text>
-                       <View className="w-1 h-6 bg-patient rounded-full" />
-                    </View>
-                    <SettingRow
-                      icon={Moon}
-                      title="الوضع الداكن"
-                      description="تغيير مظهر التطبيق إلى الألوان الليلية"
-                      value={settings.darkMode}
-                      onValueChange={() => toggleSetting("darkMode")}
-                    />
-                    <TouchableOpacity 
-                      onPress={() => Alert.alert("اللغة", "اللغة العربية مفعلة حالياً")}
-                      className="flex-row items-center justify-between py-5"
-                    >
-                      <View className="flex-row items-center gap-2">
-                         <Text className="text-sm font-extrabold text-patient">العربية</Text>
-                         <ArrowRight size={14} color="#022451" style={{ transform: [{ rotate: '180deg' }] }} />
-                      </View>
-                      <View className="flex-row items-center gap-4">
-                        <View className="flex-1">
-                           <Text className="text-base font-extrabold text-gray-900 text-right">لغة التطبيق</Text>
-                           <Text className="text-[10px] font-bold text-gray-400 mt-1 text-right">تغيير لغة واجهة المستخدم</Text>
-                        </View>
-                        <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-                          <Globe size={22} color="#022451" strokeWidth={2.5} />
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-
-                  <View className="mb-6">
-                    <View className="flex-row items-center justify-end mb-4 gap-2">
-                       <Text className="text-lg font-extrabold text-gray-900">الأمان</Text>
-                       <View className="w-1 h-6 bg-patient rounded-full" />
-                    </View>
-                    <SettingRow
-                      icon={ShieldAlert}
-                      title="قفل التطبيق"
-                      description="استخدام البصمة لتعزيز سرية بياناتك"
-                      value={settings.useBiometrics}
-                      onValueChange={() => toggleSetting("useBiometrics")}
-                      showDivider={false}
-                    />
+                    <Text className="text-sm text-gray-500 text-center font-bold">لا توجد إعدادات إضافية حالياً.</Text>
                   </View>
 
                   <TouchableOpacity
@@ -735,30 +735,58 @@ export default function PatientProfile() {
                     </View>
                   </View>
 
-                  <TouchableOpacity 
-                    onPress={() => Alert.alert("اتصال", "جاري الاتصال بـ 920000000")}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 items-center justify-center gap-2 shadow-sm mb-8"
-                  >
-                    <View className="w-14 h-14 rounded-full bg-blue-100 items-center justify-center">
-                      <Phone size={28} color="#3B82F6" />
+                  <View className="bg-white p-6 rounded-2xl border border-gray-100 items-center justify-center gap-4 shadow-sm mb-8">
+                    <View className="w-16 h-16 rounded-full bg-blue-50 items-center justify-center border border-blue-100">
+                      <ShieldCheck size={32} color="#3B82F6" />
                     </View>
-                    <Text className="text-base font-bold text-gray-900 mt-2">اتصل بنا</Text>
-                    <Text className="text-sm text-gray-500">920000000</Text>
-                  </TouchableOpacity>
+                    <View>
+                      <Text className="text-base font-bold text-gray-900 text-center mb-1">تحتاج للمساعدة؟</Text>
+                      <Text className="text-sm text-gray-500 text-center leading-relaxed">للمساعدة، يرجى التواصل مع إدارة المنظمة أو الصيدلية المسؤولة.</Text>
+                    </View>
+                  </View>
 
                   <View className="bg-gray-50 rounded-[2.5rem] p-6 border border-gray-100">
                     <Text className="text-lg font-extrabold text-gray-900 mb-4 text-right">الأسئلة الشائعة</Text>
                     
                     {[
-                      "كيف يمكنني عرض الوصفة الطبية بلغة الإشارة؟",
-                      "هل يمكن للصيدلي رؤية جميع وصفاتي السابقة؟",
-                      "ماذا أفعل في حال فقدت رمز الاستجابة السريعة؟",
-                      "كيف يمكنني تحديث بياناتي الصحية؟"
-                    ].map((q, idx) => (
-                      <TouchableOpacity key={idx} className="flex-row items-center justify-between py-4 border-b border-gray-100">
-                        <ChevronLeft size={18} color="#9CA3AF" />
-                        <Text className="text-sm font-bold text-gray-800 text-right flex-1 pr-4">{q}</Text>
-                      </TouchableOpacity>
+                      {
+                        q: "كيف يمكنني عرض الوصفة الطبية بلغة الإشارة؟",
+                        a: "افتح الوصفة من سجل الوصفات، ثم اختر الدواء لعرض التعليمات والنص الداعم."
+                      },
+                      {
+                        q: "هل يمكن للصيدلي رؤية جميع وصفاتي السابقة؟",
+                        a: "يمكن للصيدلي رؤية المعلومات المرتبطة بالجلسة والوصفة عند وجود صلاحية مناسبة."
+                      },
+                      {
+                        q: "ماذا أفعل في حال فقدت رمز الاستجابة السريعة؟",
+                        a: "يرجى التواصل مع إدارة المنظمة لإعادة إصدار رمز جديد."
+                      },
+                      {
+                        q: "كيف يمكنني تحديث بياناتي الصحية؟",
+                        a: "يمكنك تعديل بياناتك من صفحة الملف الشخصي ثم حفظ التغييرات."
+                      }
+                    ].map((item, idx) => (
+                      <View key={idx} className="border-b border-gray-100">
+                        <TouchableOpacity 
+                          onPress={() => setExpandedFaq(expandedFaq === idx ? null : idx)}
+                          className="flex-row items-center justify-between py-5"
+                          activeOpacity={0.7}
+                        >
+                          <ChevronLeft 
+                            size={18} 
+                            color="#9CA3AF" 
+                            style={{ transform: [{ rotate: expandedFaq === idx ? '-90deg' : '0deg' }] }}
+                          />
+                          <Text className="text-sm font-bold text-gray-800 text-right flex-1 pr-4">{item.q}</Text>
+                        </TouchableOpacity>
+                        {expandedFaq === idx && (
+                          <View className="pb-5 pr-4 pl-8">
+                            <Text className="text-xs text-gray-500 text-right leading-relaxed font-bold">
+                              {item.a}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
                     ))}
                   </View>
                 </View>

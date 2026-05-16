@@ -3,14 +3,8 @@ import MobileShell from "@/components/mobile/MobileShell";
 import { useRouter } from "expo-router";
 import {
   ArrowRight,
-  Bell,
-  FileText,
-  Globe,
-  HelpCircle,
-  Home,
   Lock,
   LogOut,
-  MapPin,
   Settings,
   User,
   X,
@@ -145,27 +139,14 @@ export default function PharmacistSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [settings, setSettings] = useState({
-    notifications: true,
-    autoAccept: false,
-    darkMode: false,
-    useBiometrics: true,
-  });
-
   const [accountData, setAccountData] = useState({
     name: "",
     phone: "",
-  });
-
-  const [pharmacyData, setPharmacyData] = useState({
-    name: "",
-    address: "",
-    contact: "",
+    pharmacyName: "",
   });
 
   const [activeModal, setActiveModal] = useState(null);
   const [tempProfile, setTempProfile] = useState({ name: "", phone: "" });
-  const [tempPharmacy, setTempPharmacy] = useState({ name: "", address: "", contact: "" });
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
@@ -183,31 +164,17 @@ export default function PharmacistSettings() {
     setIsLoading(true);
     setError("");
 
-    const [profileRes, pharmacyRes] = await Promise.all([
-      profileApi.getPharmacistProfile(),
-      profileApi.getPharmacyData(),
-    ]);
+    const profileRes = await profileApi.getPharmacistProfile();
 
     if (profileRes.success) {
       const p = profileRes.data;
       const data = {
         name: p.full_name || "",
         phone: p.phone_number || "",
+        pharmacyName: p.pharmacy?.name || "",
       };
       setAccountData(data);
-      // Only set temp if modal not open (prevents resetting while typing)
       if (!activeModal) setTempProfile(data);
-    }
-
-    if (pharmacyRes.success) {
-      const ph = pharmacyRes.data;
-      const data = {
-        name: ph.name || "",
-        address: ph.address || "",
-        contact: ph.contact_number || "",
-      };
-      setPharmacyData(data);
-      if (!activeModal) setTempPharmacy(data);
     }
 
     if (!profileRes.success && profileRes.status !== 401) {
@@ -217,8 +184,7 @@ export default function PharmacistSettings() {
     setIsLoading(false);
   };
 
-  const toggleSetting = (key) =>
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+
 
   const handleLogout = async () => {
     await logout();
@@ -244,24 +210,6 @@ export default function PharmacistSettings() {
       if (setUser && user) {
         setUser({ ...user, name: updatedData.name, phone: updatedData.phone });
       }
-      setActiveModal(null);
-      Alert.alert("تم", "تم حفظ البيانات بنجاح");
-    } else {
-      Alert.alert("خطأ", "تعذر حفظ البيانات. حاول مرة أخرى.");
-    }
-  };
-
-  const savePharmacy = async () => {
-    setIsSaving(true);
-    const res = await profileApi.updatePharmacyData({
-      name: tempPharmacy.name,
-      address: tempPharmacy.address,
-      contact_number: tempPharmacy.contact,
-    });
-    setIsSaving(false);
-
-    if (res.success) {
-      setPharmacyData({ ...tempPharmacy });
       setActiveModal(null);
       Alert.alert("تم", "تم حفظ البيانات بنجاح");
     } else {
@@ -334,26 +282,17 @@ export default function PharmacistSettings() {
 
               <View className="flex-row items-center gap-2 bg-white/10 px-5 py-2.5 rounded-2xl border border-white/10 mt-3">
                 <Text className="text-sm font-bold text-white/90">
-                  {pharmacyData.name || "صيدلية فارماساين"}
-                </Text>
-
-                <View className="w-1.5 h-1.5 bg-white/40 rounded-full" />
-
-                <MapPin size={14} color="rgba(255,255,255,0.8)" />
-
-                <Text className="text-xs font-bold text-white/70">
-                  {pharmacyData.address ? (pharmacyData.address.split("،")[1] || pharmacyData.address) : "الرياض"}
+                  {accountData.pharmacyName || "صيدلية غير محددة"}
                 </Text>
               </View>
             </View>
           </View>
 
           <View className="px-5 -mt-6">
-            {/* Account & Pharmacy Section */}
             <View className="bg-white rounded-[2.5rem] p-7 mb-6 border border-gray-100 shadow-sm">
               <View className="flex-row items-center justify-end mb-6 gap-2">
                 <Text className="text-lg font-extrabold text-gray-900">
-                  الحساب والصيدلية
+                  إعدادات الحساب
                 </Text>
                 <View className="w-1 h-6 bg-primary rounded-full" />
               </View>
@@ -373,103 +312,15 @@ export default function PharmacistSettings() {
                 title="تغيير كلمة المرور"
                 subtitle="تحديث كلمة مرور الحساب"
                 onPress={() => setActiveModal("password")}
-              />
-
-              <ClickableRow
-                icon={Home}
-                title="بيانات الصيدلية"
-                subtitle="اسم الصيدلية، العنوان، ورقم التواصل"
-                onPress={() => {
-                  setTempPharmacy({ ...pharmacyData });
-                  setActiveModal("pharmacy");
-                }}
                 showDivider={false}
               />
             </View>
 
-            {/* Workflow Section */}
-            <View className="bg-white rounded-[2.5rem] p-7 mb-6 border border-gray-100 shadow-sm">
-              <View className="flex-row items-center justify-end mb-6 gap-2">
-                <Text className="text-lg font-extrabold text-gray-900">
-                  سير العمل
-                </Text>
-                <View className="w-1 h-6 bg-primary rounded-full" />
-              </View>
-
-              <SettingRow
-                icon={Bell}
-                title="تنبيهات الوصفات"
-                description="تلقي إشعار فور مسح رمز مريض جديد"
-                value={settings.notifications}
-                onValueChange={() => toggleSetting("notifications")}
-              />
-
-              <SettingRow
-                icon={FileText}
-                title="الأرشفة التلقائية"
-                description="أرشفة الوصفات المكتملة تلقائياً بعد الصرف"
-                value={settings.autoAccept}
-                onValueChange={() => toggleSetting("autoAccept")}
-                showDivider={false}
-              />
-            </View>
-
-            {/* Support & System Section */}
             <View className="bg-white rounded-[2.5rem] p-6 mb-5 border border-gray-50 shadow-sm">
-              <View className="flex-row items-center justify-end mb-6 gap-2">
-                <Text className="text-lg font-extrabold text-gray-900">
-                  النظام والدعم
-                </Text>
-                <View className="w-1 h-6 bg-primary rounded-full" />
-              </View>
-
-              <TouchableOpacity
-                onPress={() => Alert.alert("اللغة", "اللغة العربية مفعلة حالياً")}
-                className="flex-row items-center justify-between py-4 border-b border-gray-50"
-              >
-                <Text className="text-sm font-extrabold text-primary">
-                  العربية
-                </Text>
-
-                <View className="flex-row items-center gap-4">
-                  <Text className="text-base font-extrabold text-gray-900">
-                    لغة التطبيق
-                  </Text>
-
-                  <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-                    <Globe size={22} color="#05997F" strokeWidth={2.5} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() =>
-                  Alert.alert("الدعم", "للمساعدة، تواصل مع إدارة PharmaSign")
-                }
-                className="flex-row items-center justify-between py-4 border-b border-gray-50"
-              >
-                <ArrowRight
-                  size={16}
-                  color="#D1D5DB"
-                  style={{ transform: [{ rotate: "180deg" }] }}
-                />
-
-                <View className="flex-row items-center gap-4">
-                  <Text className="text-base font-extrabold text-gray-900">
-                    مساعدة ودعم
-                  </Text>
-
-                  <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-                    <HelpCircle size={22} color="#05997F" strokeWidth={2.5} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-
-              {/* Logout Button */}
               <TouchableOpacity
                 onPress={handleLogout}
                 activeOpacity={0.85}
-                className="mt-5 bg-red-50 border border-red-100 rounded-3xl h-16 flex-row items-center justify-center gap-3"
+                className="bg-red-50 border border-red-100 rounded-3xl h-16 flex-row items-center justify-center gap-3"
               >
                 <Text className="text-lg font-extrabold text-red-500">
                   تسجيل الخروج
@@ -479,7 +330,7 @@ export default function PharmacistSettings() {
               </TouchableOpacity>
             </View>
           </View>
-
+          
           <Text className="text-center text-[10px] font-extrabold text-gray-300 mt-8 mb-4 uppercase tracking-widest">
             PharmaSign v1.0.0 (GRADUATION_PROJECT)
           </Text>
@@ -572,48 +423,7 @@ export default function PharmacistSettings() {
               </View>
             )}
 
-            {activeModal === "pharmacy" && (
-              <View>
-                <ModalHeader
-                  title="بيانات الصيدلية"
-                  onClose={() => setActiveModal(null)}
-                />
 
-                <FormInput
-                  label="اسم الصيدلية"
-                  value={tempPharmacy.name}
-                  onChangeText={(t) =>
-                    setTempPharmacy({ ...tempPharmacy, name: t })
-                  }
-                />
-
-                <FormInput
-                  label="العنوان / المنطقة"
-                  value={tempPharmacy.address}
-                  onChangeText={(t) =>
-                    setTempPharmacy({ ...tempPharmacy, address: t })
-                  }
-                />
-
-                <FormInput
-                  label="رقم تواصل الصيدلية"
-                  value={tempPharmacy.contact}
-                  onChangeText={(t) =>
-                    setTempPharmacy({ ...tempPharmacy, contact: t })
-                  }
-                />
-
-                <TouchableOpacity
-                  onPress={savePharmacy}
-                  disabled={isSaving}
-                  className={`h-16 rounded-2xl items-center justify-center mt-4 ${isSaving ? "bg-primary/50" : "bg-pharmacist"}`}
-                >
-                  <Text className="text-white font-extrabold text-lg">
-                    {isSaving ? "جاري الحفظ..." : "حفظ بيانات الصيدلية"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
       </Modal>

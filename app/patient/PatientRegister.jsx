@@ -162,7 +162,7 @@ export default function PatientRegister() {
               <Text className="text-white text-2xl font-extrabold text-center">
                 {step === 0 ? "إنشاء حساب جديد" : "التحقق من الرقم"}
               </Text>
-              <Text className="text-white/70 text-sm mt-1 text-center">
+              <Text className="text-white/70 text-sm mt-1 text-center font-bold">
                 {step === 0 ? "أهلاً بك في فارماساين، يرجى تعبئة بياناتك" : "تم إرسال رمز تحقق إلى رقم جوالك"}
               </Text>
             </View>
@@ -279,7 +279,7 @@ export default function PatientRegister() {
                 </View>
                 <Text className="text-2xl font-extrabold text-gray-900 mb-2">التحقق من رقم الجوال</Text>
                 <Text className="text-base text-gray-500 font-bold text-center leading-relaxed">
-                  تم إرسال رمز تحقق إلى رقم الجوال عبر واتساب.
+                  تم إرسال رمز تحقق إلى رقم الجوال عبر تيليغرام.
                 </Text>
               </View>
 

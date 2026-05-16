@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { 
   ShieldCheck, 
   Activity, 
-  Phone, 
   User, 
   Stethoscope,
   MapPin, 
@@ -145,9 +144,7 @@ export default function PharmacistPrescriptionDetail() {
               {/* Patient Info Card */}
               <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-50 mb-6">
                 <View className="flex-row items-center justify-between mb-6 pb-6 border-b border-gray-50">
-                  <TouchableOpacity className="w-12 h-12 bg-pharmacist/5 rounded-2xl items-center justify-center">
-                    <Phone size={22} color="#05997F" strokeWidth={2.5} />
-                  </TouchableOpacity>
+                  <View className="w-12 h-12" />
 
                   <View className="items-end">
                     <Text className="text-lg font-extrabold text-gray-900">{getPatientDisplayName(rx)}</Text>

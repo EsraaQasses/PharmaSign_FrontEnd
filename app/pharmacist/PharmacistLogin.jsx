@@ -88,7 +88,7 @@ export default function PharmacistLogin() {
               <Text className="text-white text-2xl font-extrabold">
                 تسجيل الدخول
               </Text>
-              <Text className="text-white/70 text-sm mt-1 text-center">
+              <Text className="text-white/70 text-sm mt-1 text-center font-bold">
                 الدخول كـ صيدلي للمتابعة
               </Text>
             </View>
@@ -188,7 +188,7 @@ export default function PharmacistLogin() {
 
             {/* Register */}
             <View className="flex-row items-center justify-center gap-1 mt-4">
-              <Text className="text-gray-500 text-sm">ليس لديك حساب؟</Text>
+              <Text className="text-gray-500 text-sm font-medium">ليس لديك حساب؟</Text>
               <TouchableOpacity
                 onPress={() => router.push("/pharmacist/PharmacistRegister")}
                 activeOpacity={0.7}

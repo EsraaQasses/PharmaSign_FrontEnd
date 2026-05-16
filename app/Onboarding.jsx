@@ -130,7 +130,7 @@ export default function Onboarding() {
           </Text>
 
           {/* Description */}
-          <Text className="text-gray-500 text-sm leading-6 text-center max-w-[280px]">
+          <Text className="text-gray-500 text-sm leading-6 text-center max-w-[280px] font-medium">
             {slide.description}
           </Text>
         </Animated.View>

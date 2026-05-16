@@ -31,7 +31,7 @@ export default function PharmacistForgotPassword() {
       return;
     }
 
-    setError("ميزة استعادة الحساب عبر واتساب ستتوفر قريباً. يرجى التواصل مع المنظمة لاستعادة الحساب حالياً.");
+    setError("ميزة استعادة الحساب عبر تيليغرام ستتوفر قريباً. يرجى التواصل مع المنظمة لاستعادة الحساب حالياً.");
   };
 
   return (
@@ -59,7 +59,7 @@ export default function PharmacistForgotPassword() {
                 استعادة حساب الصيدلي
               </Text>
               <Text className="text-base text-gray-500 leading-relaxed text-right">
-                أدخل رقم الجوال المرتبط بحسابك كصيدلي وسنرسل لك رابط إعادة تعيين كلمة المرور عبر واتساب.
+                أدخل رقم الجوال المرتبط بحسابك كصيدلي وسنرسل لك رابط إعادة تعيين كلمة المرور عبر تيليغرام.
               </Text>
             </View>
 
