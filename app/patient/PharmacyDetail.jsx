@@ -182,10 +182,13 @@ export default function PharmacyDetail() {
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={openInGoogleMaps}
-          className="flex-1 bg-patient h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl shadow-patient/30"
+          disabled={!pharmacy.latitude || !pharmacy.longitude}
+          className={`flex-1 h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl ${(!pharmacy.latitude || !pharmacy.longitude) ? 'bg-gray-300 shadow-none' : 'bg-patient shadow-patient/30'}`}
         >
-          <Navigation size={22} color="#FFFFFF" strokeWidth={2.5} />
-          <Text className="text-white font-extrabold text-lg">بدء التوجيه</Text>
+          {!!(pharmacy.latitude && pharmacy.longitude) && <Navigation size={22} color="#FFFFFF" strokeWidth={2.5} />}
+          <Text className={`font-extrabold text-lg ${(!pharmacy.latitude || !pharmacy.longitude) ? 'text-gray-500 text-sm' : 'text-white'}`}>
+            {(!pharmacy.latitude || !pharmacy.longitude) ? 'الموقع غير متوفر حالياً' : 'بدء التوجيه'}
+          </Text>
         </TouchableOpacity>
       </View>
     </MobileShell>

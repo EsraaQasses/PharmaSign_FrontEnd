@@ -8,9 +8,6 @@
     "scheme": "pharmasignfinalversion",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#F0F4F4",

@@ -141,6 +141,15 @@ const FormInput = ({ label, value, onChangeText, placeholder, icon: Icon, multil
 
 const SettingRow = ({ icon: Icon, title, description, value, onValueChange, showDivider = true }) => (
   <View className={`flex-row items-center justify-between py-4 ${showDivider ? 'border-b border-gray-50' : ''}`}>
+    <View className="flex-1 flex-row items-center gap-4">
+      <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
+        <Icon size={22} color="#022451" strokeWidth={2.5} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-base font-extrabold text-gray-900 text-right">{title}</Text>
+        {description && <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">{description}</Text>}
+      </View>
+    </View>
     <Switch
       value={value}
       onValueChange={onValueChange}
@@ -148,35 +157,28 @@ const SettingRow = ({ icon: Icon, title, description, value, onValueChange, show
       thumbColor={"#FFFFFF"}
       style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
     />
-    <View className="flex-1 flex-row items-center gap-4 justify-end">
-      <View className="flex-1">
-        <Text className="text-base font-extrabold text-gray-900 text-right">{title}</Text>
-        {description && <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right leading-relaxed">{description}</Text>}
-      </View>
-      <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
-        <Icon size={22} color="#022451" strokeWidth={2.5} />
-      </View>
-    </View>
   </View>
 );
 
 const MenuLink = ({ icon: Icon, title, subtitle, onPress, color }) => (
   <TouchableOpacity
     onPress={onPress}
-    className="flex-row items-center p-5 bg-white border-b border-gray-50"
+    className="flex-row items-center justify-between p-5 bg-white border-b border-gray-50"
     activeOpacity={0.7}
   >
-    <View 
-      style={{ backgroundColor: color }}
-      className="w-10 h-10 rounded-full items-center justify-center shadow-sm"
-    >
-      <Icon size={18} color="#FFFFFF" strokeWidth={2.5} />
-    </View>
-    <View className="flex-1 px-4">
-      <Text className="text-sm font-extrabold text-gray-900 text-right">{title}</Text>
-      {subtitle && (
-        <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right">{subtitle}</Text>
-      )}
+    <View className="flex-1 flex-row items-center gap-4">
+      <View 
+        style={{ backgroundColor: color }}
+        className="w-10 h-10 rounded-full items-center justify-center shadow-sm"
+      >
+        <Icon size={18} color="#FFFFFF" strokeWidth={2.5} />
+      </View>
+      <View className="flex-1">
+        <Text className="text-sm font-extrabold text-gray-900 text-right">{title}</Text>
+        {subtitle && (
+          <Text className="text-[10px] font-bold text-gray-400 mt-0.5 text-right">{subtitle}</Text>
+        )}
+      </View>
     </View>
     <ChevronLeft size={18} color="#D1D5DB" />
   </TouchableOpacity>
@@ -305,6 +307,12 @@ export default function PatientProfile() {
       return;
     }
     
+    const validBloodTypes = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+    if (profileData.bloodType && !validBloodTypes.includes(profileData.bloodType.trim().toUpperCase())) {
+      setProfileError("يرجى اختيار زمرة دم صحيحة");
+      return;
+    }
+
     // Normalize and validate date
     const bDateInput = profileData.birthDate.trim();
     let normalizedBDate = null;
@@ -348,7 +356,7 @@ export default function PatientProfile() {
         setActiveModal(null);
       }
     } else {
-      setProfileError(res.message || "تعذر حفظ البيانات. حاول مرة أخرى.");
+      setProfileError(res.message || "تعذر حفظ التعديلات، يرجى التحقق من البيانات المدخلة");
     }
     setIsSavingProfile(false);
   };

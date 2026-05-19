@@ -144,17 +144,17 @@ export default function PrescriptionDetail() {
             </Text>
 
             {rx.doctor_name && (
-              <View className="flex-row items-center justify-end gap-3 mb-5">
-                <View className="items-end">
-                  <Text className="text-base font-extrabold text-gray-800">
-                    {rx.doctor_name}
-                  </Text>
-                  <Text className="text-xs text-gray-400 mt-0.5">
-                    {rx.doctor_specialty || "طبيب ممارس"}
-                  </Text>
-                </View>
+              <View className="flex-row items-center gap-3 mb-5">
                 <View className="w-12 h-12 bg-patient/5 rounded-2xl items-center justify-center border border-patient/10">
                   <Thermometer size={22} color="#022451" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-base font-extrabold text-gray-800 text-right">
+                    {rx.doctor_name}
+                  </Text>
+                  <Text className="text-xs text-gray-400 mt-0.5 text-right">
+                    {rx.doctor_specialty || "طبيب ممارس"}
+                  </Text>
                 </View>
               </View>
             )}
@@ -162,17 +162,17 @@ export default function PrescriptionDetail() {
             {getPharmacyName(rx) ? (
               <>
                 <View className="h-px bg-gray-50 w-full mb-5" />
-                <View className="flex-row items-center justify-end gap-3">
-                  <View className="items-end">
-                    <Text className="text-base font-extrabold text-gray-800">
-                      {getPharmacyName(rx)}
-                    </Text>
-                    <Text className="text-[10px] text-gray-400 mt-1">
-                      تم صرف الدواء من هذه الصيدلية
-                    </Text>
-                  </View>
+                <View className="flex-row items-center gap-3">
                   <View className="w-12 h-12 bg-blue-50 rounded-2xl items-center justify-center border border-blue-100">
                     <MapPin size={22} color="#3B82F6" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-base font-extrabold text-gray-800 text-right">
+                      {getPharmacyName(rx)}
+                    </Text>
+                    <Text className="text-[10px] text-gray-400 mt-1 text-right">
+                      تم صرف الدواء من هذه الصيدلية
+                    </Text>
                   </View>
                 </View>
               </>
@@ -255,19 +255,19 @@ export default function PrescriptionDetail() {
                       <Text className="text-base font-extrabold text-gray-800 mb-1 text-right">
                         {med.medication_name || med.medicine_name || med.name || "دواء"}
                       </Text>
-                      <View className="flex-row items-center justify-end gap-3 mt-0.5">
+                      <View className="flex-row items-center gap-3 mt-0.5">
+                        {shouldShowDosage ? (
+                          <View className="flex-row items-center gap-1.5">
+                            <Clock size={10} color="#9CA3AF" />
+                            <Text className="text-[10px] text-gray-500 font-bold text-right">
+                              {dosageText}
+                            </Text>
+                          </View>
+                        ) : null}
                         <View className="flex-row items-center gap-1 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
                            <Text className="text-[10px] font-bold text-gray-600">{formatPrice(getItemSubtotal(med))}</Text>
                            <Text className="text-[8px] text-gray-400">ل.س</Text>
                         </View>
-                        {shouldShowDosage ? (
-                          <View className="flex-row items-center justify-end gap-1.5">
-                            <Text className="text-[10px] text-gray-500 font-bold">
-                              {dosageText}
-                            </Text>
-                            <Clock size={10} color="#9CA3AF" />
-                          </View>
-                        ) : null}
                       </View>
                       <Text className="text-xs text-gray-400 mt-2 leading-relaxed text-right" numberOfLines={2}>
                         {instructions}

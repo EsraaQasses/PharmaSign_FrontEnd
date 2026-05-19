@@ -71,14 +71,10 @@ const SettingRow = ({
       showDivider ? "border-b border-gray-50" : ""
     }`}
   >
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: "#E5E7EB", true: "#05997F" }}
-      thumbColor="#FFFFFF"
-      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-    />
-    <View className="flex-1 flex-row items-center gap-4 justify-end">
+    <View className="flex-1 flex-row items-center gap-4">
+      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
+        <Icon size={22} color="#05997F" strokeWidth={2.5} />
+      </View>
       <View className="flex-1">
         <Text className="text-base font-extrabold text-gray-900 text-right">
           {title}
@@ -89,10 +85,14 @@ const SettingRow = ({
           </Text>
         )}
       </View>
-      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-        <Icon size={22} color="#05997F" strokeWidth={2.5} />
-      </View>
     </View>
+    <Switch
+      value={value}
+      onValueChange={onValueChange}
+      trackColor={{ false: "#E5E7EB", true: "#05997F" }}
+      thumbColor="#FFFFFF"
+      style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+    />
   </View>
 );
 
@@ -110,12 +110,10 @@ const ClickableRow = ({
     }`}
     activeOpacity={0.6}
   >
-    <ArrowRight
-      size={16}
-      color="#D1D5DB"
-      style={{ transform: [{ rotate: "180deg" }] }}
-    />
-    <View className="flex-1 flex-row items-center gap-4 justify-end">
+    <View className="flex-1 flex-row items-center gap-4">
+      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
+        <Icon size={22} color="#05997F" strokeWidth={2.5} />
+      </View>
       <View className="flex-1">
         <Text className="text-base font-extrabold text-gray-900 text-right">
           {title}
@@ -124,10 +122,12 @@ const ClickableRow = ({
           {subtitle}
         </Text>
       </View>
-      <View className="w-12 h-12 bg-primary/5 rounded-2xl items-center justify-center border border-primary/10">
-        <Icon size={22} color="#05997F" strokeWidth={2.5} />
-      </View>
     </View>
+    <ArrowRight
+      size={16}
+      color="#D1D5DB"
+      style={{ transform: [{ rotate: "180deg" }] }}
+    />
   </TouchableOpacity>
 );
 

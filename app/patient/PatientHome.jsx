@@ -246,30 +246,30 @@ export default function PatientHome() {
 
                       {/* Doctor & Pharmacy Info */}
                       <View className="space-y-1.5 mb-5">
-                        <View className="flex-row items-center justify-end gap-2">
-                          <Text className="text-base font-extrabold text-gray-900">
-                            {rx.doctor_name || "طبيب غير محدد"}
-                          </Text>
+                        <View className="flex-row items-center gap-2">
                           <View className="bg-blue-50 p-1.5 rounded-lg">
                              <Thermometer size={14} color="#3B82F6" />
                           </View>
+                          <Text className="text-base font-extrabold text-gray-900 text-right">
+                            {rx.doctor_name || "طبيب غير محدد"}
+                          </Text>
                         </View>
                         <Text className="text-xs text-gray-400 text-right mr-9">
                           {rx.doctor_specialty || "تخصص غير محدد"}
                         </Text>
                         
                         {getPharmacyName(rx) ? (
-                          <View className="flex-row items-center justify-end gap-2 mt-1">
-                            <Text className="text-xs text-gray-500 font-medium">
+                          <View className="flex-row items-center gap-2 mt-1">
+                            <MapPin size={14} color="#9CA3AF" />
+                            <Text className="text-xs text-gray-500 font-medium text-right">
                               {getPharmacyName(rx)}
                             </Text>
-                            <MapPin size={14} color="#9CA3AF" />
                           </View>
                         ) : null}
                       </View>
 
                       {/* Medications Summary */}
-                      <View className="flex-row flex-wrap justify-end gap-2 mb-6">
+                      <View className="flex-row flex-wrap gap-2 mb-6">
                         {(rx.items || []).map((med, idx) => (
                           <View
                             key={med.id || idx}

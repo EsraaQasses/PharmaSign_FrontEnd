@@ -136,16 +136,16 @@ export default function SetInitialPassword() {
           </View>
 
           {error ? (
-            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 flex-row items-center justify-end gap-3">
-              <Text className="text-red-600 font-bold flex-1 text-right text-xs">{error}</Text>
+            <View className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6 flex-row items-center gap-3">
               <AlertCircle size={18} color="#DC2626" />
+              <Text className="text-red-600 font-bold flex-1 text-right text-xs">{error}</Text>
             </View>
           ) : null}
 
           {message ? (
-            <View className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 flex-row items-center justify-end gap-3">
-              <Text className="text-amber-700 font-bold flex-1 text-right text-xs">{message}</Text>
+            <View className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-6 flex-row items-center gap-3">
               <CheckCircle2 size={18} color="#D97706" />
+              <Text className="text-amber-700 font-bold flex-1 text-right text-xs">{message}</Text>
             </View>
           ) : null}
 

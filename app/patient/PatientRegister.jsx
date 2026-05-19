@@ -118,7 +118,7 @@ export default function PatientRegister() {
       <Text className="text-gray-700 text-sm font-bold mb-2 ml-1 text-right">{label}</Text>
       <View className="relative">
         <TextInput
-          className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pr-12"
+          className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pl-12"
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}

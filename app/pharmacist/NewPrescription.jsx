@@ -592,11 +592,11 @@ export default function NewPrescription() {
           >
             {/* Doctor Details (Prescription Level) */}
             <View className="bg-white rounded-3xl p-6 shadow-sm border border-gray-50 mb-5">
-              <View className="flex-row items-center gap-2 mb-4 justify-end">
-                <Text className="text-sm font-extrabold text-gray-900">
+              <View className="flex-row items-center gap-2 mb-4">
+                <Plus size={18} color="#05997F" />
+                <Text className="text-sm font-extrabold text-gray-900 text-right">
                   بيانات الطبيب المعالج
                 </Text>
-                <Plus size={18} color="#05997F" />
               </View>
 
               <View className="mb-4">
@@ -663,11 +663,11 @@ export default function NewPrescription() {
 
             {/* Camera/Upload Area */}
             <View className="bg-white rounded-3xl p-5 shadow-sm border border-gray-50 mb-5">
-              <View className="flex-row items-center gap-2 mb-4 justify-end">
-                <Text className="text-sm font-extrabold text-gray-900">
+              <View className="flex-row items-center gap-2 mb-4">
+                <ImageIcon size={18} color="#05997F" />
+                <Text className="text-sm font-extrabold text-gray-900 text-right">
                   صورة الدواء
                 </Text>
-                <ImageIcon size={18} color="#05997F" />
               </View>
 
               <View

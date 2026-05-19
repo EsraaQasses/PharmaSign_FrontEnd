@@ -178,9 +178,9 @@ export default function PharmacistPrescriptionDetail() {
                 {getPharmacyName(rx) ? (
                    <View className="mt-4 pt-4 border-t border-gray-50">
                       <Text className="text-[10px] font-extrabold text-gray-400 mb-1.5 uppercase tracking-wider text-right">الصيدلية</Text>
-                      <View className="flex-row items-center justify-end gap-1.5">
-                         <Text className="text-xs font-bold text-gray-600 text-right">{getPharmacyName(rx)}</Text>
+                      <View className="flex-row items-center gap-1.5 mt-2">
                          <MapPin size={12} color="#9CA3AF" />
+                         <Text className="text-xs font-bold text-gray-600 text-right">{getPharmacyName(rx)}</Text>
                       </View>
                    </View>
                 ) : null}
@@ -226,7 +226,7 @@ export default function PharmacistPrescriptionDetail() {
                           </View>
                            <View className="flex-1">
                              <Text className="text-base font-extrabold text-gray-900 mb-1 text-right">{med.medication_name || med.medicine_name || med.name || "دواء"}</Text>
-                             <View className="flex-row justify-end gap-3 mt-1">
+                             <View className="flex-row gap-3 mt-1">
                                 <View className="flex-row items-center gap-1 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
                                    <Text className="text-[11px] font-bold text-gray-700">{formatPrice(getItemSubtotal(med))}</Text>
                                    <Text className="text-[9px] text-gray-400">ل.س</Text>
@@ -247,7 +247,7 @@ export default function PharmacistPrescriptionDetail() {
                             })()}
                           </Text>
                           
-                          <View className="flex-row flex-wrap justify-end gap-2 mt-2">
+                          <View className="flex-row flex-wrap gap-2 mt-2">
                              {(() => {
                                const val = String(med.duration || "").trim();
                                const hidden = ["غير محدد", "غير محددة", "null", "undefined", ".", "-", ""];

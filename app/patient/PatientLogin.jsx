@@ -135,7 +135,7 @@ export default function PatientLogin() {
                   placeholder="أدخل كلمة المرور"
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showPassword}
-                  className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pr-12"
+                  className="bg-white border border-gray-100 rounded-xl px-4 py-4 text-gray-800 text-base pl-12"
                   style={{ textAlign: "right" }}
                 />
                 <TouchableOpacity

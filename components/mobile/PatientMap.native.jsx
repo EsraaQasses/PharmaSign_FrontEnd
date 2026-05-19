@@ -11,7 +11,7 @@ export default function PatientMap({ region, pharmacies, selectedId, onMarkerPre
       showsUserLocation
       showsMyLocationButton={false}
     >
-      {pharmacies.map((p) => (
+      {pharmacies.filter(p => p.lat != null && p.lng != null && !isNaN(p.lat) && !isNaN(p.lng)).map((p) => (
         <Marker
           key={p.id}
           coordinate={{ latitude: p.lat, longitude: p.lng }}

@@ -117,6 +117,9 @@ export default function PharmacistPrescriptions() {
           {/* Search Bar */}
           <View className="flex-row items-center gap-3">
             <View className="flex-1 flex-row items-center bg-gray-50 border border-gray-100 rounded-2xl px-4 h-14 relative">
+              <View className="mr-2">
+                <Search size={22} color="#9CA3AF" />
+              </View>
               <TextInput
                 className="flex-1 text-base text-gray-900 h-full font-medium"
                 placeholder="ابحث في سجل الوصفات..."
@@ -125,9 +128,6 @@ export default function PharmacistPrescriptions() {
                 onChangeText={setSearchQuery}
                 textAlign="right"
               />
-              <View className="ml-2">
-                <Search size={22} color="#9CA3AF" />
-              </View>
             </View>
           </View>
         </View>
@@ -214,9 +214,9 @@ export default function PharmacistPrescriptions() {
                     </View>
                     
                     {getPharmacyName(rx) ? (
-                      <View className="flex-row items-center justify-end gap-1.5 mt-2">
-                         <Text className="text-[11px] font-bold text-gray-400">{getPharmacyName(rx)}</Text>
+                      <View className="flex-row items-center gap-1.5 mt-2">
                          <MapPin size={10} color="#9CA3AF" />
+                         <Text className="text-[11px] font-bold text-gray-400">{getPharmacyName(rx)}</Text>
                       </View>
                     ) : null}
                   </View>

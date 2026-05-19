@@ -224,11 +224,18 @@ export default function PatientPharmacies() {
 
                 <View className="flex-row gap-3">
                   <TouchableOpacity 
-                     onPress={() => openInGoogleMaps(pharmacy.latitude, pharmacy.longitude)}
-                     className="flex-1 bg-patient h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-lg shadow-patient/20"
+                     onPress={() => {
+                        if (pharmacy.latitude && pharmacy.longitude) {
+                            openInGoogleMaps(pharmacy.latitude, pharmacy.longitude);
+                        }
+                     }}
+                     disabled={!pharmacy.latitude || !pharmacy.longitude}
+                     className={`flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-lg ${(!pharmacy.latitude || !pharmacy.longitude) ? 'bg-gray-300 shadow-none' : 'bg-patient shadow-patient/20'}`}
                   >
-                    <Text className="text-sm font-extrabold text-white">توجيه الخريطة</Text>
-                    <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} stroke={2.5} />
+                    <Text className={`text-[11px] font-extrabold ${(!pharmacy.latitude || !pharmacy.longitude) ? 'text-gray-500' : 'text-white'}`}>
+                      {(!pharmacy.latitude || !pharmacy.longitude) ? 'الموقع غير متوفر حالياً' : 'توجيه الخريطة'}
+                    </Text>
+                    {!!(pharmacy.latitude && pharmacy.longitude) && <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} stroke={2.5} />}
                   </TouchableOpacity>
 
                   <TouchableOpacity 

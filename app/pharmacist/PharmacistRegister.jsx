@@ -16,13 +16,13 @@ const InputField = ({ icon: Icon, label, value, onChangeText, placeholder, secur
   <View>
     <Text className="text-gray-700 text-sm font-bold mb-2 ml-1 text-right">{label}</Text>
     <View className="relative">
-      <TextInput
-        className={`bg-white border rounded-xl px-4 py-4 text-gray-800 text-base pr-12 ${error ? "border-red-500" : "border-gray-100"}`}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
-        secureTextEntry={secureTextEntry}
+        <TextInput
+          className={`bg-white border rounded-xl px-4 py-4 text-gray-800 text-base pl-12 ${error ? "border-red-500" : "border-gray-100"}`}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#9CA3AF"
+          secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         textAlign="right"
         onBlur={onBlur}
@@ -530,13 +530,13 @@ export default function PharmacistRegister() {
             <View className="px-6 py-4">
               <View className="relative">
                 <TextInput
-                  className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-gray-800 text-right pr-10"
-                  placeholder="بحث عن صيدلية، مدينة أو منطقة..."
+                  className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-gray-800 text-right pl-10"
+                  placeholder="ابحث عن الصيدلية بالاسم أو المنطقة..."
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   textAlign="right"
                 />
-                <View className="absolute right-3 top-3.5">
+                <View className="absolute left-3 top-3.5">
                   <Search size={18} color="#9CA3AF" />
                 </View>
               </View>
