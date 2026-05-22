@@ -44,10 +44,46 @@ export const authApi = {
   },
 
   // Patient QR Login
-  loginByQR: async (qr_token) => {
+  loginByQR: async (qr_code_value) => {
     return fetchClient('/auth/patient/qr-login/', {
       method: 'POST',
-      body: JSON.stringify({ qr_token }),
+      body: JSON.stringify({ qr_code_value }),
+    });
+  },
+
+  // Set Initial Password
+  setInitialPassword: async (newPassword, confirmPassword) => {
+    return fetchClient('/auth/patient/set-initial-password/', {
+      method: 'POST',
+      body: JSON.stringify({
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      }),
+    });
+  },
+
+  // Request Password Reset OTP
+  requestPasswordResetOTP: async (phoneNumber, role) => {
+    return fetchClient('/auth/password-reset/request-otp/', {
+      method: 'POST',
+      body: JSON.stringify({
+        phone_number: phoneNumber,
+        role: role
+      }),
+    });
+  },
+
+  // Confirm Password Reset
+  confirmPasswordReset: async (phoneNumber, role, otp, newPassword, confirmPassword) => {
+    return fetchClient('/auth/password-reset/confirm/', {
+      method: 'POST',
+      body: JSON.stringify({
+        phone_number: phoneNumber,
+        role: role,
+        otp: otp,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      }),
     });
   },
 };

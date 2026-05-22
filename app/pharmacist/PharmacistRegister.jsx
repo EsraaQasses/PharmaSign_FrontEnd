@@ -4,6 +4,7 @@ import LogoCard from "@/components/mobile/LogoCard";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import MobileShell from "@/components/mobile/MobileShell";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
+import { normalizeArabicNumerals } from "@/utils/formatters";
 import { useRouter } from "expo-router";
 import { AlertCircle, Building2, Lock, MessageSquare, Phone, ShieldCheck, User } from "lucide-react-native";
 import React, { useState } from "react";
@@ -62,6 +63,38 @@ export default function PharmacistRegister() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const mapBackendError = (message, resData = null, defaultMessage = "تعذر إرسال طلب إنشاء الحساب، يرجى المحاولة مرة أخرى") => {
+    let msgToMap = message;
+    
+    if (resData) {
+      const fieldsToCheck = ["birth_date", "password", "confirm_password", "phone_number", "full_name", "otp", "license_number", "pharmacy_id", "non_field_errors"];
+      const errorsToSearch = resData.fields ? { ...resData, ...resData.fields } : resData;
+      
+      for (const field of fieldsToCheck) {
+        if (errorsToSearch[field]) {
+          msgToMap = Array.isArray(errorsToSearch[field]) ? errorsToSearch[field][0] : errorsToSearch[field];
+          break;
+        }
+      }
+    }
+
+    if (!msgToMap) return defaultMessage;
+    const msgLower = msgToMap.toLowerCase();
+    
+    if (msgLower.includes("missing or invalid required fields") || msgLower.includes("missing_required_fields")) return "يرجى التأكد من تعبئة جميع الحقول المطلوبة";
+    if (msgLower.includes("invalid otp") || msgLower.includes("invalid_otp")) return "رمز التحقق غير صحيح";
+    if (msgLower.includes("otp_expired") || msgLower.includes("expired")) return "انتهت صلاحية رمز التحقق";
+    if (msgLower.includes("otp_locked") || msgLower.includes("too many") || msgLower.includes("otp_max_attempts_exceeded")) return "تم تجاوز عدد المحاولات المسموح بها، يرجى طلب رمز جديد لاحقاً";
+    if (msgLower.includes("duplicate phone") || msgLower.includes("duplicate_phone") || msgLower.includes("phone already exists")) return "رقم الجوال مستخدم مسبقاً";
+    if (msgLower.includes("pharmacy_required") || msgLower.includes("pharmacy required") || msgLower.includes("pharmacy_id")) return "يرجى اختيار الصيدلية";
+    if (msgLower.includes("password_too_weak") || msgLower.includes("password is too") || msgLower.includes("common")) return "كلمة المرور ضعيفة، يرجى اختيار كلمة أقوى";
+    if (msgLower.includes("passwords do not match") || msgLower.includes("passwords_do_not_match")) return "كلمتا المرور غير متطابقتين";
+    if (msgLower.includes("license") || msgLower.includes("رخصة") || msgLower.includes("ترخيص")) return "يرجى إدخال رقم ترخيص صحيح";
+    if (msgLower.includes("phone_number") || msgLower.includes("رقم جوال")) return "يرجى إدخال رقم جوال صحيح";
+    
+    return defaultMessage;
+  };
 
   // Real Pharmacy Data State
   const [pharmacies, setPharmacies] = useState([]);
@@ -165,7 +198,7 @@ export default function PharmacistRegister() {
       }
       setStep(1);
     } else {
-      setErrors({ phone: res.message });
+      setErrors({ server: mapBackendError(res.message, res.data, "تعذر إرسال رمز التحقق، يرجى المحاولة مرة أخرى") });
     }
   };
 
@@ -180,12 +213,13 @@ export default function PharmacistRegister() {
 
     const payload = {
       full_name: formData.name.trim(),
-      phone_number: normalizePhoneNumber(formData.phone),
+      phone_number: normalizePhoneNumber(normalizeArabicNumerals(formData.phone)),
       password: formData.password,
-      license_number: formData.license_number.trim(),
+      confirm_password: formData.confirmPassword,
+      license_number: normalizeArabicNumerals(formData.license_number.trim()),
       // Backend now supports pharmacy_id; legacy pharmacy_name/address fallback removed.
       pharmacy_id: formData.selectedPharmacy.id,
-      otp: otp.trim()
+      otp: normalizeArabicNumerals(otp.trim())
     };
 
     console.log("Pharmacist registration payload prepared");
@@ -196,7 +230,18 @@ export default function PharmacistRegister() {
     if (res.success) {
       setShowSuccessModal(true);
     } else {
-      setErrors({ otp: res.message });
+      const isOtpError = res.message?.toLowerCase().includes("otp") || 
+                         res.data?.code?.toLowerCase().includes("otp") || 
+                         res.data?.fields?.otp || res.data?.otp;
+      
+      const mappedError = mapBackendError(res.message, res.data);
+      
+      if (isOtpError) {
+        setErrors({ otp: mappedError });
+      } else {
+        setErrors({ server: mappedError });
+        setStep(0);
+      }
     }
   };
 
@@ -244,6 +289,11 @@ export default function PharmacistRegister() {
           <View className="px-6 pt-8 pb-10 gap-5">
             {step === 0 ? (
               <>
+                {errors.server ? (
+                  <View className="bg-red-50 border border-red-100 rounded-xl p-4">
+                    <Text className="text-red-600 text-sm text-center font-bold">{errors.server}</Text>
+                  </View>
+                ) : null}
                 <View className="gap-5 flex-1">
                 <InputField 
                   icon={User} 
@@ -493,7 +543,7 @@ export default function PharmacistRegister() {
               تم إرسال طلب التسجيل
             </Text>
             <Text className="text-base text-gray-500 font-bold text-center leading-relaxed mb-8 px-2">
-              تم التحقق من رقم الجوال بنجاح. تم إرسال طلبك إلى المنظمة لمراجعته، وسيتم تفعيل الحساب بعد الموافقة.
+              تم إرسال طلب إنشاء الحساب إلى الإدارة للمراجعة
             </Text>
             <TouchableOpacity
               onPress={() => router.replace("/pharmacist/PharmacistLogin")}

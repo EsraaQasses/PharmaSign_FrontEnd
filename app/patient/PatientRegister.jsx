@@ -11,6 +11,7 @@ import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import PageHeader from "@/components/mobile/PageHeader";
 import { authApi } from "@/api/authApi";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
+import { normalizeArabicNumerals, parseAndNormalizeDate } from "@/utils/formatters";
 
 export default function PatientRegister() {
   const router = useRouter();
@@ -32,6 +33,37 @@ export default function PatientRegister() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const mapBackendError = (message, resData = null, defaultMessage = "تعذر إرسال طلب إنشاء الحساب، يرجى المحاولة مرة أخرى") => {
+    let msgToMap = message;
+    
+    if (resData) {
+      const fieldsToCheck = ["birth_date", "password", "confirm_password", "phone_number", "full_name", "otp", "non_field_errors"];
+      const errorsToSearch = resData.fields ? { ...resData, ...resData.fields } : resData;
+      
+      for (const field of fieldsToCheck) {
+        if (errorsToSearch[field]) {
+          msgToMap = Array.isArray(errorsToSearch[field]) ? errorsToSearch[field][0] : errorsToSearch[field];
+          break;
+        }
+      }
+    }
+
+    if (!msgToMap) return defaultMessage;
+    const msgLower = msgToMap.toLowerCase();
+    
+    if (msgLower.includes("missing or invalid required fields") || msgLower.includes("missing_required_fields")) return "يرجى التأكد من تعبئة جميع الحقول المطلوبة";
+    if (msgLower.includes("invalid otp") || msgLower.includes("invalid_otp")) return "رمز التحقق غير صحيح";
+    if (msgLower.includes("otp_expired") || msgLower.includes("expired")) return "انتهت صلاحية رمز التحقق";
+    if (msgLower.includes("otp_locked") || msgLower.includes("too many") || msgLower.includes("otp_max_attempts_exceeded")) return "تم تجاوز عدد المحاولات المسموح بها، يرجى طلب رمز جديد لاحقاً";
+    if (msgLower.includes("duplicate phone") || msgLower.includes("duplicate_phone") || msgLower.includes("phone already exists")) return "رقم الجوال مستخدم مسبقاً";
+    if (msgLower.includes("password_too_weak") || msgLower.includes("password is too") || msgLower.includes("common")) return "كلمة المرور ضعيفة، يرجى اختيار كلمة أقوى";
+    if (msgLower.includes("passwords do not match") || msgLower.includes("passwords_do_not_match")) return "كلمتا المرور غير متطابقتين";
+    if (msgLower.includes("date has wrong format") || msgLower.includes("birth_date") || msgLower.includes("تاريخ ميلاد")) return "يرجى إدخال تاريخ ميلاد صحيح أو ترك الحقل فارغاً";
+    if (msgLower.includes("phone_number") || msgLower.includes("رقم جوال")) return "يرجى إدخال رقم جوال صحيح";
+
+    return defaultMessage;
+  };
+
   const handleRegisterStep1 = async () => {
     if (!formData.name.trim()) {
       setError("يرجى إدخال الاسم الثلاثي");
@@ -42,7 +74,7 @@ export default function PatientRegister() {
       return;
     }
     
-    const normalizedPhone = normalizePhoneNumber(formData.phone);
+    const normalizedPhone = normalizePhoneNumber(normalizeArabicNumerals(formData.phone));
     if (!normalizedPhone || normalizedPhone.length < 10) {
       setError("رقم الجوال يجب أن يبدأ بـ 09 ويتكون من 10 أرقام");
       return;
@@ -60,6 +92,16 @@ export default function PatientRegister() {
       setError("كلمتا المرور غير متطابقتين");
       return;
     }
+    
+    let normalizedBirthDate = null;
+    if (formData.birthDate && formData.birthDate.trim() !== "") {
+      normalizedBirthDate = parseAndNormalizeDate(formData.birthDate);
+      if (!normalizedBirthDate) {
+        setError("يرجى إدخال تاريخ ميلاد صحيح أو ترك الحقل فارغاً");
+        return;
+      }
+    }
+
     if (!acceptedTerms) {
       setError("يرجى الموافقة على الشروط وسياسة الخصوصية");
       return;
@@ -79,7 +121,7 @@ export default function PatientRegister() {
       }
       setStep(1);
     } else {
-      setError(res.message);
+      setError(mapBackendError(res.message, res.data, "تعذر إرسال رمز التحقق، يرجى المحاولة مرة أخرى"));
     }
   };
 
@@ -94,13 +136,17 @@ export default function PatientRegister() {
 
     const payload = {
       full_name: formData.name.trim(),
-      phone_number: normalizePhoneNumber(formData.phone),
+      phone_number: normalizePhoneNumber(normalizeArabicNumerals(formData.phone)),
       password: formData.password,
-      otp: otp.trim()
+      confirm_password: formData.confirmPassword,
+      otp: normalizeArabicNumerals(otp.trim())
     };
 
-    if (formData.birthDate) {
-      payload.birth_date = formData.birthDate;
+    if (formData.birthDate && formData.birthDate.trim() !== "") {
+      const normalizedBirthDate = parseAndNormalizeDate(formData.birthDate);
+      if (normalizedBirthDate) {
+        payload.birth_date = normalizedBirthDate;
+      }
     }
 
     const res = await authApi.registerPatient(payload);
@@ -109,7 +155,16 @@ export default function PatientRegister() {
     if (res.success) {
       setShowSuccessModal(true);
     } else {
-      setError(res.message);
+      const isOtpError = res.message?.toLowerCase().includes("otp") || 
+                         res.data?.code?.toLowerCase().includes("otp") || 
+                         res.data?.fields?.otp || res.data?.otp;
+      
+      const mappedError = mapBackendError(res.message, res.data);
+      setError(mappedError);
+      
+      if (!isOtpError) {
+        setStep(0);
+      }
     }
   };
 
@@ -348,7 +403,7 @@ export default function PatientRegister() {
               تم إرسال طلب التسجيل
             </Text>
             <Text className="text-base text-gray-500 font-bold text-center leading-relaxed mb-8 px-2">
-              تم التحقق من رقم الجوال بنجاح. تم إرسال طلبك إلى المنظمة لمراجعته، وسيتم تفعيل الحساب بعد الموافقة.
+              تم إرسال طلب إنشاء الحساب إلى الإدارة للمراجعة
             </Text>
             <TouchableOpacity
               onPress={() => router.replace("/patient/PatientLogin")}

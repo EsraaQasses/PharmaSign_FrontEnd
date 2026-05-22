@@ -158,14 +158,14 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
 
       if (result.success && result.data) {
-        const { access, refresh, user: userData } = result.data;
+        const { access, refresh, user: userData, must_set_password } = result.data;
         
         await tokenStorage.saveTokens(access, refresh);
         setUser(userData);
         setUserRole("patient");
         setIsAuthenticated(true);
         setIsLoadingAuth(false);
-        return { success: true, user: userData };
+        return { success: true, user: userData, must_set_password };
       } else {
         setIsLoadingAuth(false);
         return { success: false, ...result };

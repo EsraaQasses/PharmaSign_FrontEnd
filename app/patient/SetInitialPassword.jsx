@@ -4,6 +4,19 @@ import { useRouter } from "expo-router";
 import { Lock, ShieldCheck, Hash, Smile, ChevronLeft, CheckCircle2, AlertCircle, X } from "lucide-react-native";
 import MobileShell from "@/components/mobile/MobileShell";
 import PageHeader from "@/components/mobile/PageHeader";
+import { authApi } from "@/api/authApi";
+
+const getArabicError = (code, fallback) => {
+  const map = {
+    passwords_do_not_match: "كلمتا المرور غير متطابقتين",
+    password_too_weak: "كلمة المرور ضعيفة، يرجى اختيار كلمة أقوى",
+    password_already_set: "تم تعيين كلمة المرور مسبقاً",
+    invalid_otp: "رمز التحقق غير صحيح",
+    otp_expired: "انتهت صلاحية رمز التحقق",
+    otp_locked: "تم تجاوز عدد المحاولات المسموح بها، يرجى طلب رمز جديد لاحقاً"
+  };
+  return map[code] || fallback || "حدث خطأ، يرجى المحاولة مرة أخرى";
+};
 
 const EMOJI_PALETTE = ["😀", "😍", "⭐", "❤️", "🌙", "☀️", "🐱", "🐶", "🍎", "🌸"];
 
@@ -12,6 +25,7 @@ export default function SetInitialPassword() {
   const [mode, setMode] = useState("text"); // 'text', 'pin', 'emoji'
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   // Text Password State
   const [password, setPassword] = useState("");
@@ -63,12 +77,38 @@ export default function SetInitialPassword() {
     return true;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (validate()) {
-      // TODO: Implement backend call to save password/PIN/emoji
-      // Endpoint: POST /auth/patient/set-initial-password/
-      // Payload: { mode, password/pin/emoji_seq }
-      setMessage("سيتم تفعيل حفظ رمز الحماية بعد تحديث الخادم.");
+      setIsSaving(true);
+      setError("");
+      setMessage("");
+      
+      let finalPassword = password;
+      let finalConfirm = confirmPassword;
+      
+      if (mode === "pin") {
+        finalPassword = pin;
+        finalConfirm = confirmPin;
+      } else if (mode === "emoji") {
+        finalPassword = emojiSeq.join("");
+        finalConfirm = emojiSeq.join("");
+      }
+
+      try {
+        const result = await authApi.setInitialPassword(finalPassword, finalConfirm);
+        if (result.success) {
+          setMessage("تم تعيين كلمة المرور بنجاح");
+          setTimeout(() => {
+            router.replace("/patient/PatientHome");
+          }, 1000);
+        } else {
+          setError(getArabicError(result.data?.code, result.message));
+        }
+      } catch (err) {
+        setError("حدث خطأ أثناء الاتصال بالخادم.");
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -262,9 +302,10 @@ export default function SetInitialPassword() {
             <TouchableOpacity 
               onPress={handleSave}
               activeOpacity={0.8}
-              className="w-full bg-patient py-4 rounded-2xl items-center justify-center shadow-lg shadow-patient/30"
+              disabled={isSaving}
+              className={`w-full py-4 rounded-2xl items-center justify-center shadow-lg shadow-patient/30 ${isSaving ? "bg-patient/70" : "bg-patient"}`}
             >
-              <Text className="text-white font-extrabold text-base">حفظ رمز الحماية</Text>
+              <Text className="text-white font-extrabold text-base">{isSaving ? "جاري الحفظ..." : "حفظ رمز الحماية"}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity 

@@ -30,10 +30,11 @@ export default function PatientQRLogin() {
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
-          // TODO: Check result.must_set_password flag from backend
-          // If true, router.replace("/patient/SetInitialPassword");
-          // else:
-          router.replace("/patient/PatientHome");
+          if (result.must_set_password) {
+            router.replace("/patient/SetInitialPassword");
+          } else {
+            router.replace("/patient/PatientHome");
+          }
         }, 1500);
       } else {
         setError(result.message || "رمز الدخول غير صالح أو منتهي. يرجى المحاولة مرة أخرى.");
@@ -74,10 +75,11 @@ export default function PatientQRLogin() {
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
-          // TODO: Check result.must_set_password flag from backend
-          // If true, router.replace("/patient/SetInitialPassword");
-          // else:
-          router.replace("/patient/PatientHome");
+          if (result.must_set_password) {
+            router.replace("/patient/SetInitialPassword");
+          } else {
+            router.replace("/patient/PatientHome");
+          }
         }, 1500);
       } else {
         setError(result.message || "رمز الدخول غير صالح أو منتهي. يرجى المحاولة مرة أخرى.");
