@@ -91,7 +91,9 @@ export default function ScanPatient() {
 
   const simulateScan = () => {
     // For development/web testing where camera might not be available
-    handleBarcodeScanned({ data: "MOCK_TOKEN" });
+    if (__DEV__) {
+      handleBarcodeScanned({ data: "MOCK_TOKEN" });
+    }
   };
 
   const resetScan = () => {

@@ -2,7 +2,6 @@ import BottomNav from "@/components/mobile/BottomNav";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useAuth } from "@/lib/AuthContext";
 import {
-  MOCK_NOTIFICATIONS,
   MOCK_PATIENTS,
 } from "@/lib/mockData";
 import { useRouter } from "expo-router";
@@ -104,7 +103,6 @@ export default function PatientHome() {
   };
 
   const patientName = profile?.full_name || user?.name || "";
-  const unreadNotifs = MOCK_NOTIFICATIONS.filter((n) => !n.read).length;
 
   return (
     <MobileShell className="bg-patient" edges={["top", "left", "right"]}>
