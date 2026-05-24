@@ -11,7 +11,7 @@ import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import PageHeader from "@/components/mobile/PageHeader";
 import { authApi } from "@/api/authApi";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
-import { normalizeArabicNumerals, parseAndNormalizeDate } from "@/utils/formatters";
+import { normalizeArabicNumerals, parseAndNormalizeDate, isStrongPassword } from "@/utils/formatters";
 
 export default function PatientRegister() {
   const router = useRouter();
@@ -84,8 +84,8 @@ export default function PatientRegister() {
       setError("يرجى إدخال كلمة المرور");
       return;
     }
-    if (formData.password.length < 6) {
-      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
+    if (!isStrongPassword(formData.password, formData.phone)) {
+      setError("كلمة المرور ضعيفة، يرجى اختيار كلمة أقوى");
       return;
     }
     if (formData.password !== formData.confirmPassword) {

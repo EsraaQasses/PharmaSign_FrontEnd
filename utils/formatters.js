@@ -56,3 +56,30 @@ export const parseAndNormalizeDate = (dateStr) => {
   return `${year}-${formattedMonth}-${formattedDay}`;
 };
 
+/**
+ * Validates if a password is strong enough to pass backend validators.
+ */
+export const isStrongPassword = (password, phone) => {
+  if (!password || password.length < 8) return false;
+  
+  // Phone number similarity check
+  const normalizedPhone = normalizeArabicNumerals(phone || "");
+  if (normalizedPhone && password === normalizedPhone) return false;
+  
+  // Not entirely numeric
+  if (/^\d+$/.test(password)) return false;
+  
+  // Must contain English letter, number, and special character
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+  
+  if (!hasLetter || !hasNumber || !hasSpecial) return false;
+  
+  // Reject very common passwords
+  const commonPasswords = ["password", "12345678", "test1234", "11111111", "abcdef12", "0936275418"];
+  if (commonPasswords.includes(password.toLowerCase())) return false;
+  
+  return true;
+};
+

@@ -4,7 +4,7 @@ import LogoCard from "@/components/mobile/LogoCard";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 import MobileShell from "@/components/mobile/MobileShell";
 import { normalizePhoneNumber } from "@/utils/phoneUtils";
-import { normalizeArabicNumerals } from "@/utils/formatters";
+import { normalizeArabicNumerals, isStrongPassword } from "@/utils/formatters";
 import { useRouter } from "expo-router";
 import { AlertCircle, Building2, Lock, MessageSquare, Phone, ShieldCheck, User } from "lucide-react-native";
 import React, { useState } from "react";
@@ -160,8 +160,8 @@ export default function PharmacistRegister() {
     // 5. Password Validation
     if (!formData.password) {
       newErrors.password = "يرجى إدخال كلمة المرور";
-    } else if (formData.password.length < 8 || !(/[a-zA-Z\u0600-\u06FF]/.test(formData.password) && /\d/.test(formData.password))) {
-      newErrors.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على رقم وحرف";
+    } else if (!isStrongPassword(formData.password, formData.phone)) {
+      newErrors.password = "كلمة المرور ضعيفة، يرجى اختيار كلمة أقوى";
     }
 
     // 6. Confirm Password
