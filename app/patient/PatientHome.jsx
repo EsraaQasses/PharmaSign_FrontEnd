@@ -1,12 +1,9 @@
 import BottomNav from "@/components/mobile/BottomNav";
 import BrandLogo from "@/components/mobile/BrandLogo";
 import { useAuth } from "@/lib/AuthContext";
-import {
-  MOCK_PATIENTS,
-} from "@/lib/mockData";
+
 import { useRouter } from "expo-router";
 import {
-  Bell,
   ChevronLeft,
   Clock,
   FileText,
