@@ -70,9 +70,15 @@ export default function PharmacyDetail() {
     );
   }
 
+  const isValidLocation = (lat, lng) => {
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+  };
+
   const openInGoogleMaps = () => {
-    if (!pharmacy.latitude || !pharmacy.longitude) return;
-    const url = `https://www.google.com/maps/search/?api=1&query=${pharmacy.latitude},${pharmacy.longitude}`;
+    if (!pharmacy || !isValidLocation(pharmacy.latitude, pharmacy.longitude)) return;
+    const url = `https://www.google.com/maps/search/?api=1&query=${Number(pharmacy.latitude)},${Number(pharmacy.longitude)}`;
     Linking.openURL(url);
   };
 
@@ -182,12 +188,12 @@ export default function PharmacyDetail() {
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={openInGoogleMaps}
-          disabled={!pharmacy.latitude || !pharmacy.longitude}
-          className={`flex-1 h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-xl ${(!pharmacy.latitude || !pharmacy.longitude) ? 'bg-gray-300 shadow-none' : 'bg-patient shadow-patient/30'}`}
+          disabled={!pharmacy || !isValidLocation(pharmacy.latitude, pharmacy.longitude)}
+          className={`flex-1 h-16 rounded-2xl flex-row items-center justify-center gap-3 shadow-sm ${(!pharmacy || !isValidLocation(pharmacy.latitude, pharmacy.longitude)) ? 'bg-gray-100 shadow-none' : 'bg-patient shadow-patient/30'}`}
         >
-          {!!(pharmacy.latitude && pharmacy.longitude) && <Navigation size={22} color="#FFFFFF" strokeWidth={2.5} />}
-          <Text className={`font-extrabold text-lg ${(!pharmacy.latitude || !pharmacy.longitude) ? 'text-gray-500 text-sm' : 'text-white'}`}>
-            {(!pharmacy.latitude || !pharmacy.longitude) ? 'الموقع غير متوفر حالياً' : 'بدء التوجيه'}
+          {pharmacy && isValidLocation(pharmacy.latitude, pharmacy.longitude) && <Navigation size={22} color="#FFFFFF" strokeWidth={2.5} />}
+          <Text className={`font-extrabold text-lg ${(!pharmacy || !isValidLocation(pharmacy.latitude, pharmacy.longitude)) ? 'text-gray-400 text-sm' : 'text-white'}`}>
+            {(!pharmacy || !isValidLocation(pharmacy.latitude, pharmacy.longitude)) ? 'الموقع غير متوفر حالياً' : 'فتح الموقع على الخريطة'}
           </Text>
         </TouchableOpacity>
       </View>

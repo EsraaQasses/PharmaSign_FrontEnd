@@ -1,32 +1,16 @@
 import React from "react";
-import { View } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import { View, Text } from "react-native";
 import { MapPin } from "lucide-react-native";
 
-export default function PatientMap({ region, pharmacies, selectedId, onMarkerPress }) {
+export default function PatientMap() {
   return (
-    <MapView
-      initialRegion={region}
-      className="w-full h-full"
-      showsUserLocation
-      showsMyLocationButton={false}
-    >
-      {pharmacies.filter(p => p.lat != null && p.lng != null && !isNaN(p.lat) && !isNaN(p.lng)).map((p) => (
-        <Marker
-          key={p.id}
-          coordinate={{ latitude: p.lat, longitude: p.lng }}
-          title={p.name}
-          onPress={() => onMarkerPress(p)}
-        >
-          <View className="items-center">
-             <View className={`bg-white p-1 rounded-full shadow-lg border ${selectedId === p.id ? 'border-patient border-2' : 'border-white'}`}>
-              <View className={`w-8 h-8 rounded-full items-center justify-center ${p.hasSignService ? 'bg-emerald-500' : 'bg-patient'}`}>
-                <MapPin size={16} color="#FFFFFF" strokeWidth={2.5} />
-              </View>
-            </View>
-          </View>
-        </Marker>
-      ))}
-    </MapView>
+    <View className="flex-1 items-center justify-center p-6 bg-gray-50">
+      <View className="w-20 h-20 bg-white rounded-full items-center justify-center mb-4 border border-gray-100 shadow-sm">
+        <MapPin size={40} color="#D1D5DB" />
+      </View>
+      <Text className="text-gray-500 font-bold text-center">
+        الخريطة التفاعلية غير متاحة حالياً، يمكن فتح موقع الصيدلية من الزر المخصص
+      </Text>
+    </View>
   );
 }

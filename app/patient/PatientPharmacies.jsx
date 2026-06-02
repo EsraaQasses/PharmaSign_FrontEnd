@@ -2,10 +2,9 @@ import React, { useState, useRef } from "react";
 import { View, Text, TouchableOpacity, TextInput, ScrollView, Linking, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowRight, Search, MapPin, Hand, SlidersHorizontal, LocateFixed, Star, Navigation, Phone, Globe } from "lucide-react-native";
+import { ArrowRight, Search, MapPin, Hand, SlidersHorizontal, Star, Navigation, Phone, Globe } from "lucide-react-native";
 import { pharmacyApi } from "@/api/pharmacyApi";
 import MobileShell from "@/components/mobile/MobileShell";
-import PatientMap from "@/components/mobile/PatientMap";
 import HeaderBackButton from "@/components/mobile/HeaderBackButton";
 
 export default function PatientPharmacies() {
@@ -13,7 +12,6 @@ export default function PatientPharmacies() {
   const insets = useSafeAreaInsets();
   const scrollRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
   const [pharmacies, setPharmacies] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,40 +46,39 @@ export default function PatientPharmacies() {
       (p.region && p.region.includes(searchQuery))
   );
 
-  const damascusRegion = {
-    latitude: 33.5138,
-    longitude: 36.2765,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
-  };
-
   const openInGoogleMaps = (lat, lng) => {
-    if (!lat || !lng) return;
-    const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return;
+    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     Linking.openURL(url);
   };
 
   const callPharmacy = (phone) => {
+    if (!phone) return;
     Linking.openURL(`tel:${phone}`);
   };
 
-  const handleMarkerPress = (pharmacy) => {
-    setSelectedId(pharmacy.id);
+  const isValidLocation = (lat, lng) => {
+    const latitude = Number(lat);
+    const longitude = Number(lng);
+    return Number.isFinite(latitude) && Number.isFinite(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
   };
 
   return (
-    <MobileShell className="bg-white" edges={["left", "right"]}>
-      {/* Search Header over Map */}
+    <MobileShell className="bg-gray-50" edges={["top", "left", "right"]}>
+      {/* Header & Search */}
       <View
-        className="absolute top-0 w-full z-10 px-6"
-        style={{ paddingTop: Math.max(insets.top, 20) + 10 }}
+        className="bg-white px-6 pb-5 shadow-sm z-10"
+        style={{ paddingTop: insets.top || 20 }}
       >
-        <View className="mb-5" style={{ position: 'relative', minHeight: 44 }}>
-          <View style={{ position: 'absolute', right: 0, top: 0, zIndex: 10 }}>
+        <View className="mb-5 flex-row items-center relative" style={{ minHeight: 44 }}>
+          <View style={{ position: 'absolute', right: 0, zIndex: 10 }}>
             <HeaderBackButton fallback="/patient/PatientHome" color="#022451" />
           </View>
-          <View className="items-center justify-center" style={{ minHeight: 44 }}>
-            <View className="bg-patient px-6 py-2 rounded-full shadow-lg border border-white/20">
+          <View className="flex-1 items-center justify-center">
+            <View className="bg-patient px-6 py-2 rounded-full shadow-sm border border-gray-100">
               <Text className="text-sm font-extrabold text-white text-center">
                 صيدليات دمشق
               </Text>
@@ -90,8 +87,8 @@ export default function PatientPharmacies() {
         </View>
 
         {/* Search Bar */}
-        <View className="flex-row items-center bg-white rounded-2xl p-2 shadow-2xl border border-gray-100">
-          <TouchableOpacity className="bg-patient w-12 h-12 rounded-xl items-center justify-center shadow-lg">
+        <View className="flex-row items-center bg-gray-50 rounded-2xl p-2 border border-gray-200">
+          <TouchableOpacity className="bg-patient w-12 h-12 rounded-xl items-center justify-center shadow-sm">
             <SlidersHorizontal size={20} color="#FFFFFF" strokeWidth={2.5} />
           </TouchableOpacity>
           <TextInput
@@ -108,39 +105,11 @@ export default function PatientPharmacies() {
         </View>
       </View>
 
-      {/* Map Content */}
-      <View className="absolute inset-0 z-0 bg-gray-200">
-        <PatientMap 
-          region={damascusRegion}
-          pharmacies={filteredPharmacies.map(p => ({
-            ...p,
-            lat: p.latitude,
-            lng: p.longitude,
-            hasSignService: p.is_contracted_with_organization
-          }))}
-          selectedId={selectedId}
-          onMarkerPress={handleMarkerPress}
-        />
-      </View>
-
-      {/* Floating GPS Button */}
-      <TouchableOpacity
-        className="absolute left-6 w-14 h-14 bg-white rounded-2xl items-center justify-center shadow-2xl z-10 border border-gray-50"
-        style={{ bottom: "46%" }}
-        activeOpacity={0.8}
-      >
-        <LocateFixed size={24} color="#022451" strokeWidth={2.5} />
-      </TouchableOpacity>
-
-      {/* Bottom Sheet List */}
-      <View
-        className="absolute bottom-0 w-full bg-white rounded-t-[3rem] shadow-[0_-10px_20px_rgba(0,0,0,0.1)] z-20 px-6 pt-4"
-        style={{ height: "44%", paddingBottom: Math.max(insets.bottom, 20) }}
-      >
-        <View className="w-12 h-1 bg-gray-200 rounded-full self-center mb-5" />
+      {/* List Content */}
+      <View className="flex-1 px-6 pt-4">
 
         <View className="flex-row items-center justify-between mb-5">
-           <View className="flex-row items-center gap-1.5 bg-background px-3 py-1.5 rounded-full">
+           <View className="flex-row items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-gray-100">
             <Globe size={14} color="#022451" />
             <Text className="text-[10px] font-bold text-patient">نطاق دمشق</Text>
           </View>
@@ -152,7 +121,7 @@ export default function PatientPharmacies() {
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 20) + 20 }}
           className="gap-4"
         >
           {isLoading ? (
@@ -188,7 +157,7 @@ export default function PatientPharmacies() {
                 key={pharmacy.id}
                 onPress={() => router.push(`/patient/PharmacyDetail?id=${pharmacy.id}`)}
                 activeOpacity={0.7}
-                className={`p-5 rounded-3xl border shadow-sm mb-4 ${selectedId === pharmacy.id ? 'bg-blue-50/50 border-patient/20' : 'bg-white border-gray-100'}`}
+                className="p-5 rounded-3xl bg-white border border-gray-100 shadow-sm mb-4"
               >
                 <View className="flex-row justify-between items-start mb-5">
                   <View className="flex-row items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md self-start">
@@ -224,18 +193,14 @@ export default function PatientPharmacies() {
 
                 <View className="flex-row gap-3">
                   <TouchableOpacity 
-                     onPress={() => {
-                        if (pharmacy.latitude && pharmacy.longitude) {
-                            openInGoogleMaps(pharmacy.latitude, pharmacy.longitude);
-                        }
-                     }}
-                     disabled={!pharmacy.latitude || !pharmacy.longitude}
-                     className={`flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-lg ${(!pharmacy.latitude || !pharmacy.longitude) ? 'bg-gray-300 shadow-none' : 'bg-patient shadow-patient/20'}`}
+                     onPress={() => openInGoogleMaps(pharmacy.latitude, pharmacy.longitude)}
+                     disabled={!isValidLocation(pharmacy.latitude, pharmacy.longitude)}
+                     className={`flex-1 h-12 rounded-xl flex-row items-center justify-center gap-2 shadow-sm ${!isValidLocation(pharmacy.latitude, pharmacy.longitude) ? 'bg-gray-100' : 'bg-patient'}`}
                   >
-                    <Text className={`text-[11px] font-extrabold ${(!pharmacy.latitude || !pharmacy.longitude) ? 'text-gray-500' : 'text-white'}`}>
-                      {(!pharmacy.latitude || !pharmacy.longitude) ? 'الموقع غير متوفر حالياً' : 'توجيه الخريطة'}
+                    <Text className={`text-[11px] font-extrabold ${!isValidLocation(pharmacy.latitude, pharmacy.longitude) ? 'text-gray-400' : 'text-white'}`}>
+                      {!isValidLocation(pharmacy.latitude, pharmacy.longitude) ? 'الموقع غير متوفر حالياً' : 'فتح الموقع على الخريطة'}
                     </Text>
-                    {!!(pharmacy.latitude && pharmacy.longitude) && <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} stroke={2.5} />}
+                    {isValidLocation(pharmacy.latitude, pharmacy.longitude) && <Navigation size={16} color="#FFFFFF" strokeWidth={2.5} stroke={2.5} />}
                   </TouchableOpacity>
 
                   <TouchableOpacity 
