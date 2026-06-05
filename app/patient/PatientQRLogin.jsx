@@ -18,15 +18,46 @@ export default function PatientQRLogin() {
   const [manualToken, setManualToken] = useState("");
   const [showHelp, setShowHelp] = useState(false);
 
+  const parseQRData = (rawData) => {
+    try {
+      const parsed = JSON.parse(rawData);
+      if (parsed.token) return parsed.token;
+      if (parsed.qr_code_value) return parsed.qr_code_value;
+    } catch (e) {}
+
+    try {
+      if (rawData.startsWith("http")) {
+        const urlParams = rawData.split("?")[1];
+        if (urlParams) {
+          const params = new URLSearchParams(urlParams);
+          const token = params.get("token") || params.get("qr_code_value");
+          if (token) return token;
+        }
+      }
+    } catch (e) {}
+
+    return rawData.trim();
+  };
+
   const onBarcodeScanned = async ({ data }) => {
     if (verifying || success || !scanning) return;
     
+    // Safety check for empty or whitespace data
+    if (!data || typeof data !== 'string' || data.trim() === "") return;
+    
+    if (__DEV__) {
+      console.log("[DEV] Scanned QR raw data length:", data.length);
+    }
+    
+    const parsedToken = parseQRData(data);
+    if (!parsedToken) return;
+
     setScanning(false);
     setVerifying(true);
     setError("");
     
     try {
-      const result = await loginByQR(data);
+      const result = await loginByQR(parsedToken);
       if (result.success) {
         setSuccess(true);
         setTimeout(() => {
@@ -105,7 +136,7 @@ export default function PatientQRLogin() {
                اختر طريقة الدخول
             </Text>
             <Text className="text-sm text-gray-500 text-center px-6 leading-relaxed">
-              يرجى استخدام رمز QR الخاص بك والمقدم من المؤسسة الطبية لتسجيل الدخول السريع
+              يرجى استخدام رمز QR الخاص بك والمقدم من المنظمة أو الأدمن لتسجيل الدخول السريع
             </Text>
           </View>
 
@@ -150,19 +181,25 @@ export default function PatientQRLogin() {
                     {success ? "تم التعرف على الرمز" : "ابدأ المسح الضوئي"}
                   </Text>
                 </>
-              ) : (
-                <View className="w-full h-full items-center justify-center">
+              ) : permission?.granted ? (
+                <View className="w-full h-full items-center justify-center bg-black">
                   <CameraView 
-                    className="absolute inset-0" 
-                    onBarcodeScanned={scanning ? onBarcodeScanned : undefined}
+                    style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+                    onBarcodeScanned={scanning && !verifying ? onBarcodeScanned : undefined}
                     barcodeScannerSettings={{
                       barcodeTypes: ["qr"],
                     }}
                   />
                   <View className="w-full h-1 bg-patient absolute top-1/2 shadow-lg shadow-patient" />
-                  <View className="bg-black/40 px-4 py-2 rounded-full absolute bottom-6">
-                    <Text className="text-white font-bold">جاري قراءة الرمز...</Text>
+                  <View className="bg-black/60 px-6 py-3 rounded-full absolute bottom-6 flex-row items-center gap-3">
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <Text className="text-white font-bold text-sm">جاري البحث عن الرمز...</Text>
                   </View>
+                </View>
+              ) : (
+                <View className="w-full h-full items-center justify-center px-6">
+                  <ActivityIndicator size="large" color="#022451" className="mb-4" />
+                  <Text className="text-gray-500 font-bold text-center">جاري تشغيل الكاميرا...</Text>
                 </View>
               )}
             </TouchableOpacity>

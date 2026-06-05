@@ -446,13 +446,6 @@ export default function PatientProfile() {
               color="#022451"
             />
             <MenuLink
-              icon={Settings}
-              title="الإعدادات"
-              subtitle="خيارات التنبيهات والتطبيق"
-              onPress={() => setActiveModal("settings")}
-              color="#0FAE9B"
-            />
-            <MenuLink
               icon={Shield}
               title="الأمان والخصوصية"
               subtitle="كلمة المرور والأجهزة المتصلة"
@@ -573,23 +566,6 @@ export default function PatientProfile() {
                 </View>
               )}
 
-              {/* SETTINGS MODAL */}
-              {activeModal === "settings" && (
-                <View>
-                  <ModalHeader title="الإعدادات" onClose={() => setActiveModal(null)} />
-                  
-                  <View className="mb-6">
-                    <Text className="text-sm text-gray-500 text-center font-bold">لا توجد إعدادات إضافية حالياً.</Text>
-                  </View>
-
-                  <TouchableOpacity
-                    onPress={() => setActiveModal(null)}
-                    className="bg-patient h-16 rounded-2xl items-center justify-center mt-4"
-                  >
-                    <Text className="text-white font-extrabold text-lg">إغلاق</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
 
               {/* SECURITY & PRIVACY MODAL */}
               {activeModal === "security" && (
@@ -649,41 +625,9 @@ export default function PatientProfile() {
                     </TouchableOpacity>
                   </View>
 
-                  <View className="mb-8">
-                    <View className="flex-row items-center justify-end gap-2 mb-4">
-                      <Text className="text-lg font-bold text-patient">الأجهزة المتصلة</Text>
-                      <Smartphone size={20} color="#022451" />
-                    </View>
-                    
-                    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex-row items-center justify-between">
-                      <View className="bg-emerald-100 px-2 py-1 rounded">
-                        <Text className="text-[10px] font-bold text-emerald-700">هذا الجهاز</Text>
-                      </View>
-                      <View className="flex-row items-center gap-3">
-                        <View>
-                          <Text className="text-sm font-bold text-gray-900 text-right">iPhone 13 Pro</Text>
-                          <Text className="text-[10px] text-gray-500 mt-0.5 text-right">الرياض، السعودية • نشط الآن</Text>
-                        </View>
-                        <View className="w-10 h-10 bg-white rounded-full items-center justify-center border border-gray-100">
-                          <Smartphone size={20} color="#022451" />
-                        </View>
-                      </View>
-                    </View>
-                  </View>
 
-                  <View className="bg-red-50 rounded-2xl p-4 border border-red-100 flex-row gap-3">
-                    <View className="flex-1">
-                      <Text className="text-sm font-bold text-red-700 mb-1 text-right">حذف الحساب</Text>
-                      <Text className="text-xs text-red-600 text-right mb-3 leading-relaxed">سيؤدي هذا إلى حذف جميع بياناتك وسجلك الطبي نهائياً.</Text>
-                      <TouchableOpacity 
-                        onPress={() => Alert.alert("تنبيه", "سيتم توجيهك لطلب حذف الحساب")}
-                        className="bg-red-100 self-end px-4 py-2 rounded-lg"
-                      >
-                        <Text className="text-xs font-bold text-red-700">طلب حذف الحساب</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <AlertTriangle size={24} color="#EF4444" />
-                  </View>
+
+
                 </View>
               )}
 

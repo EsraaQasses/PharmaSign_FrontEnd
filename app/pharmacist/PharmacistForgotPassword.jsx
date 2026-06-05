@@ -27,6 +27,7 @@ export default function PharmacistForgotPassword() {
   const [step, setStep] = useState(0); // 0: phone, 1: reset, 2: success
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [devOtp, setDevOtp] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
@@ -51,6 +52,8 @@ export default function PharmacistForgotPassword() {
     try {
       const res = await authApi.requestPasswordResetOTP(phoneDigits, "pharmacist");
       if (res.success) {
+        const extractedOtp = res.data?.otp || res.data?.debug_otp || res.data?.code || res.data?.debug_code || res.data?.verification_code || res.data?.dev_otp || res.otp || res.debug_otp || res.code || (res.message && /\\b\\d{4,6}\\b/.test(res.message) ? res.message.match(/\\b\\d{4,6}\\b/)[0] : "");
+        setDevOtp(extractedOtp);
         setStep(1);
       } else {
         setError(getArabicError(res.data?.code, res.message));
@@ -65,6 +68,10 @@ export default function PharmacistForgotPassword() {
   const handleConfirmReset = async () => {
     if (!otp.trim() || !password.trim() || !confirmPassword.trim()) {
       setError("يرجى تعبئة جميع الحقول");
+      return;
+    }
+    if (password.length < 6) {
+      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
     if (password !== confirmPassword) {
@@ -191,6 +198,11 @@ export default function PharmacistForgotPassword() {
                       className="text-gray-900 font-bold text-lg tracking-widest"
                     />
                   </View>
+                  {devOtp ? (
+                    <Text className="text-xs text-primary mt-2 font-bold text-center">
+                      (لأغراض الاختبار: رمز التحقق هو {devOtp})
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View className="mb-4">

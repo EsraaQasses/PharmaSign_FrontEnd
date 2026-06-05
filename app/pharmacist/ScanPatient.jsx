@@ -37,8 +37,45 @@ export default function ScanPatient() {
   const [scanKey, setScanKey] = useState(0);
   const scanProcessingRef = React.useRef(false);
 
+  const parseQRData = (rawData) => {
+    try {
+      const parsed = JSON.parse(rawData);
+      if (parsed.token) return parsed.token;
+      if (parsed.qr_token) return parsed.qr_token;
+      if (parsed.session_token) return parsed.session_token;
+      if (parsed.qr_code_value) return parsed.qr_code_value;
+      if (parsed.value) return parsed.value;
+    } catch (e) {}
+
+    try {
+      if (rawData.startsWith("http")) {
+        const urlParams = rawData.split("?")[1];
+        if (urlParams) {
+          const params = new URLSearchParams(urlParams);
+          const keys = ["token", "qr_token", "session_token", "qr_code_value", "value"];
+          for (const key of keys) {
+            const token = params.get(key);
+            if (token) return token;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return rawData.trim();
+  };
+
   const handleBarcodeScanned = async ({ type, data }) => {
     if (scanState !== "scanning" || scanProcessingRef.current) return;
+    
+    // Safety check for empty or whitespace data
+    if (!data || typeof data !== 'string' || data.trim() === "") return;
+
+    const parsedToken = parseQRData(data);
+    if (!parsedToken) return;
+
+    if (__DEV__) {
+      console.log("[DEV] Scanned QR raw data length:", data.length);
+    }
     
     scanProcessingRef.current = true;
     console.log("[Scan Audit] QR scan detected. Starting validation...");
@@ -47,7 +84,7 @@ export default function ScanPatient() {
     setErrorMessage("");
 
     try {
-      const res = await sessionApi.startSessionByQR(data);
+      const res = await sessionApi.startSessionByQR(parsedToken);
       
       if (res.success) {
         console.log(`[Scan Audit] Session started successfully. ID: ${res.data?.session?.id}`);
