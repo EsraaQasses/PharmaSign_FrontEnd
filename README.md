@@ -1,50 +1,92 @@
-# Welcome to your Expo app 👋
+<div align="center"> <img src="assets/images/logo.png" alt="PharmaSign logo" width="140" />
+PharmaSign — Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Helping deaf and hard-of-hearing patients understand their medication instructions in Arabic Sign Language.
 
-## Get started
+نظام ذكي يساعد الصم وضعاف السمع على فهم تعليمات استخدام الأدوية داخل الصيدليات
 
-1. Install dependencies
 
-   ```bash
-   npm install
-   ```
 
-2. Start the app
+</div>
+About
 
-   ```bash
-   npx expo start
-   ```
+In most pharmacies, medication counseling happens by voice. For deaf and hard-of-hearing patients this creates a real risk of misunderstanding the dose, timing, or warnings of a medicine.
 
-In the output, you'll find options to open the app in a
+PharmaSign closes that gap. The pharmacist records the instructions by voice, reviews the generated text, and the system turns it into an Arabic Sign Language video played by an avatar. The patient opens the prescription on their phone and can replay the instructions at any time, without needing an interpreter.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This repository contains the mobile app (patient and pharmacist interfaces), built with React Native and Expo. It is part of a graduation project at the Faculty of Informatics Engineering, AL Sham Private University (ASPU), 2026.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+How it works
+🎙️ Pharmacist recordsinstructions
+Speech-to-Text
+✍️ Pharmacist reviewsand approves text
+Text-to-Gloss
+Gloss-to-Pose
+Pose-to-Avatar
+📱 Patient watchessign-language video
+Features
+For patients
+Quick QR login: scan a code from the pharmacy to sign in, no typing needed.
+Prescriptions: view all prescriptions and each medication's instructions in sign language.
+Session QR: show a personal code to the pharmacist to start a dispensing session.
+Pharmacies map: browse nearby pharmacies and their details.
+Sign tutorial and app guide: visual onboarding designed for deaf users.
+Notifications, profile, security, and privacy settings.
+For pharmacists
+Scan patient: open a patient's session by scanning their QR code with the camera.
+New prescription: enter the medication's basic data.
+Record audio: dictate the instructions instead of typing them.
+Verify text: review and correct the transcribed text before approval (human-in-the-loop).
+Generate sign: send the approved text to the AI pipeline and deliver the result to the patient.
+Prescription history and details.
+<!-- ## Screenshots Add 3–4 screenshots here (put them in a `docs/screenshots` folder), for example: <p align="center"> <img src="docs/screenshots/patient-home.png" width="220" /> <img src="docs/screenshots/medication-view.png" width="220" /> <img src="docs/screenshots/record-audio.png" width="220" /> <img src="docs/screenshots/verify-text.png" width="220" /> </p> -->
+Tech stack
+Area	Tools
+Framework	React Native, Expo, Expo Router (file-based routing, typed routes)
+Language	JavaScript, TypeScript
+Styling	NativeWind (Tailwind CSS), Cairo font for Arabic UI
+Data fetching	TanStack React Query, REST API client with Arabic error messages
+Device features	expo-camera (QR scanning), expo-av (audio), react-native-qrcode-svg, react-native-maps
+Storage and auth	AsyncStorage token storage, auth context, protected routes
+Project structure
+app/
+├── Splash.jsx, Onboarding.jsx, RoleSelect.jsx   # entry flow
+├── patient/        # patient screens (login, prescriptions, medication view, QR, map...)
+└── pharmacist/     # pharmacist screens (scan, new prescription, record audio, verify text...)
+api/                # REST API modules: auth, prescriptions, sessions, pharmacies, profile
+components/
+├── mobile/         # app shell, navigation, headers, map, status badges
+└── ui/             # reusable UI primitives (button, card, input, alert...)
+lib/                # auth context, query client, helpers
+utils/              # token storage, formatters, phone utilities
+Getting started
 
-## Get a fresh project
+Requirements: Node.js 18+ and the Expo Go app (or an Android/iOS emulator).
 
-When you're ready, run:
+bash
+git clone https://github.com/EsraaQasses/PharmaSign_FrontEnd.git
+cd PharmaSign_FrontEnd
+npm install
+npx expo start
 
-```bash
-npm run reset-project
-```
+Then scan the QR code with Expo Go, or press a for Android, i for iOS, or w for web.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Connecting to the backend
 
-## Learn more
+The API base URL is set in api/client.js. It points to the hosted backend by default. For local development, change it to:
 
-To learn more about developing your project with Expo, look at the following resources:
+Environment	URL
+Web	http://127.0.0.1:8000/api
+Android emulator	http://10.0.2.2:8000/api
+Physical device	http://<your-LAN-IP>:8000/api
+Related repositories
+PharmaSign_BackEnd: Django REST API
+PharmaSign_AI: AI pipeline (Speech-to-Text, Text-to-Gloss, Gloss-to-Pose, avatar)
+Team
+Name	Role
+Mahmoud Alhosen	Mobile app (React Native), Speech-to-Text, Pose-to-Avatar
+Esraa Nabil Qasses	Backend and AI pipeline
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+AI modules for Text-to-Gloss and Gloss-to-Pose were developed jointly.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Supervisors: Dr. Afaf Al-Shalabi, Eng. Nour Al-Hakim Faculty of Informatics Engineering, AL Sham Private University (ASPU), Damascus.
